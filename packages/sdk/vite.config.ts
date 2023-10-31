@@ -20,7 +20,7 @@ export default defineConfig({
     {
       name: "yalc-publish",
       closeBundle() {
-        exec("yalc publish");
+        exec("yalc push");
       },
     },
   ],

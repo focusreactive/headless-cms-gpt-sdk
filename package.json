@@ -4,8 +4,13 @@
   "workspaces": [
     "packages/*"
   ],
+  "scripts": {
+    "dev": "lerna run --parallel dev",
+    "clean": "lerna run --parallel yalc-clean"
+  },
   "dependencies": {},
   "devDependencies": {
+    "husky": "^8.0.3",
     "lerna": "^7.4.1"
   },
   "repository": "git@github.com:focusreactive/headless-cms-gpt-sdk.git",

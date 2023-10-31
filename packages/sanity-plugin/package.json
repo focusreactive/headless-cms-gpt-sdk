@@ -40,10 +40,12 @@
     "build": "run-s clean && plugin-kit verify-package --silent && pkg-utils build --strict && pkg-utils --strict",
     "clean": "rimraf dist",
     "format": "prettier --write --cache --ignore-unknown .",
-    "link-watch": "plugin-kit link-watch",
+    "dev": "yalc add --link focusreactive-ai-sdk && yarn install && plugin-kit link-watch",
     "lint": "eslint .",
     "prepublishOnly": "run-s build",
-    "watch": "pkg-utils watch --strict"
+    "watch": "pkg-utils watch --strict",
+    "yalc-clean": "yalc remove --all",
+    "yalc-check": "yalc check"
   },
   "dependencies": {
     "@sanity/incompatible-plugin": "^1.0.4"

@@ -5378,6 +5378,13 @@ focus-lock@^1.0.0:
   dependencies:
     tslib "^2.0.3"
 
+"focusreactive-ai-sdk@link:packages/sanity-plugin/.yalc/focusreactive-ai-sdk":
+  version "0.0.1"
+
+"focusreactive-ai-sdk@link:packages/sanity-studio-playground/.yalc/sanity-plugin-focusreactive-ai/.yalc/focusreactive-ai-sdk":
+  version "0.0.0"
+  uid ""
+
 follow-redirects@^1.15.0, follow-redirects@^1.15.2:
   version "1.15.3"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.3.tgz#fe2f3ef2690afce7e82ed0b44db08165b207123a"
@@ -6132,6 +6139,11 @@ humanize-ms@^1.2.1:
   integrity sha512-Fl70vYtsAFb/C06PTS9dZBo7ihau+Tu/DNCk/OyHhea07S+aeMWpFFkUaXRa8fI+ScZbEI8dfSxwY7gxZ9SAVQ==
   dependencies:
     ms "^2.0.0"
+
+husky@^8.0.3:
+  version "8.0.3"
+  resolved "https://registry.yarnpkg.com/husky/-/husky-8.0.3.tgz#4936d7212e46d1dea28fef29bb3a108872cd9184"
+  integrity sha512-+dQSyqPh4x1hlO1swXBiNb2HzTDN1I2IGLQx1GrBuiqFJfoMrnZWwVmatvSiO+Iz8fBUnf+lekwNo4c2LlXItg==
 
 iconv-lite@0.6.3, iconv-lite@^0.6.2:
   version "0.6.3"
@@ -9369,6 +9381,12 @@ sanity-diff-patch@^3.0.2:
   integrity sha512-Vsx6IPuMepvfaX2/jOFuUrJaloHvSmXavS9SL3iJhhIPAu20VfumCtdH5kpKlXKL1pBgCAZhWHXfLC4Fyg7qFg==
   dependencies:
     "@sanity/diff-match-patch" "^3.0.0"
+
+"sanity-plugin-focusreactive-ai@link:packages/sanity-studio-playground/.yalc/sanity-plugin-focusreactive-ai":
+  version "1.0.0"
+  dependencies:
+    "@sanity/incompatible-plugin" "^1.0.4"
+    focusreactive-ai-sdk "link:packages/sanity-studio-playground/.yalc/sanity-plugin-focusreactive-ai/.yalc/focusreactive-ai-sdk"
 
 sanity@^3.18.1:
   version "3.18.1"

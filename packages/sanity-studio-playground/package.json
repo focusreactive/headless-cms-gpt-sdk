@@ -5,11 +5,13 @@
   "main": "package.json",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "sanity dev",
+    "dev": "yalc add --link sanity-plugin-focusreactive-ai && yarn install && sanity dev",
     "start": "sanity start",
     "build": "sanity build",
     "deploy": "sanity deploy",
-    "deploy-graphql": "sanity graphql deploy"
+    "deploy-graphql": "sanity graphql deploy",
+    "yalc-clean": "yalc remove --all",
+    "yalc-check": "yalc check"
   },
   "keywords": [
     "sanity"
@@ -31,6 +33,9 @@
     "prettier": "^3.0.2",
     "typescript": "^5.1.6",
     "yalc": "^1.0.0-pre.53"
+  },
+  "peerDependencies": {
+    "sanity-plugin-focusreactive-ai": "*"
   },
   "prettier": {
     "semi": false,

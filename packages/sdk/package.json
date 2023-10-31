@@ -6,11 +6,10 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "yalc publish --push && vite",
-    "watch": "yalc publish --push && vite build --watch",
+    "dev": "yalc publish --push && vite build --watch",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest run",
+    "tets-watch": "vitest"
   },
   "devDependencies": {
     "@types/node": "^20.8.9",
