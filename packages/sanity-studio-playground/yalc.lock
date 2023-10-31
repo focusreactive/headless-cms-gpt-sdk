@@ -2,7 +2,7 @@
   "version": "v1",
   "packages": {
     "sanity-plugin-focusreactive-ai": {
-      "signature": "143cd45b75231741d7455752a22187c9",
+      "signature": "0661a167d3bbf413b4f6c4029ae01e27",
       "file": true,
       "replaced": "link:.yalc/sanity-plugin-focusreactive-ai"
     }

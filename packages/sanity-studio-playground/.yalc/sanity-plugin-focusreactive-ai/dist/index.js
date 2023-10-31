@@ -4,10 +4,10 @@ Object.defineProperty(exports, '__esModule', {
   value: true
 });
 var sanity = require('sanity');
-const n = (t, r) => t - r;
+var focusreactiveAiSdk = require('focusreactive-ai-sdk');
 const myPlugin = sanity.definePlugin(function () {
   let config = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  console.log("hello from sanity-plugin-focusreactive-ai-test-plugin", n(10, 2));
+  console.log("hello from sanity-plugin-focusreactive-ai-test-plugin", focusreactiveAiSdk.subtract(10, 2));
   return {
     name: "sanity-plugin-focusreactive-ai"
   };
