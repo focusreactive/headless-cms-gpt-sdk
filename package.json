@@ -1,0 +1,14 @@
+{
+  "name": "headless-cms-gpt-sdk",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "lerna": "^7.4.1"
+  },
+  "repository": "git@github.com:focusreactive/headless-cms-gpt-sdk.git",
+  "author": "Alex Hramovich <alex@focusreactive.com>",
+  "license": "MIT"
+}

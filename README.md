@@ -1,1 +1,0 @@
-# headless-cms-gpt-sdk

@@ -1,0 +1,28 @@
+{
+  "name": "focusreactive-ai-sdk",
+  "description": "An easy way to enchance your project with ready for use GPT functions",
+  "author": "Alex Hramovich <alex@focusreactive.com>",
+  "license": "MIT",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "yalc publish --push && vite",
+    "watch": "yalc publish --push && vite build --watch",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "main": "./dist/my-lib.umd.cjs",
+  "module": "./dist/my-lib.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/my-lib.js",
+      "require": "./dist/my-lib.umd.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "yalcSig": "3ee4bb4cdc24e89e5663e8cb36927c3a"
+}
