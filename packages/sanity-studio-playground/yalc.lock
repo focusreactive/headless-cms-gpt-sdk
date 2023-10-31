@@ -3,7 +3,8 @@
   "packages": {
     "sanity-plugin-focusreactive-ai": {
       "signature": "143cd45b75231741d7455752a22187c9",
-      "link": true
+      "file": true,
+      "replaced": "link:.yalc/sanity-plugin-focusreactive-ai"
     }
   }
 }
