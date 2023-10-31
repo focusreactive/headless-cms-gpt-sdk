@@ -21,7 +21,6 @@
     "react-icons": "^3.11.0",
     "react-is": "^18.2.0",
     "sanity": "^3.18.1",
-    "sanity-plugin-focusreactive-ai": "file:.yalc/sanity-plugin-focusreactive-ai",
     "styled-components": "^5.3.9"
   },
   "devDependencies": {

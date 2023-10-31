@@ -1,5 +1,4 @@
 import {definePlugin} from 'sanity'
-import {subtract} from 'focusreactive-ai-sdk'
 
 interface MyPluginConfig {
   /* nothing here yet */
@@ -20,7 +19,7 @@ interface MyPluginConfig {
  */
 export const myPlugin = definePlugin<MyPluginConfig | void>((config = {}) => {
   // eslint-disable-next-line no-console
-  console.log('hello from sanity-plugin-focusreactive-ai-test-plugin', subtract(10, 2))
+  console.log('hello from sanity-plugin-focusreactive-ai-test-plugin')
   return {
     name: 'sanity-plugin-focusreactive-ai',
   }
