@@ -6,7 +6,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "yalc publish --push && vite build --watch",
+    "dev": "vite build --watch",
+    "pre-dev": "yarn build && yalc publish --push",
     "build": "tsc && vite build",
     "test": "vitest run",
     "tets-watch": "vitest"
