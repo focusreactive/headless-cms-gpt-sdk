@@ -1,1 +1,0 @@
-(function(e,t){typeof exports=="object"&&typeof module<"u"?t(exports):typeof define=="function"&&define.amd?define(["exports"],t):(e=typeof globalThis<"u"?globalThis:e||self,t(e["my-lib"]={}))})(this,function(e){"use strict";const t=(n,i)=>n-i,u=(n,i)=>n+i;e.subtract=t,e.sum=u,Object.defineProperty(e,Symbol.toStringTag,{value:"Module"})});
