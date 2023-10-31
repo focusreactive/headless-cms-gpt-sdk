@@ -4,10 +4,6 @@
     "sanity-plugin-focusreactive-ai": {
       "signature": "143cd45b75231741d7455752a22187c9",
       "link": true
-    },
-    "focusreactive-ai-sdk": {
-      "signature": "3ee4bb4cdc24e89e5663e8cb36927c3a",
-      "link": true
     }
   }
 }

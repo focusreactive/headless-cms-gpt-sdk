@@ -16,7 +16,6 @@
   ],
   "dependencies": {
     "@sanity/vision": "^3.18.1",
-    "focusreactive-ai-sdk": "link:.yalc/focusreactive-ai-sdk",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^3.11.0",
