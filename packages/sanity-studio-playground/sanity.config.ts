@@ -15,7 +15,7 @@ export default defineConfig({
   plugins: [
     deskTool(),
     visionTool(),
-    myPlugin(),
+    myPlugin({openAiToken: process.env.SANITY_STUDIO_OPENAI_TOKEN as string}),
     //googleMapsInput(),
   ],
 

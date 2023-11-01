@@ -36,5 +36,8 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "openai": "^4.14.2"
+  }
 }

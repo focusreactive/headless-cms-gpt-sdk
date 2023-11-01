@@ -13,6 +13,11 @@ export default defineType({
       type: 'string',
     }),
     defineField({
+      name: 'seoDescription',
+      title: 'SEO description',
+      type: 'string',
+    }),
+    defineField({
       name: 'slug',
       title: 'Slug',
       type: 'slug',

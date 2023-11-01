@@ -1,27 +1,20 @@
 import {definePlugin} from 'sanity'
-import {sum} from 'focusreactive-ai-sdk'
+import ConfirmDialogAction from './actions/openEditorModal'
 
 interface MyPluginConfig {
-  /* nothing here yet */
+  openAiToken: string
 }
 
-/**
- * Usage in `sanity.config.ts` (or .js)
- *
- * ```ts
- * import {defineConfig} from 'sanity'
- * import {myPlugin} from 'sanity-plugin-focusreactive-ai'
- *
- * export default defineConfig({
- *   // ...
- *   plugins: [myPlugin()],
- * })
- * ```
- */
-export const myPlugin = definePlugin<MyPluginConfig | void>((config = {}) => {
-  // eslint-disable-next-line no-console
-  console.log('hello from sanity-plugin-focusreactive-ai-test-plugin', sum(2, 5))
+export const myPlugin = definePlugin<MyPluginConfig>(({openAiToken}) => {
   return {
     name: 'sanity-plugin-focusreactive-ai',
+    document: {
+      actions: (prev, context) => {
+        // Only add the action for documents of type "movie"
+        return context.schemaType === 'movie'
+          ? [...prev, (props) => ConfirmDialogAction({...props, context, openAiToken})]
+          : prev
+      },
+    },
   }
 })
