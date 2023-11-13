@@ -5065,11 +5065,6 @@ focus-lock@^1.0.0:
   dependencies:
     tslib "^2.0.3"
 
-"focusreactive-ai-sdk@link:packages/sanity-ai-sdk/.yalc/focusreactive-ai-sdk":
-  version "0.0.1"
-  dependencies:
-    openai "^4.17.3"
-
 "focusreactive-ai-sdk@link:packages/sanity-studio-playground/.yalc/focusreactive-ai-sdk":
   version "0.0.1"
   dependencies:
