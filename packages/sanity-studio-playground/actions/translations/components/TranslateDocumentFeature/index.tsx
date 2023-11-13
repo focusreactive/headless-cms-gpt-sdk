@@ -53,16 +53,13 @@ const TranslateDocumentFeature: React.FC<TranslateDocumentFeatureProps> = ({docu
     setIsLoading(true)
 
     try {
-      const translatedFields = await transalateSelectedDocumentFields({
+      await transalateSelectedDocumentFields({
         fieldNames: fieldsToTranslate.map((field) => field.name),
         documentId,
         targetLanguage: languageToTranslate,
         client: sanityClient,
-        newDocumentConfig: {
-          titleFieldName: 'title',
-        },
+        newDocumentConfig: createNewDocument ? {titleFieldName: 'title'} : undefined,
       })
-      console.log('translatedFields', translatedFields)
     } catch (error) {
       console.error(error)
     }

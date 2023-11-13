@@ -6,6 +6,7 @@ import person from './person'
 import screening from './screening'
 import plotSummary from './plotSummary'
 import plotSummaries from './plotSummaries'
+import tags from './tags'
 
 export const schemaTypes = [
   // Document types
@@ -19,4 +20,5 @@ export const schemaTypes = [
   plotSummaries,
   castMember,
   crewMember,
+  tags,
 ]

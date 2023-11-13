@@ -1,20 +1,28 @@
 import { getOpenAiClient } from "../../config/openAi";
 
-interface TranslateOptions {
-  targetLanguage: string;
+interface SummariseContentProps {
   content: unknown;
+  contentTitle: string;
   promptModifier?: string;
 }
 
-export const translateJSON = async ({
-  targetLanguage,
+export const summariseContent = async ({
   content,
+  contentTitle,
   promptModifier = "",
-}: TranslateOptions) => {
+}: SummariseContentProps) => {
   const openAiClient = getOpenAiClient();
 
   if (!openAiClient) {
     throw new Error("OpenAI client is not configurated");
+  }
+
+  let isValidJSON = false;
+  try {
+    JSON.parse(JSON.stringify(content));
+    isValidJSON = true;
+  } catch {
+    console.info("Content is not a valid JSON");
   }
 
   try {
@@ -23,16 +31,18 @@ export const translateJSON = async ({
       messages: [
         {
           role: "system",
-          content: `You will be provided with a JSON string, and your task is to translate fields values into ${targetLanguage}. Act like a native ${targetLanguage} speaker and rephase the text in a way that it sounds natural. ${promptModifier}`,
+          content: `You will be provided with ${
+            isValidJSON ? "a JSON titled" : "an text titled"
+          } '${contentTitle}'. Could you provide a detailed summary focusing on the main described things and with an attention to details? Maintain the original text style without alterations. ${promptModifier}`,
         },
         { role: "user", content: JSON.stringify(content) },
       ],
       model: "gpt-3.5-turbo-1106",
-      temperature: 0,
+      temperature: 0.3,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
-      response_format: { type: "json_object" },
+      response_format: { type: "text" },
     });
 
     return chatCompletion.choices[0].message.content as string;
