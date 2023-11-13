@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",
-    "pre-dev": "yarn build && yalc publish --push",
+    "pre-dev-sdk": "yarn build && yalc publish --push",
     "build": "tsc && vite build",
     "test": "vitest run",
     "tets-watch": "vitest"
@@ -31,13 +31,14 @@
   "exports": {
     ".": {
       "import": "./dist/my-lib.js",
-      "require": "./dist/my-lib.umd.cjs"
+      "require": "./dist/my-lib.umd.cjs",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
     "dist"
   ],
   "dependencies": {
-    "openai": "^4.14.2"
+    "openai": "^4.17.3"
   }
 }

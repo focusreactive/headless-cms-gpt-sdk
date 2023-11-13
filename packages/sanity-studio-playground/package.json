@@ -5,7 +5,7 @@
   "main": "package.json",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "yalc add --link sanity-plugin-focusreactive-ai && yarn install && sanity dev",
+    "dev": "yalc add --link sanity-ai-sdk && yalc add --link focusreactive-ai-sdk && yarn install && sanity dev",
     "start": "sanity start",
     "build": "sanity build",
     "deploy": "sanity deploy",
@@ -17,6 +17,7 @@
     "sanity"
   ],
   "dependencies": {
+    "@sanity/ui": "^1.9.0",
     "@sanity/vision": "^3.18.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -35,7 +36,8 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "sanity-plugin-focusreactive-ai": "*"
+    "focusreactive-ai-sdk": "*",
+    "sanity-ai-sdk": "*"
   },
   "prettier": {
     "semi": false,

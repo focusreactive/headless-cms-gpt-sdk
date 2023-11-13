@@ -5,10 +5,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "lerna run pre-dev && lerna run --parallel dev",
+    "dev": "lerna run pre-dev-sdk && lerna run pre-dev-sanity-sdk && lerna run --parallel dev",
     "clean": "lerna run --parallel yalc-clean"
   },
-  "dependencies": {},
   "devDependencies": {
     "husky": "^8.0.3",
     "lerna": "^7.4.1"
