@@ -1,6 +1,6 @@
-import React, {useContext, useEffect, useState} from 'react'
+import React, {useContext, useState} from 'react'
 import {ActionContext} from '../../context'
-import {Button, Card, Flex, Grid, Heading, Stack, Text, TextInput} from '@sanity/ui'
+import {Button, Card, Flex, Heading, Stack, Text, TextInput} from '@sanity/ui'
 import {useClient} from 'sanity'
 import {summariseDocument} from 'sanity-ai-sdk'
 
