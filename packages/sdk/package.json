@@ -11,7 +11,9 @@
     "pre-dev-sdk": "yarn build && yalc publish --push",
     "build": "tsc && vite build",
     "test": "vitest run",
-    "tets-watch": "vitest"
+    "tets-watch": "vitest",
+    "yalc-clean": "yalc remove --all",
+    "yalc-check": "yalc check"
   },
   "devDependencies": {
     "@types/node": "^20.8.9",
