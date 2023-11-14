@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "dev": "lerna run pre-dev-sdk && lerna run pre-dev-sanity-sdk && lerna run --parallel dev",
+    "dev:sb": "lerna run pre-dev-sdk && lerna run pre-dev-sb-sdk && lerna run --parallel dev:sb",
     "clean": "lerna run --parallel yalc-clean"
   },
   "devDependencies": {

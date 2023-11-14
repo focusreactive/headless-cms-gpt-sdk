@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",
+    "dev:sb": "vite build --watch",
     "pre-dev-sdk": "yarn build && yalc publish --push",
     "build": "tsc && vite build",
     "test": "vitest run",

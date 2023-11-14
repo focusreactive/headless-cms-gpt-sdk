@@ -1,0 +1,50 @@
+{
+  "name": "sb-ai-sdk",
+  "version": "0.0.0",
+  "scripts": {
+    "dev:sb": "vite build --watch",
+    "pre-dev-sb-sdk": "yalc add --link focusreactive-ai-sdk && yarn build && yalc publish --push",
+    "yalc-clean": "yalc remove --all",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "yalc-check": "yalc check"
+  },
+  "type": "module",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "vite-plugin-dts": "^3.6.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.3",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-plugin-dts": "^3.6.3",
+    "yalc": "^1.0.0-pre.53"
+  },
+  "peerDependencies": {
+    "focusreactive-ai-sdk": "*",
+    "react": "^16.8.0 || 17.x",
+    "react-dom": "^16.8.0 || 17.x"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/sb-ai-sdk.umd.js",
+  "module": "./dist/sb-ai-sdk.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/sb-ai-sdk.es.js",
+      "require": "./dist/sb-ai-sdk.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}

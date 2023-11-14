@@ -1,0 +1,34 @@
+{
+  "name": "sb-ai-toolkit",
+  "private": true,
+  "author": {
+    "name": "Alex Hramovich",
+    "email": "alex@focusreactive.com"
+  },
+  "scripts": {
+    "check:types": "tsc --noEmit",
+    "start": "next start",
+    "dev:sb": "yalc add --link sb-ai-sdk && yalc add --link focusreactive-ai-sdk && yarn install && next dev",
+    "yalc-clean": "yalc remove --all",
+    "yalc-check": "yalc check",
+    "build": "next build"
+  },
+  "dependencies": {
+    "@storyblok/app-extension-auth": "1.0.0-alpha.1",
+    "next": "latest",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "storyblok-js-client": "^5.10.5"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.17",
+    "@types/react": "^18.0.19",
+    "typescript": "5.0.4",
+    "yalc": "^1.0.0-pre.53"
+  },
+  "peerDependencies": {
+    "focusreactive-ai-sdk": "*",
+    "sb-ai-sdk": "*"
+  },
+  "packageManager": "yarn@3.2.4"
+}

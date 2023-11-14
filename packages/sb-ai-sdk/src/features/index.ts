@@ -1,0 +1,1 @@
+export { translateFullDocument } from "./translations";
