@@ -1,9 +1,11 @@
+import SumariseDocument from '../components/Summary'
 import FindTags from '../components/Tags'
 import TranslateDocumentFeature from '../components/TranslateDocumentFeature'
 
 export enum FeatureName {
   Translate = 'Translate',
   Tags = 'Tags',
+  Summary = 'Summary',
 }
 
 interface BaseFeatureConfig {
@@ -25,5 +27,10 @@ export const FeaturesConfig: TranslateFeatureConfig[] = [
     name: FeatureName.Tags,
     title: 'Tags',
     component: FindTags,
+  },
+  {
+    name: FeatureName.Summary,
+    title: 'Summary',
+    component: SumariseDocument,
   },
 ]

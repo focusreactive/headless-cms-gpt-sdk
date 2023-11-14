@@ -1,20 +1,14 @@
 import { SanityDocument } from "sanity";
-import { appplyTags } from "focusreactive-ai-sdk";
+import { summariseContent } from "focusreactive-ai-sdk";
 import { getSanityClient } from "../../../config/sanityClient";
 
-interface Tag {
-  id: string;
-  title: string;
-  description?: string;
-}
-
-interface FindRelevantTagsProps {
+interface SummariseDocumentProps {
   documentId: string;
-  tags: Tag[];
   contentTitle: string;
+  promptModifier?: string;
 }
 
-export const findRelevantTags = async (props: FindRelevantTagsProps) => {
+export const summariseDocument = async (props: SummariseDocumentProps) => {
   const sanityClient = getSanityClient();
   if (!sanityClient) {
     throw new Error("Sanity client is not initialized");
@@ -33,17 +27,16 @@ export const findRelevantTags = async (props: FindRelevantTagsProps) => {
       documentData;
 
     try {
-      const tags = await appplyTags({
+      const summary = await summariseContent({
         content: documentContent,
         promptModifier:
-          "Do not work with technical fields of the data, they starts with a _ symbol.",
-        tags: props.tags,
+          "Do not work with technical fields of the data, they starts with a _ symbol. The content you provided with is a movie overview.",
         contentTitle: props.contentTitle,
       });
 
-      return tags;
+      return summary;
     } catch {
-      throw new Error("Something went wrong");
+      throw new Error("Failed to summarise document");
     }
   } catch {
     throw new Error("Document not found");

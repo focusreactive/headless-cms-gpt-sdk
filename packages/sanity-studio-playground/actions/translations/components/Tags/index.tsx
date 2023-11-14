@@ -61,7 +61,7 @@ const FindTags: React.FC<FindTagsProps> = ({documentId}) => {
       </Heading>
       <Stack marginY={4}>
         <Text size={2}>
-          Hey! Please enter the content title and click the button to find the most relevant tags
+          Hey! Please enter a content title and click the button to find the most relevant tags
           for this document
         </Text>
       </Stack>
