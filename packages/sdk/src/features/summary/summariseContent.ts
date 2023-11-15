@@ -33,7 +33,7 @@ export const summariseContent = async ({
           role: "system",
           content: `You will be provided with ${
             isValidJSON ? "a JSON titled" : "an text titled"
-          } '${contentTitle}'. Could you provide a detailed summary focusing on the main described things and with an attention to details? Maintain the original text style without alterations. ${promptModifier}`,
+          } '${contentTitle}'. Could you provide a detailed summary focusing on the main described things and with an attention to details? Maintain the original text style without alterations. Result should not contain any information about the content type itself. ${promptModifier}`,
         },
         { role: "user", content: JSON.stringify(content) },
       ],

@@ -1,6 +1,4 @@
-html {
-  height: 100%;
-}
+html {}
 
 body {
   font-size: 0.875rem;
@@ -13,7 +11,7 @@ body {
   height: 100%;
 }
 
-body > div {
+body>div {
   height: 100%;
   display: flex;
 }

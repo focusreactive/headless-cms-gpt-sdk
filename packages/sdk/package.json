@@ -4,6 +4,7 @@
   "author": "Alex Hramovich <alex@focusreactive.com>",
   "license": "MIT",
   "version": "0.0.1",
+  "private": false,
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",

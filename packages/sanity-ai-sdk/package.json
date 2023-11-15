@@ -1,6 +1,7 @@
 {
   "name": "sanity-ai-sdk",
   "version": "0.0.0",
+  "private": false,
   "scripts": {
     "dev": "vite build --watch",
     "pre-dev-sanity-sdk": "yalc add --link focusreactive-ai-sdk && yarn build && yalc publish --push",
@@ -30,11 +31,11 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
+    "@sanity/client": "^6.4.9",
     "focusreactive-ai-sdk": "*",
     "react": "^16.8.0 || 17.x",
     "react-dom": "^16.8.0 || 17.x",
-    "sanity": "^3.18.1",
-    "@sanity/client": "^6.4.9"
+    "sanity": "^3.18.1"
   },
   "files": [
     "dist"

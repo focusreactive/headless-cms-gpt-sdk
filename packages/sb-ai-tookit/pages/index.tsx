@@ -1,51 +1,69 @@
 import { GetServerSideProps, NextPage } from 'next'
 import { authHandlerParams, endpointPrefix } from '@src/auth'
-import { Layout } from '@src/components/Layout'
-import { useEffect, useState } from 'react'
-import { StoryTable } from '@src/components/StoryTable'
-import { isStories, Story } from '@src/Story'
+import React, { useEffect, useState } from 'react'
 import {
+  AppSession,
   isAppSessionQuery,
   sessionCookieStore,
 } from '@storyblok/app-extension-auth'
-import styles from '@src/styles/Index.module.css'
+
+import { lightTheme } from '@storyblok/mui'
+import { CssBaseline, ThemeProvider } from '@mui/material'
+import FeaturesLayout from '@src/components/FeaturesLayout'
+import { initSDK } from 'sb-ai-sdk'
 
 type PageProps = {
   spaceId: number
   userId: number
+  appSession: AppSession
 }
 
-const fetchStories = (spaceId: number, userId: number): Promise<Story[]> =>
-  fetch(`api/stories?spaceId=${spaceId}&userId=${userId}`)
-    .then((res) => res.json())
-    .then((res) => (isStories(res) ? res : []))
-    .catch((error) => {
-      console.error('Failed to fetch stories', error)
-      return []
-    })
-
 const Home: NextPage<PageProps> = (props) => {
-  const [stories, setStories] = useState<Story[]>([])
+  const [currentHeight, setCurrentHeight] = useState<number>(0)
 
   useEffect(() => {
-    fetchStories(props.spaceId, props.userId).then((stories) =>
-      setStories(stories),
-    )
-  }, [props.spaceId, props.userId])
+    const handleResize = () => {
+      const height = document.body.clientHeight
+
+      if (height === currentHeight) {
+        return
+      }
+
+      window.parent.postMessage(
+        {
+          action: 'tool-changed',
+          tool: 'focusreactive-ai-toolkit',
+          event: 'heightChange',
+          height: height,
+          width: '100%',
+        },
+        '*',
+      )
+
+      setCurrentHeight(height)
+    }
+
+    const observer = new ResizeObserver(handleResize)
+    observer.observe(document.body)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    initSDK({
+      token: props.appSession.accessToken,
+      pluginName: 'focusreactive-ai-toolkit',
+      openAiToken: process.env.NEXT_PUBLIC_SANITY_STUDIO_OPENAI_TOKEN,
+    })
+  }, [])
 
   return (
-    <Layout>
-      <div className={styles.app}>
-        <span className={styles.app__text}>
-          Here is a list of the last {stories.length} updated stories on this
-          space:
-        </span>
-        <StoryTable
-          stories={stories}
-          className={styles['app__story-table']}
-        />
-      </div>
-    </Layout>
+    <ThemeProvider theme={lightTheme}>
+      <CssBaseline />
+      <FeaturesLayout />
+    </ThemeProvider>
   )
 }
 export default Home
@@ -75,6 +93,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
 
   return {
     props: {
+      appSession,
       spaceId: appSession.spaceId,
       userId: appSession.userId,
     },

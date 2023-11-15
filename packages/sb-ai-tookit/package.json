@@ -1,5 +1,6 @@
 {
   "name": "sb-ai-toolkit",
+  "version": "0.0.0",
   "private": true,
   "author": {
     "name": "Alex Hramovich",
@@ -14,11 +15,15 @@
     "build": "next build"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/material": "^5.14.18",
     "@storyblok/app-extension-auth": "1.0.0-alpha.1",
-    "next": "latest",
+    "@storyblok/mui": "0.2.0",
+    "next": "^14.0.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "storyblok-js-client": "^5.10.5"
+    "storyblok-js-client": "^6.2.0"
   },
   "devDependencies": {
     "@types/node": "^18.7.17",
@@ -29,6 +34,5 @@
   "peerDependencies": {
     "focusreactive-ai-sdk": "*",
     "sb-ai-sdk": "*"
-  },
-  "packageManager": "yarn@3.2.4"
+  }
 }
