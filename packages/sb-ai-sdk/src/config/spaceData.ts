@@ -1,13 +1,12 @@
 interface SpaceInfo {
   pluginName: string;
+  spaceId: string;
 }
 
 let SpaceInfo: SpaceInfo | null = null;
 
-export const getSpaceInfo = () => {
-  return SpaceInfo;
-};
-
-export const configureSpaceInfo = (props: SpaceInfo) => {
+const configureSpaceInfo = (props: SpaceInfo) => {
   SpaceInfo = props;
 };
+
+export { SpaceInfo, configureSpaceInfo };

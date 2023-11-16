@@ -1,2 +1,2 @@
-export { translateFullDocument } from "./translations";
 export { summariseStory } from "./summarisation";
+export { findRelevantTags } from "./categorisation";

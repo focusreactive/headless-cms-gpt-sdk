@@ -1,6 +1,6 @@
 import { summariseContent } from "focusreactive-ai-sdk";
-import { getSpaceInfo } from "../../../config/spaceData";
 import { ISbStoryData } from "storyblok-js-client";
+import { SpaceInfo } from "../../../config/spaceData";
 
 interface SummariseStoryProps {
   contentTitle: string;
@@ -9,9 +9,7 @@ interface SummariseStoryProps {
 }
 
 export const summariseStory = (props: SummariseStoryProps) => {
-  const spaceInfo = getSpaceInfo();
-
-  if (!spaceInfo) {
+  if (!SpaceInfo) {
     throw new Error("SDK is not initialised");
   }
 
@@ -39,7 +37,7 @@ export const summariseStory = (props: SummariseStoryProps) => {
   window.parent.postMessage(
     {
       action: "tool-changed",
-      tool: spaceInfo.pluginName,
+      tool: SpaceInfo.pluginName,
       event: "getContext",
     },
     "*"

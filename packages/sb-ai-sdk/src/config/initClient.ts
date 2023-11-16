@@ -1,13 +1,23 @@
 import StoryblokClient from "storyblok-js-client";
 
-let Storyblok: StoryblokClient | null = null;
+let SBManagementClient: StoryblokClient | null = null;
+let SBClient: StoryblokClient | null = null;
 
-export const getClient = () => {
-  return Storyblok;
-};
+interface InitSDKProps {
+  token: string;
+  managementToken: string;
+}
 
-export const configureClient = (token: string) => {
-  Storyblok = new StoryblokClient({
-    oauthToken: token,
+const configureClient = (props: InitSDKProps) => {
+  SBManagementClient = new StoryblokClient({
+    oauthToken: `Bearer ${props.managementToken}`,
   });
+  SBClient = new StoryblokClient({
+    accessToken: `${props.token}`,
+  });
+
+  SBClient.flushCache();
+  SBManagementClient.flushCache();
 };
+
+export { SBManagementClient, SBClient, configureClient };
