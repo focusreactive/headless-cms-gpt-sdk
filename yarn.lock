@@ -5238,6 +5238,20 @@ focus-lock@^1.0.0:
   dependencies:
     tslib "^2.0.3"
 
+"focusreactive-ai-sdk@link:packages/sanity-ai-sdk/.yalc/focusreactive-ai-sdk":
+  version "0.0.1"
+  dependencies:
+    openai "^4.17.3"
+
+"focusreactive-ai-sdk@link:packages/sanity-studio-playground/.yalc/focusreactive-ai-sdk":
+  version "0.0.1"
+  dependencies:
+    openai "^4.17.3"
+
+"focusreactive-ai-sdk@link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk/.yalc/focusreactive-ai-sdk":
+  version "0.0.0"
+  uid ""
+
 follow-redirects@^1.15.0, follow-redirects@^1.15.2:
   version "1.15.3"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.3.tgz#fe2f3ef2690afce7e82ed0b44db08165b207123a"
@@ -8914,6 +8928,14 @@ safe-regex-test@^1.0.0:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
+
+"sanity-ai-sdk@link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk":
+  version "0.0.0"
+  dependencies:
+    focusreactive-ai-sdk "link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk/.yalc/focusreactive-ai-sdk"
+    react "^18.2.0"
+    react-dom "^18.2.0"
+    vite-plugin-dts "^3.6.3"
 
 sanity-diff-patch@^3.0.2:
   version "3.0.2"

@@ -1,4 +1,4 @@
-import { configurateOpenAi } from "focusreactive-ai-sdk";
+import { initSDK as configure } from "focusreactive-ai-sdk";
 import { configureClient } from "./initClient";
 import { configureSpaceInfo } from "./spaceData";
 
@@ -20,5 +20,5 @@ export const initSDK = (props: InitSDKProps) => {
     managementToken: props.managementToken,
     token: props.token,
   });
-  configurateOpenAi(props.openAiToken);
+  configure({ openAiToken: props.openAiToken });
 };

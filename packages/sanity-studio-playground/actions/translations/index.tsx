@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react'
 import {ActionComponent, DocumentActionProps, DocumentActionsContext, useClient} from 'sanity'
 import ContentLayout from './components/ContentLayout'
-import {configurateOpenAi} from 'focusreactive-ai-sdk'
+import {initSDK as configure} from 'focusreactive-ai-sdk'
 import {initSDK, translateFullDocument} from 'sanity-ai-sdk'
 
 interface Props extends DocumentActionProps {
@@ -23,7 +23,7 @@ const ConfirmDialogAction: ActionComponent<Props> = (props) => {
     })
   }, [client])
 
-  configurateOpenAi(props.openAiToken)
+  configure({openAiToken: props.openAiToken})
 
   return {
     label: 'Ai assist',

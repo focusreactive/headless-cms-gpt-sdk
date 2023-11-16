@@ -1,4 +1,4 @@
-export { configurateOpenAi } from "./config/openAi";
+export { initSDK } from "./config";
 export {
   translateJSON,
   summariseContent,
