@@ -3,7 +3,7 @@
 		<img  src="https://gitnation.imgix.net/stichting-frontend-amsterdam/image/upload/f_auto,c_scale,w_300/v1682673527/dev/focus_reactive__light_back_s7lhwa.png?auto=format"  alt="FocusReactive logo">
 	</a>
 	<h1 align="center">Sanity JavaScript OpenAI SDK</h1>
-	<p align="center">This client is a thin wrapper for the OpeanAI API. A way to easely enchance your studio with ready for use GPT functions</p>
+	<p align="center">This client is a thin wrapper for the OpeanAI API. A way to easely enchance your studio with ready to use GPT functions</p>
 </div>
 
 ## 🚀 Usage

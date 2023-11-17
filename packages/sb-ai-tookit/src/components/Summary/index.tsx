@@ -20,7 +20,6 @@ const Summary = () => {
       contentTitle,
       promptModifier: 'Provided content is a website page. Summary should be short and concise.',
       cb: (summary) => {
-        console.log('summary', summary)
         setSummary(summary)
         setIsLoading(false)
       },
