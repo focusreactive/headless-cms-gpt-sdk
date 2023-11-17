@@ -56,7 +56,6 @@ const Home: NextPage<PageProps> = (props) => {
 
     initSDK({
       managementToken: props.appSession.accessToken,
-      token: process.env.NEXT_PUBLIC_SB_PREVIEW_TOKEN,
       pluginName: 'focusreactive-ai-toolkit',
       openAiToken: process.env.NEXT_PUBLIC_SANITY_STUDIO_OPENAI_TOKEN,
       spaceId: String(props.spaceId),
