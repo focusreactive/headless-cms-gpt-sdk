@@ -1,16 +1,16 @@
-# Headless CMS AI SDK monorepo
+<div align="center">
+	<a  href="https://focusreactive.com/"  align="center">
+		<img  src="https://gitnation.imgix.net/stichting-frontend-amsterdam/image/upload/f_auto,c_scale,w_300/v1682673527/dev/focus_reactive__light_back_s7lhwa.png?auto=format"  alt="FocusReactive logo">
+	</a>
+	<h1 align="center">Headless CMS AI SDK playground</h1>
+</div>
 
-## Monorepo overview
+## Storyblok Development
 
-Этот монорепозиторий состоит из следующих частей:
+### Install
 
-- **focusreactive-ai-sdk** - AI SDK, наибор иструментов основанных на OpenAI API, которые можно использовать в любом проекте
-- **sanity-ai-sdk** - набор методов, созданных для использования при разработке кастомных плагинов для Sanity headless CMS
-- **sb-ai-sdk** - набор методов, созданеных для использования при разработнке кастомных плагинов, иструментов и приложений StoryBlok headless CMS
-- **sanity-studio-playground** - Sanity studio с кастомным плагином, который содержить в себе примере использования интрументов SDK Sanity
-- **sb-ai-toolkit** - StoryBlok tool с примерами использования интрументов SDK StoryBlok
+```sh
+yarn
+```
 
-## Sanity Development
 
-- `yarn`
-- `yarn dev`
