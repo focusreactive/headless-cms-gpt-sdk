@@ -3,7 +3,7 @@
 		<img  src="https://gitnation.imgix.net/stichting-frontend-amsterdam/image/upload/f_auto,c_scale,w_300/v1682673527/dev/focus_reactive__light_back_s7lhwa.png?auto=format"  alt="FocusReactive logo">
 	</a>
 	<h1 align="center">StoryBlok JavaScript OpenAI SDK</h1>
-	<p align="center">This client is a thin wrapper for the OpeanAI API. A way to easely enchance your plugins with ready for use GPT functions</p>
+	<p align="center">This client is a thin wrapper for the OpeanAI API. A way to easely enchance your StoryBlok plugins with ready to use GPT functions</p>
 </div>
 
 ## 🚀 Usage
@@ -64,6 +64,8 @@ interface FindRelevantTagsProps {
 ```
 
 - `contentTitle` - Title of the content that we need to process. We use it to set a logical context.
+- `promptModifier` - Optional. If you want to add some instructions to the prompt, you can pass the modifier here.
+- `cb` - Callback function that will be called with the result.
 
 **Usage**
 
@@ -87,12 +89,9 @@ interface SummariseStoryProps {
 }
 ```
 
-- `fieldNames` - Array of field names that should be translated. Should match the document schema. Can with any type of content (string, JSON, etc.)
-- `documentId` - Id of the document that we need to process.
-- `targetLanguage` - Language to which we need to translate the content.
-- `newDocumentConfig` - Optional. If you want to create a new document with the translated content, you can pass the config here.
-- `titleFieldName` - Field that should be used to create a new document title based on it's value.
-- `additionalFields` - Optional. Additional fields that should be added to the new document.
+- `contentTitle` - Title of the content that we need to process. We use it to set a logical context.
+- `promptModifier` - Optional. If you want to add some instructions to the prompt, you can pass the modifier here.
+- `cb` - Callback function that will be called with the result.
 
 **Usage**
 
