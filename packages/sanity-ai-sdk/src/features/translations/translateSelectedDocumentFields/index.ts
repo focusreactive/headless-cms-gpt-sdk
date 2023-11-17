@@ -1,5 +1,6 @@
 import { SanityClient } from "sanity";
 import { translateJSON } from "focusreactive-ai-sdk";
+import { getSanityClient } from "../../../config/sanityClient";
 
 interface NewDocumentprops {
   titleFieldName: string;
@@ -18,9 +19,11 @@ export const transalateSelectedDocumentFields = async ({
   fieldNames,
   documentId,
   targetLanguage,
-  client,
   newDocumentConfig,
 }: TranslateSelectedDocumentFieldsProps): Promise<void> => {
+  const client = getSanityClient();
+  if (!client) throw new Error("SDK not initialised");
+
   const document = await client.getDocument(documentId);
   if (!document) {
     throw new Error(`Document with id ${documentId} not found`);

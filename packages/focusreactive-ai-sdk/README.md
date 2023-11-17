@@ -95,6 +95,8 @@ const deContent = await translateJSON({
 });
 ```
 
+### Summarisation
+
 #### Function **`summariseContent`**
 
 This function is created to be able to create a sammury of a content. Works with string and JSON objects.
@@ -129,6 +131,8 @@ const summary = await summariseContent({
   promptModifier: "Make sure that the summary is not longer than 3 sentences.",
 });
 ```
+
+### Categotisation
 
 #### Function **`appplyTags`**
 

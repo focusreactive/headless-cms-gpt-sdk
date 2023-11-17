@@ -4,7 +4,6 @@ import { translateJSON } from "focusreactive-ai-sdk";
 
 interface TranslateFullDocumentProps {
   documentId: string;
-  currentLanguage: string;
   targetLanguage: string;
 }
 
