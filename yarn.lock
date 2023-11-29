@@ -5250,6 +5250,19 @@ focus-lock@^1.0.0:
 
 "focusreactive-ai-sdk@link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk/.yalc/focusreactive-ai-sdk":
   version "0.0.0"
+
+"focusreactive-ai-sdk@link:packages/sb-ai-sdk/.yalc/focusreactive-ai-sdk":
+  version "0.0.1"
+  dependencies:
+    openai "^4.17.3"
+
+"focusreactive-ai-sdk@link:packages/sb-ai-tookit/.yalc/focusreactive-ai-sdk":
+  version "0.0.1"
+  dependencies:
+    openai "^4.17.3"
+
+"focusreactive-ai-sdk@link:packages/sb-ai-tookit/.yalc/sb-ai-sdk/.yalc/focusreactive-ai-sdk":
+  version "0.0.0"
   uid ""
 
 follow-redirects@^1.15.0, follow-redirects@^1.15.2:
@@ -9058,6 +9071,16 @@ saxes@^6.0.0:
   integrity sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==
   dependencies:
     xmlchars "^2.2.0"
+
+"sb-ai-sdk@link:packages/sb-ai-tookit/.yalc/sb-ai-sdk":
+  version "0.0.0"
+  dependencies:
+    "@storyblok/app-extension-auth" "^1.0.0-alpha.1"
+    focusreactive-ai-sdk "link:packages/sb-ai-tookit/.yalc/sb-ai-sdk/.yalc/focusreactive-ai-sdk"
+    react "^18.2.0"
+    react-dom "^18.2.0"
+    storyblok-js-client "^6.2.0"
+    vite-plugin-dts "^3.6.3"
 
 scheduler@^0.23.0:
   version "0.23.0"

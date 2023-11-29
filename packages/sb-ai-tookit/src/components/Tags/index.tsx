@@ -22,7 +22,13 @@ const Tags = () => {
   const applyTags = async () => {
     setIsLoading(true)
 
-    findRelevantTags({ contentTitle, cb: (tags) => setTags(tags) })
+    findRelevantTags({
+      contentTitle,
+      cb: (tags) => {
+        setTags(tags)
+        setIsLoading(false)
+      },
+    })
   }
 
   return (
