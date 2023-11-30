@@ -5238,30 +5238,30 @@ focus-lock@^1.0.0:
   dependencies:
     tslib "^2.0.3"
 
-"focusreactive-ai-sdk@link:packages/sanity-ai-sdk/.yalc/focusreactive-ai-sdk":
+"content-ai-sdk@link:packages/sanity-ai-sdk/.yalc/content-ai-sdk":
   version "0.0.1"
   dependencies:
     openai "^4.17.3"
 
-"focusreactive-ai-sdk@link:packages/sanity-studio-playground/.yalc/focusreactive-ai-sdk":
+"content-ai-sdk@link:packages/sanity-studio-playground/.yalc/content-ai-sdk":
   version "0.0.1"
   dependencies:
     openai "^4.17.3"
 
-"focusreactive-ai-sdk@link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk/.yalc/focusreactive-ai-sdk":
+"content-ai-sdk@link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk/.yalc/content-ai-sdk":
   version "0.0.0"
 
-"focusreactive-ai-sdk@link:packages/sb-ai-sdk/.yalc/focusreactive-ai-sdk":
+"content-ai-sdk@link:packages/storyblok-ai-sdk/.yalc/content-ai-sdk":
   version "0.0.1"
   dependencies:
     openai "^4.17.3"
 
-"focusreactive-ai-sdk@link:packages/sb-ai-tookit/.yalc/focusreactive-ai-sdk":
+"content-ai-sdk@link:packages/sb-ai-tookit/.yalc/content-ai-sdk":
   version "0.0.1"
   dependencies:
     openai "^4.17.3"
 
-"focusreactive-ai-sdk@link:packages/sb-ai-tookit/.yalc/sb-ai-sdk/.yalc/focusreactive-ai-sdk":
+"content-ai-sdk@link:packages/sb-ai-tookit/.yalc/storyblok-ai-sdk/.yalc/content-ai-sdk":
   version "0.0.0"
   uid ""
 
@@ -8945,7 +8945,7 @@ safe-regex-test@^1.0.0:
 "sanity-ai-sdk@link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk":
   version "0.0.0"
   dependencies:
-    focusreactive-ai-sdk "link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk/.yalc/focusreactive-ai-sdk"
+    content-ai-sdk "link:packages/sanity-studio-playground/.yalc/sanity-ai-sdk/.yalc/content-ai-sdk"
     react "^18.2.0"
     react-dom "^18.2.0"
     vite-plugin-dts "^3.6.3"
@@ -9072,11 +9072,11 @@ saxes@^6.0.0:
   dependencies:
     xmlchars "^2.2.0"
 
-"sb-ai-sdk@link:packages/sb-ai-tookit/.yalc/sb-ai-sdk":
+"storyblok-ai-sdk@link:packages/sb-ai-tookit/.yalc/storyblok-ai-sdk":
   version "0.0.0"
   dependencies:
     "@storyblok/app-extension-auth" "^1.0.0-alpha.1"
-    focusreactive-ai-sdk "link:packages/sb-ai-tookit/.yalc/sb-ai-sdk/.yalc/focusreactive-ai-sdk"
+    content-ai-sdk "link:packages/sb-ai-tookit/.yalc/storyblok-ai-sdk/.yalc/content-ai-sdk"
     react "^18.2.0"
     react-dom "^18.2.0"
     storyblok-js-client "^6.2.0"

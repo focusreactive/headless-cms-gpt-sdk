@@ -20,9 +20,9 @@ export default defineConfig({
   build: {
     lib: {
       entry: path.resolve(__dirname, "src/lib/index.ts"),
-      name: "sb-ai-sdk",
+      name: "storyblok-ai-sdk",
       formats: ["es", "umd"],
-      fileName: (format) => `sb-ai-sdk.${format}.js`,
+      fileName: (format) => `storyblok-ai-sdk.${format}.js`,
     },
     rollupOptions: {
       external: ["react", "react-dom"],

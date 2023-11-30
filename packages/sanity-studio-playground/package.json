@@ -5,7 +5,7 @@
   "main": "package.json",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "yalc add --link sanity-ai-sdk && yalc add --link focusreactive-ai-sdk && yarn install && sanity dev",
+    "dev": "yalc add --link sanity-ai-sdk && yalc add --link content-ai-sdk && yarn install && sanity dev",
     "start": "sanity start",
     "build": "sanity build",
     "deploy": "sanity deploy",
@@ -36,7 +36,7 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "focusreactive-ai-sdk": "*",
+    "content-ai-sdk": "*",
     "sanity-ai-sdk": "*"
   },
   "prettier": {

@@ -11,7 +11,7 @@
 ### Install
 
 ```sh
-yarn add focusreactive-ai-sdk
+yarn add content-ai-sdk
 ```
 
 ### How to use it
@@ -20,7 +20,7 @@ yarn add focusreactive-ai-sdk
 
 ```javascript
 // 1. Import the configration function
-import { initSDK } from "focusreactive-ai-sdk";
+import { initSDK } from "content-ai-sdk";
 
 // 2. Initialize the SDK with the OpenAI token
 initSDK({ openAiToken: OPEN_AI_TOKEN });
@@ -50,7 +50,7 @@ interface TranslateOptions {
 
 ```javascript
 // 1. Import the function
-import { translate } from "focusreactive-ai-sdk";
+import { translate } from "content-ai-sdk";
 
 // 2. Call the function
 const deContent = await translate({
@@ -81,7 +81,7 @@ interface TranslateOptions {
 
 ```javascript
 // 1. Import the function
-import { translateJSON } from "focusreactive-ai-sdk";
+import { translateJSON } from "content-ai-sdk";
 
 // 2. Call the function
 const deContent = await translateJSON({
@@ -119,7 +119,7 @@ interface SummariseContentProps {
 
 ```typescript
 // 1. Import the function
-import { summariseContent } from "focusreactive-ai-sdk";
+import { summariseContent } from "content-ai-sdk";
 
 // 2. Call the function
 const summary = await summariseContent({
@@ -164,7 +164,7 @@ interface AppplyTagsProps {
 
 ```typescript
 // 1. Import the function
-import { appplyTags } from "focusreactive-ai-sdk";
+import { appplyTags } from "content-ai-sdk";
 
 // 2. Call the function
 const tags = await appplyTags({

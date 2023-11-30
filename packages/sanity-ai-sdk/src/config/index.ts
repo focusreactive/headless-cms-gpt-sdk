@@ -1,6 +1,6 @@
 import { SanityClient } from "sanity";
 import { initSanityClient } from "./sanityClient";
-import { initSDK as configure } from "focusreactive-ai-sdk";
+import { initSDK as configure } from "content-ai-sdk";
 
 interface ConfigProps {
   client: SanityClient;

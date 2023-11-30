@@ -7,7 +7,7 @@ import {
   Typography,
 } from '@mui/material'
 import React from 'react'
-import { findRelevantTags } from 'sb-ai-sdk'
+import { findRelevantTags } from 'storyblok-ai-sdk'
 
 interface Tag {
   id: string

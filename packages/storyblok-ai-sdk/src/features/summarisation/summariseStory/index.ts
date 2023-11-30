@@ -1,4 +1,4 @@
-import { summariseContent } from "focusreactive-ai-sdk";
+import { summariseContent } from "content-ai-sdk";
 import { ISbStoryData } from "storyblok-js-client";
 import { SpaceInfo } from "../../../config/spaceData";
 

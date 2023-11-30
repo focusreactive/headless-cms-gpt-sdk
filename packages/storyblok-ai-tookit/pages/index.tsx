@@ -10,7 +10,7 @@ import {
 import { lightTheme } from '@storyblok/mui'
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import FeaturesLayout from '@src/components/FeaturesLayout'
-import { initSDK } from 'sb-ai-sdk'
+import { initSDK } from 'storyblok-ai-sdk'
 
 type PageProps = {
   spaceId: number

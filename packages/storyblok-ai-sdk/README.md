@@ -11,7 +11,7 @@
 ### Install
 
 ```sh
-yarn add sb-ai-sdk
+yarn add storyblok-ai-sdk
 ```
 
 ### How to use it
@@ -20,7 +20,7 @@ yarn add sb-ai-sdk
 
 ```typescript
 // 1. Import the configration function
-import { initSDK } from "sb-ai-sdk";
+import { initSDK } from "storyblok-ai-sdk";
 
 interface InitSDKProps {
   pluginName: string;
@@ -71,7 +71,7 @@ interface FindRelevantTagsProps {
 
 ```javascript
 // 1. Import the function
-import { findRelevantTags } from "sb-ai-sdk";
+import { findRelevantTags } from "storyblok-ai-sdk";
 
 // 2. Call the function
 findRelevantTags({ contentTitle, cb: (tags) => setTags(tags) });
@@ -97,7 +97,7 @@ interface SummariseStoryProps {
 
 ```javascript
 // 1. Import the function
-import { summariseStory } from "sb-ai-sdk";
+import { summariseStory } from "storyblok-ai-sdk";
 
 // 2. Call the function
 summariseStory({

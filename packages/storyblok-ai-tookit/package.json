@@ -1,5 +1,5 @@
 {
-  "name": "sb-ai-toolkit",
+  "name": "storyblok-ai-toolkit",
   "version": "0.0.0",
   "private": true,
   "author": {
@@ -9,7 +9,7 @@
   "scripts": {
     "check:types": "tsc --noEmit",
     "start": "next start",
-    "dev:sb": "yalc add --link sb-ai-sdk && yalc add --link focusreactive-ai-sdk && yarn install && next dev",
+    "dev:sb": "yalc add --link storyblok-ai-sdk && yalc add --link content-ai-sdk && yarn install && next dev",
     "yalc-clean": "yalc remove --all",
     "yalc-check": "yalc check",
     "build": "next build"
@@ -32,7 +32,7 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "focusreactive-ai-sdk": "*",
-    "sb-ai-sdk": "*"
+    "content-ai-sdk": "*",
+    "storyblok-ai-sdk": "*"
   }
 }

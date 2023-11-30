@@ -6,7 +6,7 @@ import {
   Typography,
 } from '@mui/material'
 import React from 'react'
-import { summariseStory } from 'sb-ai-sdk'
+import { summariseStory } from 'storyblok-ai-sdk'
 
 const Summary = () => {
   const [contentTitle, setContentTitle] = React.useState<string>('')

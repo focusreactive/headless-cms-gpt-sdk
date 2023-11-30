@@ -1,5 +1,5 @@
 import { SanityDocument } from "sanity";
-import { appplyTags } from "focusreactive-ai-sdk";
+import { appplyTags } from "content-ai-sdk";
 import { getSanityClient } from "../../../config/sanityClient";
 
 interface Tag {

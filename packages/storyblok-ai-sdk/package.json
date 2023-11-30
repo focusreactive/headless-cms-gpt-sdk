@@ -1,10 +1,10 @@
 {
-  "name": "sb-ai-sdk",
+  "name": "storyblok-ai-sdk",
   "version": "0.0.0",
   "private": false,
   "scripts": {
     "dev:sb": "vite build --watch",
-    "pre-dev-sb-sdk": "yalc add --link focusreactive-ai-sdk && yarn build && yalc publish --push",
+    "pre-dev-sb-sdk": "yalc add --link content-ai-sdk && yarn build && yalc publish --push",
     "yalc-clean": "yalc remove --all",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -33,20 +33,20 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "focusreactive-ai-sdk": "*",
+    "content-ai-sdk": "*",
     "react": "^16.8.0 || 17.x",
     "react-dom": "^16.8.0 || 17.x"
   },
   "files": [
     "dist"
   ],
-  "main": "./dist/sb-ai-sdk.umd.js",
-  "module": "./dist/sb-ai-sdk.es.js",
+  "main": "./dist/storyblok-ai-sdk.umd.js",
+  "module": "./dist/storyblok-ai-sdk.es.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/sb-ai-sdk.es.js",
-      "require": "./dist/sb-ai-sdk.umd.js",
+      "import": "./dist/storyblok-ai-sdk.es.js",
+      "require": "./dist/storyblok-ai-sdk.umd.js",
       "types": "./dist/index.d.ts"
     }
   }

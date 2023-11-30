@@ -1,5 +1,5 @@
 import { SanityClient } from "sanity";
-import { translateJSON } from "focusreactive-ai-sdk";
+import { translateJSON } from "content-ai-sdk";
 import { getSanityClient } from "../../../config/sanityClient";
 
 interface NewDocumentprops {
