@@ -40,11 +40,15 @@ We implemented several features that you can use in your projects to work with l
 interface TranslateOptions {
   targetLanguage: string;
   content: string;
+  currentLanguage?: string;
+  promptModifier?: string;
 }
 ```
 
 - `targetLanguage` string - Result language
 - `content` string - Text content that should be translated to the target language.
+- `currentLanguage` string - Current language of the content. If not provided, the language will be detected automatically.
+- `promptModifier` string - Can be used to modify prompt.
 
 **Usage**
 
@@ -70,12 +74,14 @@ interface TranslateOptions {
   targetLanguage: string;
   content: unknown;
   promptModifier?: string;
+  currentLanguage?: string;
 }
 ```
 
 - `targetLanguage` - Result language
 - `content` - Text content that should be translated to the target language (JSON).
 - `promptModifier` - Can be used to modify prompt. In some cases you may need to not translate some values or exlude some fields.
+- `currentLanguage` - Current language of the content. If not provided, the language will be detected automatically.
 
 **Usage**
 

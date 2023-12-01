@@ -2,12 +2,14 @@ import { getOpenAiClient } from "../../config/openAi";
 
 interface TranslateOptions {
   targetLanguage: string;
+  currentLanguage?: string;
   content: unknown;
   promptModifier?: string;
 }
 
 export const translateJSON = async ({
   targetLanguage,
+  currentLanguage,
   content,
   promptModifier = "",
 }: TranslateOptions) => {
@@ -23,7 +25,9 @@ export const translateJSON = async ({
       messages: [
         {
           role: "system",
-          content: `You will be provided with a JSON string, and your task is to translate fields values into ${targetLanguage}. Act like a native ${targetLanguage} speaker and rephase the text in a way that it sounds natural. ${promptModifier}`,
+          content: `You will be provided with a JSON string, and your task is to translate fields values${
+            currentLanguage ? " from " + currentLanguage : ""
+          } into ${targetLanguage}. Act like a native ${targetLanguage} speaker and rephase the text in a way that it sounds natural. ${promptModifier}`,
         },
         { role: "user", content: JSON.stringify(content) },
       ],
