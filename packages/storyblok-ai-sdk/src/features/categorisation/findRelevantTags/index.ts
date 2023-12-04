@@ -1,7 +1,7 @@
 import { ISbStoryData } from "storyblok-js-client";
 import { SpaceInfo } from "../../../config/spaceData";
 import { SBManagementClient } from "../../../config/initClient";
-import { appplyTags } from "content-ai-sdk";
+import { appplyTags } from "@focus-reactive/content-ai-sdk";
 
 interface Tag {
   id: string;

@@ -20,7 +20,7 @@ yarn add content-ai-sdk
 
 ```javascript
 // 1. Import the configration function
-import { initSDK } from "content-ai-sdk";
+import { initSDK } from "@focus-reactive/content-ai-sdk";
 
 // 2. Initialize the SDK with the OpenAI token
 initSDK({ openAiToken: OPEN_AI_TOKEN });
@@ -54,7 +54,7 @@ interface TranslateOptions {
 
 ```javascript
 // 1. Import the function
-import { translate } from "content-ai-sdk";
+import { translate } from "@focus-reactive/content-ai-sdk";
 
 // 2. Call the function
 const deContent = await translate({
@@ -87,7 +87,7 @@ interface TranslateOptions {
 
 ```javascript
 // 1. Import the function
-import { translateJSON } from "content-ai-sdk";
+import { translateJSON } from "@focus-reactive/content-ai-sdk";
 
 // 2. Call the function
 const deContent = await translateJSON({
@@ -125,7 +125,7 @@ interface SummariseContentProps {
 
 ```typescript
 // 1. Import the function
-import { summariseContent } from "content-ai-sdk";
+import { summariseContent } from "@focus-reactive/content-ai-sdk";
 
 // 2. Call the function
 const summary = await summariseContent({
@@ -170,7 +170,7 @@ interface AppplyTagsProps {
 
 ```typescript
 // 1. Import the function
-import { appplyTags } from "content-ai-sdk";
+import { appplyTags } from "@focus-reactive/content-ai-sdk";
 
 // 2. Call the function
 const tags = await appplyTags({

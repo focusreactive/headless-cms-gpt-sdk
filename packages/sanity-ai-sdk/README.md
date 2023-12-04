@@ -20,7 +20,7 @@ yarn add sanity-ai-sdk
 
 ```typescript
 // 1. Import the configration function
-import { initSDK } from "content-ai-sdk";
+import { initSDK } from "@focus-reactive/content-ai-sdk";
 import { SanityClient } from "sanity";
 
 interface IConfig {

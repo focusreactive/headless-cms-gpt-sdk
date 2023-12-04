@@ -1,4 +1,4 @@
-import { initSDK as configure } from "content-ai-sdk";
+import { initSDK as configure } from "@focus-reactive/content-ai-sdk";
 import { configureClient } from "./initClient";
 import { configureSpaceInfo } from "./spaceData";
 

@@ -1,6 +1,6 @@
 import { SanityDocument } from "sanity";
 import { getSanityClient } from "../../../config/sanityClient";
-import { translateJSON } from "content-ai-sdk";
+import { translateJSON } from "@focus-reactive/content-ai-sdk";
 
 interface TranslateFullDocumentProps {
   documentId: string;

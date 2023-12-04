@@ -1,5 +1,5 @@
 import { SanityDocument } from "sanity";
-import { summariseContent } from "content-ai-sdk";
+import { summariseContent } from "@focus-reactive/content-ai-sdk";
 import { getSanityClient } from "../../../config/sanityClient";
 
 interface SummariseDocumentProps {

@@ -9037,16 +9037,6 @@ saxes@^6.0.0:
   dependencies:
     xmlchars "^2.2.0"
 
-"storyblok-ai-sdk@link:packages/sb-ai-tookit/.yalc/storyblok-ai-sdk":
-  version "0.0.0"
-  dependencies:
-    "@storyblok/app-extension-auth" "^1.0.0-alpha.1"
-    content-ai-sdk "link:packages/sb-ai-tookit/.yalc/storyblok-ai-sdk/.yalc/content-ai-sdk"
-    react "^18.2.0"
-    react-dom "^18.2.0"
-    storyblok-js-client "^6.2.0"
-    vite-plugin-dts "^3.6.3"
-
 scheduler@^0.23.0:
   version "0.23.0"
   resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.23.0.tgz#ba8041afc3d30eb206a487b6b384002e4e61fdfe"

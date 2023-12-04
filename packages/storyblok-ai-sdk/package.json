@@ -12,6 +12,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@focus-reactive/content-ai-sdk": "^0.0.1",
     "@storyblok/app-extension-auth": "^1.0.0-alpha.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
