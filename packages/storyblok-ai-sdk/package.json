@@ -35,7 +35,6 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "content-ai-sdk": "*",
     "react": "^16.8.0 || 17.x",
     "react-dom": "^16.8.0 || 17.x"
   },
