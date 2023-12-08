@@ -19,6 +19,7 @@ const Localization = () => {
 
     localizeStory({
       targetLanguage,
+      hasToCreateNewStory: true,
       cb: () => {
         setIsLoading(false)
         setTargetLanguage('')

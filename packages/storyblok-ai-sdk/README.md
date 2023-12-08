@@ -42,6 +42,44 @@ initSDK({
 
 ## Documentation
 
+### Localization
+
+We implemented localization functions that can be used to translate your stories.
+
+#### Function **`localizeStory`**
+
+**Parameters**
+
+```typescript
+interface LocalizeStoryProps {
+  targetLanguage: string;
+  cb: (newStoryData: { story: ISbStoryData }) => void;
+  hasToCreateNewStory?: boolean;
+  promptModifier?: string;
+}
+```
+
+- `targetLanguage` - Language to which you want to translate your story.
+- `cb` - Callback function that will be called with the result.
+- `hasToCreateNewStory` - Optional. If you want to create a new story, you can pass `true` here.
+- `promptModifier` - Optional. If you want to add some instructions to the prompt, you can pass the modifier here.
+
+**Usage**
+
+```javascript
+// 1. Import the function
+import { localizeStory } from "@focus-reactive/storyblok-ai-sdk";
+
+// 2. Call the function
+const localizedStory = localizeStory({
+  targetLanguage,
+  cb: (localizedStory) => {
+    setIsLoading(false); // turn off the loading indicator
+    console.log(localizedStory);
+  },
+});
+```
+
 ### Categorisation
 
 We implemented categorisation functions that can be used to categorise documents based on their content.

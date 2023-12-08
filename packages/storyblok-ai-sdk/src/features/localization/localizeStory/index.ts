@@ -7,8 +7,9 @@ import { flatten, unflatten } from "flat";
 
 interface LocalizeStoryProps {
   targetLanguage: string;
-  promptModifier?: string;
   cb: (newStoryData: { story: ISbStoryData }) => void;
+  promptModifier?: string;
+  hasToCreateNewStory?: boolean;
 }
 
 export const localizeStory = (props: LocalizeStoryProps) => {
@@ -104,21 +105,37 @@ export const localizeStory = (props: LocalizeStoryProps) => {
       );
 
       // then simply create a story with the translated unflattened content
-      const newStoryData = await SBManagementClient.post(
-        `spaces/${SpaceInfo.spaceId}/stories/`,
-        {
+      let newStoryData: { story: ISbStoryData };
+      if (props.hasToCreateNewStory) {
+        newStoryData = await SBManagementClient.post(
+          `spaces/${SpaceInfo.spaceId}/stories/`,
+          {
+            story: {
+              name: `${story.name} (${props.targetLanguage})`,
+              slug: `${story.slug}-${props.targetLanguage}`,
+              content: {
+                ...unflatten(localizedJSON),
+                component,
+              },
+              parent_id: String(story.parent_id),
+            },
+            publish: 0,
+          }
+        );
+      } else {
+        newStoryData = {
           story: {
+            ...story,
             name: `${story.name} (${props.targetLanguage})`,
             slug: `${story.slug}-${props.targetLanguage}`,
             content: {
+              ...story.content,
               ...unflatten(localizedJSON),
-              component,
             },
-            parent_id: String(story.parent_id),
+            parent_id: story.parent_id,
           },
-          publish: 0,
-        }
-      );
+        };
+      }
 
       props.cb(newStoryData);
     } catch (e) {
