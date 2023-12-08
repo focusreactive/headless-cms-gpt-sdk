@@ -2,6 +2,7 @@ import React from 'react'
 import { Button, ButtonGroup } from '@mui/material'
 import Summary from '../Summary'
 import Tags from '../Tags'
+import Localization from '../Localization'
 
 interface Feature {
   id: string
@@ -10,12 +11,16 @@ interface Feature {
 
 const FEATURES: Feature[] = [
   {
-    id: 'summary',
-    title: 'Summary',
+    id: 'localization',
+    title: 'Localization',
   },
   {
     id: 'tags',
     title: 'Tags',
+  },
+  {
+    id: 'summary',
+    title: 'Summary',
   },
 ]
 
@@ -44,8 +49,9 @@ const FeaturesLayout = () => {
           </Button>
         ))}
       </ButtonGroup>
-      {activeFeature === FEATURES[0].id && <Summary />}
+      {activeFeature === FEATURES[2].id && <Summary />}
       {activeFeature === FEATURES[1].id && <Tags />}
+      {activeFeature === FEATURES[0].id && <Localization />}
     </div>
   )
 }

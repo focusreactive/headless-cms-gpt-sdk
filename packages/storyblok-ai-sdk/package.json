@@ -1,10 +1,10 @@
 {
-  "name": "storyblok-ai-sdk",
+  "name": "@focus-reactive/storyblok-ai-sdk",
   "version": "0.0.0",
   "private": false,
   "scripts": {
     "dev:sb": "vite build --watch",
-    "pre-dev-sb-sdk": "yalc add --link content-ai-sdk && yarn build && yalc publish --push",
+    "pre-dev-sb-sdk": "yalc add --link @focus-reactive/content-ai-sdk && yarn build && yalc publish --push",
     "yalc-clean": "yalc remove --all",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -14,6 +14,7 @@
   "dependencies": {
     "@focus-reactive/content-ai-sdk": "^0.0.1",
     "@storyblok/app-extension-auth": "^1.0.0-alpha.1",
+    "flat": "^6.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "storyblok-js-client": "^6.2.0",
@@ -41,13 +42,13 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/storyblok-ai-sdk.umd.js",
-  "module": "./dist/storyblok-ai-sdk.es.js",
+  "main": "./dist/@focus-reactive/storyblok-ai-sdk.umd.js",
+  "module": "./dist/@focus-reactive/storyblok-ai-sdk.es.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/storyblok-ai-sdk.es.js",
-      "require": "./dist/storyblok-ai-sdk.umd.js",
+      "import": "./dist/@focus-reactive/storyblok-ai-sdk.es.js",
+      "require": "./dist/@focus-reactive/storyblok-ai-sdk.umd.js",
       "types": "./dist/index.d.ts"
     }
   }

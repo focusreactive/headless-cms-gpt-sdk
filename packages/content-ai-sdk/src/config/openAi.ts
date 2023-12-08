@@ -1,14 +1,14 @@
 import OpenAI from "openai";
 
-let openAi: OpenAI | null = null;
+let openAiToken: string = "";
 
 export const configurateOpenAi = (token: string) => {
-  openAi = new OpenAI({
-    apiKey: token,
-    dangerouslyAllowBrowser: true,
-  });
+  openAiToken = token;
 };
 
 export const getOpenAiClient = () => {
-  return openAi;
+  return new OpenAI({
+    apiKey: openAiToken,
+    dangerouslyAllowBrowser: true,
+  });
 };

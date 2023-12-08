@@ -9,7 +9,7 @@
   "scripts": {
     "check:types": "tsc --noEmit",
     "start": "next start",
-    "dev:sb": "yalc add --link storyblok-ai-sdk && yalc add --link content-ai-sdk && yarn install && next dev",
+    "dev:sb": "yalc add --link @focus-reactive/storyblok-ai-sdk && yalc add --link @focus-reactive/content-ai-sdk && yarn install && next dev",
     "yalc-clean": "yalc remove --all",
     "yalc-check": "yalc check",
     "build": "next build"
@@ -33,6 +33,6 @@
   },
   "peerDependencies": {
     "content-ai-sdk": "*",
-    "storyblok-ai-sdk": "*"
+    "@focus-reactive/storyblok-ai-sdk": "*"
   }
 }

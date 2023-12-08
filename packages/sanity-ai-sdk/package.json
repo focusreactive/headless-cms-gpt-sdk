@@ -4,7 +4,7 @@
   "private": false,
   "scripts": {
     "dev": "vite build --watch",
-    "pre-dev-sanity-sdk": "yalc add --link content-ai-sdk && yarn build && yalc publish --push",
+    "pre-dev-sanity-sdk": "yalc add --link @focus-reactive/content-ai-sdk && yarn build && yalc publish --push",
     "yalc-clean": "yalc remove --all",
     "build": "tsc && vite build",
     "preview": "vite preview",

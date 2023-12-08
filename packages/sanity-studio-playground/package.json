@@ -5,7 +5,7 @@
   "main": "package.json",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "yalc add --link sanity-ai-sdk && yalc add --link content-ai-sdk && yarn install && sanity dev",
+    "dev": "yalc add --link sanity-ai-sdk && yalc add --link @focus-reactive/content-ai-sdk && yarn install && sanity dev",
     "start": "sanity start",
     "build": "sanity build",
     "deploy": "sanity deploy",

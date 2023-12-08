@@ -11,7 +11,7 @@
 ### Install
 
 ```sh
-yarn add storyblok-ai-sdk
+yarn add @focus-reactive/storyblok-ai-sdk
 ```
 
 ### How to use it
@@ -20,7 +20,7 @@ yarn add storyblok-ai-sdk
 
 ```typescript
 // 1. Import the configration function
-import { initSDK } from "storyblok-ai-sdk";
+import { initSDK } from "@focus-reactive/storyblok-ai-sdk";
 
 interface InitSDKProps {
   pluginName: string;
@@ -71,7 +71,7 @@ interface FindRelevantTagsProps {
 
 ```javascript
 // 1. Import the function
-import { findRelevantTags } from "storyblok-ai-sdk";
+import { findRelevantTags } from "@focus-reactive/storyblok-ai-sdk";
 
 // 2. Call the function
 findRelevantTags({ contentTitle, cb: (tags) => setTags(tags) });
@@ -97,7 +97,7 @@ interface SummariseStoryProps {
 
 ```javascript
 // 1. Import the function
-import { summariseStory } from "storyblok-ai-sdk";
+import { summariseStory } from "@focus-reactive/storyblok-ai-sdk";
 
 // 2. Call the function
 summariseStory({

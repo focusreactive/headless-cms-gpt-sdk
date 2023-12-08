@@ -1563,6 +1563,32 @@
   resolved "https://registry.yarnpkg.com/@floating-ui/utils/-/utils-0.1.6.tgz#22958c042e10b67463997bd6ea7115fe28cbcaf9"
   integrity sha512-OfX7E2oUDYxtBvsuS4e/jSn4Q9Qb6DzgeYtsAdkPZ47znpoNsMgZw0+tVijiv3uGNR6dgNlty6r9rzIzHjtd/A==
 
+"@focus-reactive/content-ai-sdk@link:packages/storyblok-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
+  version "0.0.1"
+  dependencies:
+    gpt-3-encoder "^1.1.4"
+    openai "^4.17.3"
+
+"@focus-reactive/content-ai-sdk@link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/content-ai-sdk":
+  version "0.0.1"
+  dependencies:
+    gpt-3-encoder "^1.1.4"
+    openai "^4.17.3"
+
+"@focus-reactive/content-ai-sdk@link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/storyblok-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
+  version "0.0.0"
+  uid ""
+
+"@focus-reactive/storyblok-ai-sdk@link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/storyblok-ai-sdk":
+  version "0.0.0"
+  dependencies:
+    "@focus-reactive/content-ai-sdk" "link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/storyblok-ai-sdk/.yalc/@focus-reactive/content-ai-sdk"
+    "@storyblok/app-extension-auth" "^1.0.0-alpha.1"
+    react "^18.2.0"
+    react-dom "^18.2.0"
+    storyblok-js-client "^6.2.0"
+    vite-plugin-dts "^3.6.3"
+
 "@gar/promisify@^1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@gar/promisify/-/promisify-1.1.3.tgz#555193ab2e3bb3b6adc3d551c9c030d9e860daf6"
@@ -5218,6 +5244,11 @@ flat@^5.0.2:
   resolved "https://registry.yarnpkg.com/flat/-/flat-5.0.2.tgz#8ca6fe332069ffa9d324c327198c598259ceb241"
   integrity sha512-b6suED+5/3rTpUBdG1gupIl8MPFCAMA0QXwmljLhvCUKcUvdE4gWky9zpuGCcXHOsz4J9wPGNWq6OKpmIzz3hQ==
 
+flat@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/flat/-/flat-6.0.1.tgz#09070cf918293b401577f20843edeadf4d3e8755"
+  integrity sha512-/3FfIa8mbrg3xE7+wAhWeV+bd7L2Mof+xtZb5dRDKZ+wDvYJK4WDYeIOuOhre5Yv5aQObZrlbRmk3RTSiuQBtw==
+
 flatted@^3.2.9:
   version "3.2.9"
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.2.9.tgz#7eb4c67ca1ba34232ca9d2d93e9886e611ad7daf"
@@ -5688,6 +5719,11 @@ gopd@^1.0.1:
   integrity sha512-d65bNlIadxvpb/A2abVdlqKqV563juRnZ1Wtk6s1sIR8uNsXR70xqIzVqxVf1eTqDunwT2MkczEeaezCKTZhwA==
   dependencies:
     get-intrinsic "^1.1.3"
+
+gpt-3-encoder@^1.1.4:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/gpt-3-encoder/-/gpt-3-encoder-1.1.4.tgz#d6cdaacf5824857e133b6065247c757fc7e4fa72"
+  integrity sha512-fSQRePV+HUAhCn7+7HL7lNIXNm6eaFWFbNLOOGtmSJ0qJycyQvj60OvRlH7mee8xAMjBDNRdMXlMwjAbMTDjkg==
 
 graceful-fs@4.2.11, graceful-fs@^4.1.11, graceful-fs@^4.1.15, graceful-fs@^4.1.2, graceful-fs@^4.1.6, graceful-fs@^4.2.0, graceful-fs@^4.2.6:
   version "4.2.11"

@@ -6,7 +6,7 @@ import {
   Typography,
 } from '@mui/material'
 import React from 'react'
-import { summariseStory } from 'storyblok-ai-sdk'
+import { summariseStory } from '@focus-reactive/storyblok-ai-sdk'
 
 const Summary = () => {
   const [contentTitle, setContentTitle] = React.useState<string>('')
@@ -30,13 +30,13 @@ const Summary = () => {
     <div>
       <Typography variant="h1">Summary</Typography>
       <Typography variant="body1">
-        Hey! Please enter a content title and click the button. We'll generate a
+        Hey! Please enter the Story title and click the button. We'll generate a
         summary of the content for you.
       </Typography>
 
       <div style={{ margin: '12px 0 20px', padding: '0 4px   ' }}>
         <FormControl fullWidth>
-          <FormLabel>Content title</FormLabel>
+          <FormLabel>Story title</FormLabel>
           <TextField
             placeholder="Storyblok overview acrticle"
             value={contentTitle}

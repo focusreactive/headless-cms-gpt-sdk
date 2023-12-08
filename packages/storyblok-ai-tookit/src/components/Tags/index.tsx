@@ -7,7 +7,7 @@ import {
   Typography,
 } from '@mui/material'
 import React from 'react'
-import { findRelevantTags } from 'storyblok-ai-sdk'
+import { findRelevantTags } from '@focus-reactive/storyblok-ai-sdk'
 
 interface Tag {
   id: string
@@ -35,13 +35,13 @@ const Tags = () => {
     <div>
       <Typography variant="h1">Tags</Typography>
       <Typography variant="body1">
-        Hey! Please enter a content title and click the button. We'll find
+        Hey! Please enter the Story title and click the button. We'll find
         relevant tags for the content.
       </Typography>
 
       <div style={{ margin: '12px 0 20px', padding: '0 4px   ' }}>
         <FormControl fullWidth>
-          <FormLabel>Content title</FormLabel>
+          <FormLabel>Story title</FormLabel>
           <TextField
             placeholder="Storyblok overview acrticle"
             value={contentTitle}
