@@ -33,7 +33,6 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "@focus-reactive/storyblok-ai-sdk": "*",
     "content-ai-sdk": "*"
   }
 }
