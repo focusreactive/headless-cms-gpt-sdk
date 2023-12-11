@@ -31,8 +31,5 @@
     "@types/react": "^18.0.19",
     "typescript": "5.0.4",
     "yalc": "^1.0.0-pre.53"
-  },
-  "peerDependencies": {
-    "content-ai-sdk": "*"
   }
 }

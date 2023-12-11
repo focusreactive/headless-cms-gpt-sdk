@@ -2,7 +2,7 @@ import React, {useContext, useState} from 'react'
 import {ActionContext} from '../../context'
 import {Button, Card, Flex, Heading, Stack, Text, TextInput} from '@sanity/ui'
 import {useClient} from 'sanity'
-import {summariseDocument} from 'sanity-ai-sdk'
+import {summariseDocument} from '@focus-reactive/sanity-ai-sdk'
 
 interface SumariseDocumentProps {
   documentId: string

@@ -1,5 +1,5 @@
 {
-  "name": "sanity-ai-sdk",
+  "name": "@focus-reactive/sanity-ai-sdk",
   "version": "0.0.0",
   "private": false,
   "scripts": {
@@ -32,7 +32,6 @@
   },
   "peerDependencies": {
     "@sanity/client": "^6.4.9",
-    "content-ai-sdk": "*",
     "react": "^16.8.0 || 17.x",
     "react-dom": "^16.8.0 || 17.x",
     "sanity": "^3.18.1"

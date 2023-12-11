@@ -2,7 +2,7 @@ import React, {useContext, useEffect, useState} from 'react'
 import {ActionContext} from '../../context'
 import {Button, Card, Flex, Grid, Heading, Stack, Text, TextInput} from '@sanity/ui'
 import {useClient} from 'sanity'
-import {findRelevantTags} from 'sanity-ai-sdk'
+import {findRelevantTags} from '@focus-reactive/sanity-ai-sdk'
 
 interface Tag {
   id: string

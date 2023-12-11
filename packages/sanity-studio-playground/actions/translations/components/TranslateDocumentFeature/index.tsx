@@ -3,7 +3,7 @@ import {ActionContext} from '../../context'
 import {ParsedDocumentField, parseDocumentFields} from '../../utils/parseDocumentFields'
 import {Button, Card, Flex, Grid, Heading, Inline, Stack, Switch, Text, TextInput} from '@sanity/ui'
 import {useClient} from 'sanity'
-import {transalateSelectedDocumentFields} from 'sanity-ai-sdk'
+import {transalateSelectedDocumentFields} from '@focus-reactive/sanity-ai-sdk'
 
 interface TranslateDocumentFeatureProps {
   documentId: string

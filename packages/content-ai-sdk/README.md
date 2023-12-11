@@ -11,7 +11,7 @@
 ### Install
 
 ```sh
-yarn add content-ai-sdk
+yarn add @focus-reactive/content-ai-sdk
 ```
 
 ### How to use it

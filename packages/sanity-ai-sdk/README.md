@@ -11,7 +11,7 @@
 ### Install
 
 ```sh
-yarn add sanity-ai-sdk
+yarn add @focus-reactive/sanity-ai-sdk
 ```
 
 ### How to use it
@@ -72,7 +72,7 @@ interface NewDocumentprops {
 
 ```javascript
 // 1. Import the function
-import { transalateSelectedDocumentFields } from "sanity-ai-sdk";
+import { transalateSelectedDocumentFields } from "@focus-reactive/sanity-ai-sdk";
 
 // 2. Call the function
 const translatedFileds = await transalateSelectedDocumentFields({
@@ -100,7 +100,7 @@ interface TranslateFullDocumentProps {
 
 ```javascript
 // 1. Import the function
-import { translateFullDocument } from "sanity-ai-sdk";
+import { translateFullDocument } from "@focus-reactive/sanity-ai-sdk";
 
 // 2. Call the function
 const translatedDocument = await translateFullDocument({
@@ -137,7 +137,7 @@ interface Tag {
 
 ```javascript
 // 1. Import the function
-import { findRelevantTags } from "sanity-ai-sdk";
+import { findRelevantTags } from "@focus-reactive/sanity-ai-sdk";
 
 // 2. Call the function
 const result = await findRelevantTags({
@@ -169,7 +169,7 @@ interface SummariseDocumentProps {
 
 ```javascript
 // 1. Import the function
-import { summariseDocument } from "sanity-ai-sdk";
+import { summariseDocument } from "@focus-reactive/sanity-ai-sdk";
 
 // 2. Call the function
 const result = await summariseDocument({
