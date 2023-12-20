@@ -49,7 +49,7 @@
     "watch": "pkg-utils watch --strict"
   },
   "dependencies": {
-    "@focus-reactive/sanity-ai-sdk": "^0.0.1",
+    "@focus-reactive/sanity-ai-sdk": "0.0.3",
     "@sanity/incompatible-plugin": "^1.0.4",
     "@sanity/ui": "^1.9.3"
   },
@@ -79,7 +79,7 @@
   },
   "peerDependencies": {
     "react": "^18",
-    "sanity": "^3"
+    "sanity": "^3.21.1"
   },
   "engines": {
     "node": ">=14"
