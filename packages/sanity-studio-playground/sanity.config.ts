@@ -1,10 +1,8 @@
 import {defineConfig} from 'sanity'
 import {deskTool} from 'sanity/desk'
 import {visionTool} from '@sanity/vision'
-//import {googleMapsInput} from '@sanity/google-maps-input'
 import {schemaTypes} from './schemas'
-import TranslateAction from './actions/translations'
-// import {myPlugin} from 'sanity-plugin-focusreactive-ai'
+import {myPlugin} from '@focus-reactive/sanity-ai-toolkit'
 
 export default defineConfig({
   name: 'default',
@@ -15,19 +13,17 @@ export default defineConfig({
 
   plugins: [
     deskTool(),
+    myPlugin({
+      openAiToken: process.env.SANITY_STUDIO_OPENAI_TOKEN as string,
+      featuresConfig: {
+        translate: {enabled: true},
+        summary: {enabled: false},
+        tags: {enabled: true},
+      },
+    }),
     visionTool(),
     // myPlugin({openAiToken: process.env.SANITY_STUDIO_OPENAI_TOKEN as string}),
-    //googleMapsInput(),
   ],
-
-  document: {
-    actions: (prev, context) => {
-      // Only add the action for documents of type "movie"
-      return context.schemaType === 'movie'
-        ? [...prev, (props) => TranslateAction({...props, context, openAiToken: process.env.SANITY_STUDIO_OPENAI_TOKEN as string})]
-        : prev
-    },
-  },
 
   schema: {
     types: schemaTypes,

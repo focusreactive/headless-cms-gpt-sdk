@@ -1,7 +1,6 @@
 import React, {useEffect} from 'react'
 import {ActionComponent, DocumentActionProps, DocumentActionsContext, useClient} from 'sanity'
 import ContentLayout from './components/ContentLayout'
-import {initSDK as configure} from '@focus-reactive/content-ai-sdk'
 import {initSDK} from '@focus-reactive/sanity-ai-sdk'
 
 interface Props extends DocumentActionProps {
@@ -16,8 +15,6 @@ const ConfirmDialogAction: ActionComponent<Props> = (props) => {
   useEffect(() => {
     initSDK({client, openAiKey: props.openAiToken})
   }, [client])
-
-  configure({openAiToken: props.openAiToken})
 
   return {
     label: 'Ai assist',

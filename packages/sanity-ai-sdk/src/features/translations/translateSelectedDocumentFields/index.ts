@@ -20,7 +20,9 @@ export const transalateSelectedDocumentFields = async ({
   documentId,
   targetLanguage,
   newDocumentConfig,
-}: TranslateSelectedDocumentFieldsProps): Promise<void> => {
+}: TranslateSelectedDocumentFieldsProps): Promise<{
+  [key: string]: unknown;
+}> => {
   const client = getSanityClient();
   if (!client) throw new Error("SDK not initialised");
 

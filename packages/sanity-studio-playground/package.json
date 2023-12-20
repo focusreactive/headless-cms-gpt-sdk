@@ -5,7 +5,7 @@
   "main": "package.json",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "yalc add --link @focus-reactive/sanity-ai-sdk && yalc add --link @focus-reactive/content-ai-sdk && yarn install && sanity dev",
+    "dev": "yalc add --link @focus-reactive/sanity-ai-sdk && yalc add --link @focus-reactive/sanity-ai-toolkit && yarn install && sanity dev",
     "start": "sanity start",
     "build": "sanity build",
     "deploy": "sanity deploy",
@@ -17,6 +17,7 @@
     "sanity"
   ],
   "dependencies": {
+    "@focus-reactive/sanity-ai-toolkit": "^0.0.1",
     "@sanity/ui": "^1.9.0",
     "@sanity/vision": "^3.18.1",
     "react": "^18.2.0",

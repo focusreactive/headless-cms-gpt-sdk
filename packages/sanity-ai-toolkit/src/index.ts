@@ -1,26 +1,40 @@
 import {definePlugin} from 'sanity'
 
-interface MyPluginConfig {
-  /* nothing here yet */
+import ToolkitAction from './actions/toolkit'
+import schemaTypes from './schemas'
+interface CommonFeatureConfig {
+  enabled: boolean
+}
+interface Features {
+  translate: CommonFeatureConfig
+  summary: CommonFeatureConfig
+  tags: CommonFeatureConfig
 }
 
-/**
- * Usage in `sanity.config.ts` (or .js)
- *
- * ```ts
- * import {defineConfig} from 'sanity'
- * import {myPlugin} from '@focus-reactive/sanity-ai-toolkit'
- *
- * export default defineConfig({
- *   // ...
- *   plugins: [myPlugin()],
- * })
- * ```
- */
-export const myPlugin = definePlugin<MyPluginConfig | void>((config = {}) => {
-  // eslint-disable-next-line no-console
-  console.log('hello from @focus-reactive/sanity-ai-toolkit')
+interface Config {
+  openAiToken: string
+  featuresConfig: Features
+}
+
+export const myPlugin = definePlugin<Config>(({openAiToken}) => {
   return {
     name: '@focus-reactive/sanity-ai-toolkit',
+    document: {
+      actions: (prev, context) => {
+        // Only add the action for documents of type "movie"
+        return [
+          ...prev,
+          (props) =>
+            ToolkitAction({
+              ...props,
+              context,
+              openAiToken: openAiToken,
+            }),
+        ]
+      },
+    },
+    schema: {
+      types: schemaTypes,
+    },
   }
 })
