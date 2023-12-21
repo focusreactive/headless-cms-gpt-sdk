@@ -16,7 +16,7 @@ interface Config {
   featuresConfig: Features
 }
 
-export const myPlugin = definePlugin<Config>(({openAiToken}) => {
+export const aiToolkit = definePlugin<Config>(({openAiToken}) => {
   return {
     name: '@focus-reactive/sanity-ai-toolkit',
     document: {

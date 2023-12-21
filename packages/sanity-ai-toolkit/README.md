@@ -14,11 +14,20 @@ Add it as a plugin in `sanity.config.ts` (or .js):
 
 ```ts
 import {defineConfig} from 'sanity'
-import {myPlugin} from '@focus-reactive/sanity-ai-toolkit'
+import {aiToolkit} from '@focus-reactive/sanity-ai-toolkit'
 
 export default defineConfig({
   //...
-  plugins: [myPlugin({})],
+  plugins: [
+    aiToolkit({
+      openAiToken: process.env.SANITY_STUDIO_OPENAI_TOKEN as string,
+      featuresConfig: {
+        translate: {enabled: true},
+        summary: {enabled: false},
+        tags: {enabled: true},
+      },
+    }),
+  ],
 })
 ```
 
