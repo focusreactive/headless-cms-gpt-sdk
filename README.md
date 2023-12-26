@@ -1,5 +1,5 @@
 <a  href="https://focusreactive.com/"  align="center">
-		<img width="25%" height="auto" src="https://raw.githubusercontent.com/focusreactive/headless-cms-gpt-sdk/main/repository-logo.png?token=GHSAT0AAAAAACKMBHK4HYGAVQMZ5TAOG7UYZMKXR2Q"  alt="FocusReactive logo">
+		<img width="25%" height="auto" src="https://cdn.sanity.io/images/vftxng62/production/25e191578a3c3d4ddfaf69c5f6f7070aead0bff4-507x168.png?auto=format"  alt="FocusReactive logo">
 </a>
 
 # Headless CMS AI SDK playground
