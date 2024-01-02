@@ -1,10 +1,8 @@
-<div align="center">
-	<a  href="https://focusreactive.com/"  align="center">
-		<img  src="https://gitnation.imgix.net/stichting-frontend-amsterdam/image/upload/f_auto,c_scale,w_300/v1682673527/dev/focus_reactive__light_back_s7lhwa.png?auto=format"  alt="FocusReactive logo">
-	</a>
-	<h1 align="center">StoryBlok JavaScript OpenAI SDK</h1>
-	<p align="center">This client is a thin wrapper for the OpeanAI API. A way to easely enchance your StoryBlok plugins with ready to use GPT functions</p>
-</div>
+<a  href="https://focusreactive.com/"  align="center">
+		<img width="25%" height="auto" src="https://cdn.sanity.io/images/vftxng62/production/25e191578a3c3d4ddfaf69c5f6f7070aead0bff4-507x168.png?auto=format"  alt="FocusReactive logo">
+</a>
+
+# StoryBlok AI SDK
 
 ## 🚀 Usage
 
