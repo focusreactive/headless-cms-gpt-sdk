@@ -1,7 +1,7 @@
 import { getOpenAiClient } from "../../config/openAi";
 
 interface Tag {
-  id: string;
+  id: string | number;
   title: string;
   description?: string;
 }
@@ -14,7 +14,7 @@ interface AppplyTagsProps {
   tags: Tag[];
 }
 
-export const appplyTags = async ({
+export const applyTags = async ({
   content,
   contentTitle,
   tags,
@@ -48,7 +48,9 @@ export const appplyTags = async ({
         { role: "user", content: JSON.stringify(content) },
         {
           role: "user",
-          content: `Find all tags relevant to the provided text from the following list: ${JSON.stringify(tags)}. Then sort these tags based on their relevance. Return a JSON object with only one key "tags", this should be an array of sorted tags. Tags should have exact the same format as they were provided. Return maximum ${resultAmount} tags.`,
+          content: `Find all tags relevant to the provided text from the following list: ${JSON.stringify(
+            tags
+          )}. Then sort these tags based on their relevance. Return a JSON object with only one key "tags", this should be an array of sorted tags. Tags should have exact the same format as they were provided. Return maximum ${resultAmount} tags.`,
         },
       ],
       model: "gpt-3.5-turbo-1106",
@@ -60,9 +62,11 @@ export const appplyTags = async ({
     });
 
     try {
-      return JSON.parse(
+      const resultTags = JSON.parse(
         chatCompletion.choices[0].message.content as string
       ).tags as Tag[];
+
+      return resultTags.filter((tag) => tags.some((t) => t.id === tag.id));
     } catch (error) {
       throw new Error("Failed to parse result JSON");
     }

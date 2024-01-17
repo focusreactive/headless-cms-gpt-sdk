@@ -3,5 +3,5 @@ export {
   translateJSON,
   summariseContent,
   translate,
-  appplyTags,
+  applyTags,
 } from "./features";

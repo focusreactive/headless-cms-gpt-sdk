@@ -138,7 +138,7 @@ const summary = await summariseContent({
 
 ### Categotisation
 
-#### Function **`appplyTags`**
+#### Function **`applyTags`**
 
 This function is created to logically tag content. Returns tags on order of relevance.
 
@@ -146,7 +146,7 @@ This function is created to logically tag content. Returns tags on order of rele
 
 ```typescript
 interface Tag {
-  id: string;
+  id: string | number;
   title: string;
   description?: string;
 }
@@ -163,15 +163,17 @@ interface AppplyTagsProps {
 - `contentTitle`- Content title. Sets the logical context for the provided content.
 - `content` - Text contentf for tagging. (JSON | string)
 - `promptModifier` - Can be used to modify prompt.
+- `resultAmount` - Amount of tags that should be returned.
+- `tags` - Array of tags that should be used for tagging.
 
 **Usage**
 
 ```typescript
 // 1. Import the function
-import { appplyTags } from "@focus-reactive/content-ai-sdk";
+import { applyTags } from "@focus-reactive/content-ai-sdk";
 
 // 2. Call the function
-const tags = await appplyTags({
+const tags = await applyTags({
   contentTitle: "Batman movie overview.",
   content: JSON.stringify({
     title: "Batman",
