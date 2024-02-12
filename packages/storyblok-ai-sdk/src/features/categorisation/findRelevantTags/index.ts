@@ -1,7 +1,7 @@
 import { ISbStoryData } from "storyblok-js-client";
 import { SpaceInfo } from "../../../config/spaceData";
 import { SBManagementClient } from "../../../config/initClient";
-import { appplyTags } from "@focus-reactive/content-ai-sdk";
+import { applyTags } from "@focus-reactive/content-ai-sdk";
 
 interface Tag {
   id: string;
@@ -32,7 +32,7 @@ export const findRelevantTags = async (props: FindRelevantTagsProps) => {
         `spaces/${SpaceInfo.spaceId}/tags/`
       );
 
-      tags = await appplyTags({
+      tags = await applyTags({
         content: story,
         promptModifier: `Do not work with technical fields. ${props.promptModifier}`,
         contentTitle: props.contentTitle,

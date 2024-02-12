@@ -1,25 +1,57 @@
-import {
-  Button,
-  FormControl,
-  FormLabel,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { FormControlLabel, Radio, RadioGroup, Typography } from '@mui/material'
 import React from 'react'
-import { localizeStory } from '@focus-reactive/storyblok-ai-sdk'
+import { localizeStory, summariseStory } from '@focus-reactive/storyblok-ai-sdk'
+import { translate } from '@focus-reactive/content-ai-sdk'
+import LocalizeStoryMode from './modes/Story'
+import LocalizeTextMode from './modes/Text'
+
+type Feature = {
+  id: string
+  title: string
+}
+
+const MODE: Feature[] = [
+  {
+    id: 'story',
+    title: 'Story',
+  },
+  {
+    id: 'text',
+    title: 'Text',
+  },
+]
 
 const Localization = () => {
+  const [activeMode, setActiveMode] = React.useState<string>(MODE[0].id)
   const [targetLanguage, setTargetLanguage] = React.useState<string>('')
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
   const [successMessage, setSuccessMessage] = React.useState<string>('')
+  const [stringToTranslate, setStringToTranslate] = React.useState<string>('')
+  const [translatedString, setTranslatedString] = React.useState<string>('')
+  const [storySummary, setStorySummary] = React.useState<string>('')
 
-  const summarise = async () => {
+  const cratePageContext = async () => {
+    await summariseStory({
+      contentTitle: 'Website page',
+      promptModifier: 'Summary should be short and concise.',
+      cb: (summary) => {
+        setStorySummary(summary)
+      },
+    })
+  }
+
+  const localize = async () => {
     setIsLoading(true)
     setSuccessMessage('')
 
-    localizeStory({
+    await cratePageContext()
+
+    await localizeStory({
       targetLanguage,
       hasToCreateNewStory: true,
+      promptModifier: storySummary
+        ? `Use this text as a context, do not add it to the result translation: "${storySummary}"`
+        : '',
       cb: () => {
         setIsLoading(false)
         setTargetLanguage('')
@@ -30,53 +62,77 @@ const Localization = () => {
     })
   }
 
+  const translateString = async () => {
+    setIsLoading(true)
+    setSuccessMessage('')
+
+    await cratePageContext()
+
+    const transaltedContent = await translate({
+      targetLanguage,
+      content: stringToTranslate,
+      promptModifier: storySummary
+        ? `Use this text as a context, do not add it to the result translation: "${storySummary}"`
+        : '',
+    })
+
+    setTranslatedString(transaltedContent)
+    setIsLoading(false)
+
+    setSuccessMessage('Done! Please find your translated text below.')
+  }
+
   return (
     <div>
       <Typography variant="h1">Localization</Typography>
-      <Typography variant="body1">
-        Hey! Please enter a target language and click the button. We'll create a
-        new page for you on the same level as the current one.
-      </Typography>
 
-      <div style={{ margin: '12px 0 20px', padding: '0 4px   ' }}>
-        <FormControl fullWidth>
-          <FormLabel>Target language</FormLabel>
-          <TextField
-            placeholder="German"
-            value={targetLanguage}
-            onChange={(e) => {
-              setTargetLanguage(e.target.value)
-            }}
-            fullWidth
-          />
-        </FormControl>
-      </div>
-
-      <Button
-        fullWidth
-        disabled={!targetLanguage || isLoading}
-        onClick={summarise}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          margin: '-14px 0 8px 0',
+          padding: '0 2px',
+        }}
       >
-        {isLoading ? 'Localizing...' : 'Localize'}
-      </Button>
-      {isLoading && (
-        <Typography
-          variant="body2"
-          textAlign="center"
+        <RadioGroup
+          color="inherit"
+          row
         >
-          Usually it takes 1min max to localize a story.
-        </Typography>
+          {MODE.map((mode) => (
+            <FormControlLabel
+              control={<Radio />}
+              key={mode.id}
+              checked={activeMode === mode.id}
+              onClick={() => {
+                setActiveMode(mode.id)
+              }}
+              label={mode.title}
+            />
+          ))}
+        </RadioGroup>
+      </div>
+      {activeMode === MODE[0].id && (
+        <LocalizeStoryMode
+          targetLanguage={targetLanguage}
+          isLoading={isLoading}
+          setTargetLanguage={setTargetLanguage}
+          localize={localize}
+          successMessage={successMessage}
+        />
       )}
-
-      {successMessage && (
-        <Typography
-          variant="body1"
-          fontWeight={700}
-          margin="20px 0 0"
-          textAlign="center"
-        >
-          {successMessage}
-        </Typography>
+      {activeMode === MODE[1].id && (
+        <LocalizeTextMode
+          targetLanguage={targetLanguage}
+          isLoading={isLoading}
+          setTargetLanguage={setTargetLanguage}
+          setStringToTranslate={setStringToTranslate}
+          successMessage={successMessage}
+          stringToTranslate={stringToTranslate}
+          setSuccessMessage={setSuccessMessage}
+          translateString={translateString}
+          translatedString={translatedString}
+        />
       )}
     </div>
   )

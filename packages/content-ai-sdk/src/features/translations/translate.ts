@@ -24,7 +24,7 @@ export const translate = async ({
     messages: [
       {
         role: "system",
-        content: `You will be provided with a text, and your task is to translate it${
+        content: `The user will provide you with a text or a single word in the next message, and your task is to translate it${
           currentLanguage ? " from " + currentLanguage : ""
         } into ${targetLanguage}. Act like a native ${targetLanguage} speaker and rephase the text in a way that it sounds natural. ${promptModifier}`,
       },

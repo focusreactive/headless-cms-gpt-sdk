@@ -12,6 +12,10 @@ interface LocalizeStoryProps {
   hasToCreateNewStory?: boolean;
 }
 
+const replaceAll = (str: string, find: string, replace: string) => {
+  return str.replace(new RegExp(find, "g"), replace);
+};
+
 export const localizeStory = (props: LocalizeStoryProps) => {
   if (!SpaceInfo) {
     throw new Error("SDK is not initialised");
@@ -35,16 +39,19 @@ export const localizeStory = (props: LocalizeStoryProps) => {
         restContentToTranslate
       );
 
-      const textValueRegex = /\b\w+\s+\w+\b/g;
       const initialValue: { [key: string]: unknown } = {};
 
       const filteredTextFields = Object.keys(flattenContent as object).reduce(
         (acc, cur) => {
           const value = flattenContent[cur] as string;
-          if (!value || typeof value?.match !== "function") return acc;
-          const matches = value?.match(textValueRegex);
+          if (!value || typeof value?.match !== "function") {
+            return acc;
+          }
 
-          if (matches && matches.length >= 1) {
+          const processedValue = replaceAll(value, "\n", "");
+          const isTextContent = processedValue.split(" ").length > 1;
+
+          if (isTextContent) {
             acc[cur] = value;
           }
 

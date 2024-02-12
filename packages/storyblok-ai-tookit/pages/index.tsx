@@ -11,6 +11,7 @@ import { lightTheme } from '@storyblok/mui'
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import FeaturesLayout from '@src/components/FeaturesLayout'
 import { initSDK } from '@focus-reactive/storyblok-ai-sdk'
+import { initSDK as initContentSDK } from '@focus-reactive/content-ai-sdk'
 
 type PageProps = {
   spaceId: number
@@ -52,13 +53,14 @@ const Home: NextPage<PageProps> = (props) => {
   }, [])
 
   useEffect(() => {
-    console.log('props.appSession', props.appSession)
-
     initSDK({
       managementToken: props.appSession.accessToken,
       pluginName: 'focusreactive-ai-toolkit',
       openAiToken: process.env.NEXT_PUBLIC_SANITY_STUDIO_OPENAI_TOKEN,
       spaceId: String(props.spaceId),
+    })
+    initContentSDK({
+      openAiToken: process.env.NEXT_PUBLIC_SANITY_STUDIO_OPENAI_TOKEN,
     })
   }, [])
 
