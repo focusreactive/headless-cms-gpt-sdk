@@ -79,7 +79,7 @@ const Home: NextPage<PageProps> = (props) => {
           >
             How it works:{' '}
             <Link
-              href="https://focusreactive.com/"
+              href="https://focusreactive.com/storyblok-ai-toolkit/"
               target="_blank"
             >
               Documentation
