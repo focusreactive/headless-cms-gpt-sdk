@@ -18,7 +18,8 @@ const Summary = () => {
 
     summariseStory({
       contentTitle,
-      promptModifier: 'Provided content is a website page. Summary should be short and concise.',
+      promptModifier:
+        'Provided content is a website page. Summary should be short and concise.',
       cb: (summary) => {
         setSummary(summary)
         setIsLoading(false)
@@ -31,7 +32,7 @@ const Summary = () => {
       <Typography variant="h1">Summary</Typography>
       <Typography variant="body1">
         Hey! Please enter the Story title and click the button. We'll generate a
-        summary of the content for you.
+        content summary for you.
       </Typography>
 
       <div style={{ margin: '12px 0 20px', padding: '0 4px   ' }}>
@@ -51,7 +52,12 @@ const Summary = () => {
       {summary && (
         <>
           <Typography variant="h2">Result:</Typography>
-          <Typography style={{margin: '12px 0 18px'}} variant="body1">{summary}</Typography>
+          <Typography
+            style={{ margin: '12px 0 18px' }}
+            variant="body1"
+          >
+            {summary}
+          </Typography>
         </>
       )}
 

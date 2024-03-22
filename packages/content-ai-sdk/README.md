@@ -70,7 +70,7 @@ This function is created to translate JSON objects to a different language witho
 ```typescript
 interface TranslateOptions {
   targetLanguage: string;
-  content: unknown;
+  content: object;
   promptModifier?: string;
   currentLanguage?: string;
 }

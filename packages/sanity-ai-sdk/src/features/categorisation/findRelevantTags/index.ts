@@ -1,5 +1,5 @@
 import { SanityDocument } from "sanity";
-import { appplyTags } from "@focus-reactive/content-ai-sdk";
+import { applyTags } from "@focus-reactive/content-ai-sdk";
 import { getSanityClient } from "../../../config/sanityClient";
 
 interface Tag {
@@ -33,7 +33,7 @@ export const findRelevantTags = async (props: FindRelevantTagsProps) => {
       documentData;
 
     try {
-      const tags = await appplyTags({
+      const tags = await applyTags({
         content: documentContent,
         promptModifier:
           "Do not work with technical fields of the data, they starts with a _ symbol.",

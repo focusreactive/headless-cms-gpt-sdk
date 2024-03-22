@@ -78,33 +78,6 @@ const translatedFileds = await transalateSelectedDocumentFields({
 });
 ```
 
-#### Function **`translateFullDocument`**
-
-**Parameters**
-
-```typescript
-interface TranslateFullDocumentProps {
-  documentId: string;
-  targetLanguage: string;
-}
-```
-
-- `documentId` - Id of the document that we need to process.
-- `targetLanguage` - Language to which we need to translate the content.
-
-**Usage**
-
-```javascript
-// 1. Import the function
-import { translateFullDocument } from "@focus-reactive/sanity-ai-sdk";
-
-// 2. Call the function
-const translatedDocument = await translateFullDocument({
-  targetLanguage: "german",
-  documentId: DOCUMENT_ID,
-});
-```
-
 ### Categorisation
 
 #### Function **`findRelevantTags`**

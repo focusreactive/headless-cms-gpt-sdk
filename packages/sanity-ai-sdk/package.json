@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/sanity-ai-sdk",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "private": false,
   "scripts": {
     "dev": "vite build --watch",
@@ -12,7 +12,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@focus-reactive/content-ai-sdk": "^0.0.1",
+    "@focus-reactive/content-ai-sdk": "0.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "vite-plugin-dts": "^3.6.3"

@@ -1,22 +1,21 @@
 import { translateJSON } from "@focus-reactive/content-ai-sdk";
 import { ISbStoryData } from "storyblok-js-client";
+import lodashGet from "lodash.get";
+import lodashSet from "lodash.set";
 
 import { SpaceInfo } from "../../../config/spaceData";
 import { SBManagementClient } from "../../../config/initClient";
 import { flatten, unflatten } from "flat";
 
 interface LocalizeStoryProps {
-  targetLanguage: string;
+  targetLanguageCode: string;
+  targetLanguageName: string;
   cb: (newStoryData: { story: ISbStoryData }) => void;
   promptModifier?: string;
-  hasToCreateNewStory?: boolean;
+  mode: "createNew" | "update" | "returnData" | "test";
 }
 
-const replaceAll = (str: string, find: string, replace: string) => {
-  return str.replace(new RegExp(find, "g"), replace);
-};
-
-export const localizeStory = (props: LocalizeStoryProps) => {
+export const localizeStory = async (props: LocalizeStoryProps) => {
   if (!SpaceInfo) {
     throw new Error("SDK is not initialised");
   }
@@ -33,27 +32,171 @@ export const localizeStory = (props: LocalizeStoryProps) => {
       const { _editable, _uid, component, ...restContentToTranslate } =
         story.content;
 
-      // we need to chunk the story data because of the API limitations
-      // first step is to flatten the story data
+      // load components schema to define translatable fields
+      const componentsSchema = (
+        await SBManagementClient.get(`spaces/${SpaceInfo.spaceId}/components/`)
+      ).data.components as {
+        schema: { [key: string]: { type: string; translatable: boolean } };
+        translatable: boolean;
+        name: string;
+      }[];
+
+      // filter fields that can be translated
+      const fieldsThatCanBeTranslated = componentsSchema.reduce(
+        (acc, component) => {
+          const translatableFields = Object.keys(component.schema)
+            .filter((key) => {
+              const schema = component.schema[key];
+
+              return (
+                schema.translatable &&
+                (schema.type === "text" ||
+                  schema.type === "richtext" ||
+                  schema.type === "textarea")
+              );
+            })
+            .map((key) => ({
+              name: key,
+              component: component.name,
+              type: component.schema[key].type,
+            }));
+
+          return [...acc, ...translatableFields];
+        },
+        [] as { name: string; component: string; type: string }[]
+      );
+
+      // flat the content to chunk be able to chunk and process it
       const flattenContent: { [key: string]: unknown } = flatten(
         restContentToTranslate
       );
 
       const initialValue: { [key: string]: unknown } = {};
 
+      // rich text is a complex field, we need to handle it separately
+      // here we create a list of rich text fields to be able to restore them after translation
+      const richTextDefautFieldValues: {
+        key: string;
+        fields: unknown;
+      }[] = [];
+
+      // then we need to find all the text fields that should be translated
       const filteredTextFields = Object.keys(flattenContent as object).reduce(
         (acc, cur) => {
           const value = flattenContent[cur] as string;
-          if (!value || typeof value?.match !== "function") {
+
+          // if the value is empty or not a string or already translated, we skip it
+          if (
+            !value ||
+            typeof value?.match !== "function" ||
+            cur.includes("__i18n__")
+          ) {
             return acc;
           }
 
-          const processedValue = replaceAll(value, "\n", "");
-          const isTextContent = processedValue.split(" ").length > 1;
+          // define key variables from string like "content.component.0.type", etc.
+          const fieldPath = cur.split(".");
+          const fieldName = fieldPath.pop();
+          const fieldPathString = fieldPath.join(".");
 
-          if (isTextContent) {
-            acc[cur] = value;
+          const componentName = fieldPathString
+            ? flattenContent[`${fieldPathString}.component`]
+            : component;
+
+          // try ti find the field in the list of translatable fields
+          const isCanBeTranslated = fieldsThatCanBeTranslated.find(
+            (field) =>
+              field.name === fieldName && field.component === componentName
+          );
+
+          // if we are ok to translate the field, we add it to the list
+          if (isCanBeTranslated) {
+            acc[
+              `${
+                fieldPathString ? `${fieldPathString}.` : ""
+              }${fieldName}__i18n__${props.targetLanguageCode}`
+            ] = value;
+
+            return acc;
           }
+
+          // next we need to work with rich text fields
+          // they are way more complex and we need to handle them separately
+          // mostly because we don't know the structure of the rich text field
+          // first we need to detect if the field is part of the rich text
+          const isPartOfRichText =
+            flattenContent[`${fieldPath.join(".")}.type`] === "text" &&
+            fieldName === "text";
+
+          // then define some temporary variables to handle rich text defining logic
+          let isRichTextTranslable = false;
+          let richTextRootPath = "";
+
+          if (isPartOfRichText) {
+            // this function is used in recusive way few lines below
+            const recoursiveKeysCheckForRichTextDetection = (key: string[]) => {
+              const keyCopy = [...key];
+
+              // we need to find the root of the rich text field
+              const isRichTextRoot =
+                flattenContent[`${keyCopy.join(".")}.type`] === "doc";
+
+              if (!isRichTextRoot) {
+                return false;
+              }
+
+              richTextRootPath = keyCopy.join(".");
+              const fieldName = keyCopy.pop();
+
+              // then we need to find the component where it used
+              const componentName =
+                keyCopy.length > 0
+                  ? flattenContent[`${keyCopy.join(".")}.component`]
+                  : component;
+
+              // then we need to check if the field is translatable
+              return fieldsThatCanBeTranslated.find(
+                (field) =>
+                  field.name === fieldName && field.component === componentName
+              );
+            };
+
+            // run the recoursive function to detect if the field is part of the rich text
+            fieldPath.forEach((_key, index) => {
+              if (isRichTextTranslable) {
+                return;
+              }
+
+              const keyToCheck = fieldPath.slice(0, index + 1);
+
+              if (recoursiveKeysCheckForRichTextDetection(keyToCheck)) {
+                isRichTextTranslable = true;
+              }
+            });
+          }
+
+          // in case the field is part of the rich text, we need to add it to the list of rich text default values
+          // this part is requered to restore the rich text field after translation
+          if (isPartOfRichText && isRichTextTranslable) {
+            const richTextFieldPath = richTextRootPath.split(".");
+
+            if (
+              !richTextDefautFieldValues.find(
+                (key) => key.key === richTextRootPath
+              )
+            ) {
+              richTextDefautFieldValues.push({
+                key: richTextRootPath,
+                fields: lodashGet(restContentToTranslate, richTextFieldPath),
+              });
+            }
+
+            acc[cur] = value;
+
+            return acc;
+          }
+
+          // const isTextContent = value.split(" ").length > 1;
 
           return acc;
         },
@@ -82,22 +225,28 @@ export const localizeStory = (props: LocalizeStoryProps) => {
         return chunk.reduce((result, item) => {
           return {
             ...result,
-            [item]: flattenContent[item],
+            [item]: filteredTextFields[item],
           };
         }, {});
       });
 
       // then we need to translate each chunk
+
+      const translateJSONChunk = async (chunk: { [key: string]: string }) => {
+        return translateJSON({
+          targetLanguage: props.targetLanguageName,
+          content: chunk,
+          promptModifier: props.promptModifier ? props.promptModifier : "",
+          isFlat: true,
+        }).then((translatedChunk) => {
+          return JSON.parse(translatedChunk);
+        });
+      };
+
       const translatedChunks = await Promise.all(
-        objectsChunks.map((chunk) =>
-          translateJSON({
-            targetLanguage: props.targetLanguage,
-            content: chunk,
-            promptModifier: `Examine each value within the JSON structure. Translate only the textual content within each value, while preserving the original JSON format. Refrain from translating any HTML tags, structures, and attributes embedded within these values. Important: Do not translate JSON keys! The keys and overall structure of the JSON must remain unchanged. ${
-              props.promptModifier ? props.promptModifier : ""
-            }`,
-          }).then((translatedChunk) => flatten(JSON.parse(translatedChunk)))
-        )
+        objectsChunks.map((chunk) => {
+          return translateJSONChunk(chunk);
+        })
       );
 
       // then we need to merge all translated chunks into one object
@@ -111,40 +260,86 @@ export const localizeStory = (props: LocalizeStoryProps) => {
         { ...flattenContent }
       );
 
-      // then simply create a story with the translated unflattened content
+      // we mostly done with the translation, now we need to restore the rich text fields
       let newStoryData: { story: ISbStoryData };
-      if (props.hasToCreateNewStory) {
+
+      const storyContent: {
+        component: string | undefined;
+        _uid?: string | undefined;
+        _editable?: string | undefined;
+        [key: string]: unknown;
+      } = {
+        ...story.content,
+        ...(unflatten(localizedJSON) as object),
+        component,
+      };
+
+      if (props.mode === "test") {
+        return objectsChunks;
+      }
+
+      // restore rich text fields and replace the translated values key
+      richTextDefautFieldValues.forEach((field) => {
+        const translatedRichTextData = lodashGet(
+          storyContent,
+          field.key.split(".")
+        );
+
+        lodashSet(
+          storyContent,
+          `${field.key}__i18n__${props.targetLanguageCode}`.split("."),
+          translatedRichTextData
+        );
+
+        lodashSet(storyContent, field.key.split("."), field.fields);
+      });
+
+      // next just process the story
+
+      if (props.mode === "createNew") {
         newStoryData = await SBManagementClient.post(
           `spaces/${SpaceInfo.spaceId}/stories/`,
           {
             story: {
-              name: `${story.name} (${props.targetLanguage})`,
-              slug: `${story.slug}-${props.targetLanguage}`,
-              content: {
-                ...unflatten(localizedJSON),
-                component,
-              },
+              name: `${story.name} (${props.targetLanguageName})`,
+              slug: `${story.slug}-${props.targetLanguageCode}`,
+              content: storyContent,
               parent_id: String(story.parent_id),
             },
-            publish: 0,
           }
         );
-      } else {
+        props.cb(newStoryData);
+      }
+
+      if (props.mode === "update") {
+        newStoryData = await SBManagementClient.put(
+          `spaces/${SpaceInfo.spaceId}/stories/${story.id}`,
+          {
+            story: {
+              name: `${story.name}`,
+              slug: `${story.slug}`,
+              content: storyContent,
+              parent_id: String(story.parent_id),
+            },
+          }
+        );
+
+        props.cb(newStoryData);
+      }
+
+      if (props.mode === "returnData") {
         newStoryData = {
           story: {
             ...story,
-            name: `${story.name} (${props.targetLanguage})`,
-            slug: `${story.slug}-${props.targetLanguage}`,
-            content: {
-              ...story.content,
-              ...unflatten(localizedJSON),
-            },
+            name: `${story.name} (${props.targetLanguageName})`,
+            slug: `${story.slug}-${props.targetLanguageCode}`,
+            content: storyContent,
             parent_id: story.parent_id,
           },
         };
-      }
 
-      props.cb(newStoryData);
+        props.cb(newStoryData);
+      }
     } catch (e) {
       console.error("Failed to localize the document", e);
       throw new Error("Failed to localize the document");

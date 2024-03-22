@@ -2,9 +2,12 @@ import {
   Button,
   FormControl,
   FormLabel,
+  MenuItem,
+  Select,
   TextField,
   Typography,
 } from '@mui/material'
+import { AppDataContext } from '@src/context/AppDataContext'
 import React from 'react'
 
 interface ILocalizeStoryModeProps {
@@ -22,24 +25,41 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
   localize,
   successMessage,
 }) => {
+  const spaceLanguages = React.useContext(AppDataContext)?.languages || []
+  React.useEffect(() => {
+    if (spaceLanguages.length > 0) {
+      setTargetLanguage(spaceLanguages[0].code)
+    }
+  }, [])
+
   return (
     <>
       <Typography variant="body1">
-        Hey! Please enter a target language and click the button. We'll create a
-        new page for you on the same level as the current one.
+        Hey! Please select your target language and click the button. We will
+        update the page with translations for it.
       </Typography>
       <div style={{ margin: '12px 0 20px', padding: '0 4px' }}>
         <FormControl fullWidth>
           <FormLabel>Target language</FormLabel>
 
-          <TextField
-            placeholder="German"
+          <Select
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
             value={targetLanguage}
+            label="Age"
             onChange={(e) => {
               setTargetLanguage(e.target.value)
             }}
-            fullWidth
-          />
+          >
+            {spaceLanguages.map((language) => (
+              <MenuItem
+                key={language.code}
+                value={language.code}
+              >
+                {language.name}
+              </MenuItem>
+            ))}
+          </Select>
         </FormControl>
       </div>
       <Button

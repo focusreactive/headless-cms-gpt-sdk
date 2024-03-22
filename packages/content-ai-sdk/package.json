@@ -3,7 +3,7 @@
   "description": "An easy way to enchance your project with ready to use GPT functions",
   "author": "Alex Hramovich <alex@focusreactive.com>",
   "license": "MIT",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": false,
   "type": "module",
   "scripts": {
@@ -43,6 +43,7 @@
     "dist"
   ],
   "dependencies": {
+    "flat": "^6.0.1",
     "gpt-3-encoder": "^1.1.4",
     "openai": "^4.17.3"
   }

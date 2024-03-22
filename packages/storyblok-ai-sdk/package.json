@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/storyblok-ai-sdk",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": false,
   "scripts": {
     "dev:sb": "vite build --watch",
@@ -12,9 +12,11 @@
   },
   "type": "module",
   "dependencies": {
-    "@focus-reactive/content-ai-sdk": "^0.0.1",
+    "@focus-reactive/content-ai-sdk": "0.0.3",
     "@storyblok/app-extension-auth": "^1.0.0-alpha.1",
     "flat": "^6.0.1",
+    "lodash.get": "^4.4.2",
+    "lodash.set": "^4.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "storyblok-js-client": "^6.2.0",

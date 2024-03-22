@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/sanity-ai-toolkit",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "An easy way to enchance your Sanity studio with ready for use GPT functions. Localization, summarization, tags and more !",
   "keywords": [
     "sanity",
@@ -49,7 +49,7 @@
     "watch": "pkg-utils watch --strict"
   },
   "dependencies": {
-    "@focus-reactive/sanity-ai-sdk": "0.0.3",
+    "@focus-reactive/sanity-ai-sdk": "0.0.4",
     "@sanity/incompatible-plugin": "^1.0.4",
     "@sanity/ui": "^1.9.3"
   },

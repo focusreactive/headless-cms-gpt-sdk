@@ -1,35 +1,37 @@
+import { flatten, unflatten } from "flat";
+
 import { getOpenAiClient } from "../../config/openAi";
 
-interface TranslateOptions {
+interface ApiCalloptions {
   targetLanguage: string;
   currentLanguage?: string;
-  content: unknown;
   promptModifier?: string;
+  valuesToTranslate: unknown;
 }
 
-export const translateJSON = async ({
-  targetLanguage,
+const apiCall = async ({
   currentLanguage,
-  content,
+  targetLanguage,
+  valuesToTranslate,
   promptModifier = "",
-}: TranslateOptions) => {
+}: ApiCalloptions) => {
   const openAiClient = getOpenAiClient();
 
   if (!openAiClient) {
     throw new Error("OpenAI client is not configurated");
   }
 
-  try {
-    // !TODO work on symbols limitations
-    const chatCompletion = await openAiClient.chat.completions.create({
+  return await openAiClient.chat.completions
+    .create({
       messages: [
         {
           role: "system",
-          content: `You will be provided with a JSON string, and your task is to translate fields values${
+          content: `Translate the values from the JSON array that the user will send you ${
             currentLanguage ? " from " + currentLanguage : ""
-          } into ${targetLanguage}. Act like a native ${targetLanguage} speaker and rephase the text in a way that it sounds natural. ${promptModifier}`,
+          } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: [string, string, string]}.`,
         },
-        { role: "user", content: JSON.stringify(content) },
+        { role: "system", content: promptModifier },
+        { role: "user", content: JSON.stringify(valuesToTranslate) },
       ],
       model: "gpt-3.5-turbo-1106",
       temperature: 0,
@@ -37,9 +39,69 @@ export const translateJSON = async ({
       frequency_penalty: 0,
       presence_penalty: 0,
       response_format: { type: "json_object" },
+    })
+    .then((res) => {
+      return JSON.parse(res.choices[0].message.content as string)
+        .translations as string[];
     });
+};
 
-    return chatCompletion.choices[0].message.content as string;
+interface TranslateOptions {
+  targetLanguage: string;
+  currentLanguage?: string;
+  content: object;
+  promptModifier?: string;
+  isFlat?: boolean;
+}
+
+export const translateJSON = async ({
+  targetLanguage,
+  currentLanguage,
+  content,
+  isFlat = false,
+  promptModifier = "",
+}: TranslateOptions) => {
+  let formattedContent;
+  if (typeof content === "object" && !isFlat) {
+    formattedContent = flatten(content);
+  }
+
+  if (!formattedContent && !isFlat) {
+    throw new Error("The provided data is not a valid");
+  }
+
+  if (isFlat) {
+    formattedContent = content;
+  }
+
+  const valuesToTranslate = Object.values(formattedContent as object);
+  console.log("valuesToTranslate", valuesToTranslate);
+  const keys = Object.keys(formattedContent as object);
+  console.log("keys", keys);
+
+  try {
+    // !TODO work on symbols limitations
+    const chatCompletion = await apiCall({
+      currentLanguage,
+      targetLanguage,
+      valuesToTranslate,
+      promptModifier,
+    });
+    console.log("chatCompletion", chatCompletion);
+
+    const translatedObject = keys.reduce((result, key, index) => {
+      return {
+        ...result,
+        [key]: chatCompletion[index],
+      };
+    }, {});
+    console.log("translatedObject", translatedObject);
+
+    if (isFlat) {
+      return JSON.stringify(translatedObject);
+    } else {
+      return JSON.stringify(unflatten(translatedObject));
+    }
   } catch {
     throw new Error("Failed to translate JSON");
   }

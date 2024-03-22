@@ -50,10 +50,11 @@ We implemented localization functions that can be used to translate your stories
 
 ```typescript
 interface LocalizeStoryProps {
-  targetLanguage: string;
+  targetLanguageCode: string;
+  targetLanguageName: string;
   cb: (newStoryData: { story: ISbStoryData }) => void;
-  hasToCreateNewStory?: boolean;
   promptModifier?: string;
+  mode: "createNew" | "update" | "returnData";
 }
 ```
 
@@ -70,7 +71,8 @@ import { localizeStory } from "@focus-reactive/storyblok-ai-sdk";
 
 // 2. Call the function
 const localizedStory = localizeStory({
-  targetLanguage,
+  targetLanguageCode,
+  targetLanguageName,
   cb: (localizedStory) => {
     setIsLoading(false); // turn off the loading indicator
     console.log(localizedStory);

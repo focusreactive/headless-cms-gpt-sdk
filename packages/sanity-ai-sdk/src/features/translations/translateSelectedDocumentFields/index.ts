@@ -1,5 +1,7 @@
 import { SanityClient } from "sanity";
 import { translateJSON } from "@focus-reactive/content-ai-sdk";
+import { flatten, unflatten } from "flat";
+
 import { getSanityClient } from "../../../config/sanityClient";
 
 interface NewDocumentprops {
@@ -36,12 +38,32 @@ export const transalateSelectedDocumentFields = async ({
   }, {});
 
   try {
-    const translatedDocument = await translateJSON({
-      targetLanguage,
-      content: objectToTranslate,
-      promptModifier:
-        "Do not translate technical fields, they starts with a _ symbol. Translate only values with more than 1 word.",
-    });
+    const flattenedObject = flatten(objectToTranslate) as Record<
+      string,
+      string
+    >;
+
+    const dataToTranslate = Object.keys(flattenedObject).reduce((acc, cur) => {
+      if (
+        typeof flattenedObject[cur] === "string" &&
+        (flattenedObject[cur].split(" ").length > 1 ||
+          (cur.split(".").pop() === "text" && cur.split(".").length > 3))
+      ) {
+        return { ...acc, [cur]: flattenedObject[cur] };
+      }
+
+      return acc;
+    }, {});
+
+    const translatedDocument = unflatten({
+      ...flattenedObject,
+      ...JSON.parse(
+        await translateJSON({
+          targetLanguage,
+          content: dataToTranslate,
+        })
+      ),
+    }) as Record<string, unknown>;
 
     if (newDocumentConfig) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -49,7 +71,7 @@ export const transalateSelectedDocumentFields = async ({
 
       await client.create({
         ...rest,
-        ...JSON.parse(translatedDocument),
+        ...translatedDocument,
         [newDocumentConfig.titleFieldName]: `${
           document[newDocumentConfig.titleFieldName]
         } (${targetLanguage})`,
@@ -58,11 +80,12 @@ export const transalateSelectedDocumentFields = async ({
     }
 
     try {
-      return JSON.parse(translatedDocument);
+      return translatedDocument;
     } catch {
       throw new Error("Failed to parse translated document");
     }
-  } catch {
+  } catch (error) {
+    console.error(error);
     throw new Error("Failed to translate document");
   }
 };

@@ -7,20 +7,24 @@ import Localization from '../Localization'
 interface Feature {
   id: string
   title: string
+  isDisabled: boolean
 }
 
 const FEATURES: Feature[] = [
   {
     id: 'localization',
     title: 'Localization',
-  },
-  {
-    id: 'tags',
-    title: 'Tags',
+    isDisabled: false,
   },
   {
     id: 'summary',
     title: 'Summary',
+    isDisabled: false,
+  },
+  {
+    id: 'tags',
+    title: 'Tags',
+    isDisabled: true,
   },
 ]
 
@@ -41,17 +45,19 @@ const FeaturesLayout = () => {
             key={feature.id}
             color={activeFeature === feature.id ? 'primary' : 'inherit'}
             onClick={() => {
+              if (feature.isDisabled) return
               setActiveFeature(feature.id)
             }}
             size="small"
+            disabled={feature.isDisabled}
           >
             {feature.title}
           </Button>
         ))}
       </ButtonGroup>
-      {activeFeature === FEATURES[2].id && <Summary />}
-      {activeFeature === FEATURES[1].id && <Tags />}
+      {activeFeature === FEATURES[1].id && <Summary />}
       {activeFeature === FEATURES[0].id && <Localization />}
+      {activeFeature === FEATURES[2].id && <Tags />}
     </div>
   )
 }

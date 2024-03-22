@@ -17,7 +17,7 @@
     "sanity"
   ],
   "dependencies": {
-    "@focus-reactive/sanity-ai-toolkit": "0.0.2",
+    "@focus-reactive/sanity-ai-toolkit": "0.0.3",
     "@sanity/ui": "^1.9.0",
     "@sanity/vision": "^3.18.1",
     "react": "^18.2.0",

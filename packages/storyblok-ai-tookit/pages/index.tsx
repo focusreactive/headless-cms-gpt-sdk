@@ -8,15 +8,18 @@ import {
 } from '@storyblok/app-extension-auth'
 
 import { lightTheme } from '@storyblok/mui'
-import { CssBaseline, ThemeProvider } from '@mui/material'
+import { CssBaseline, Link, ThemeProvider, Typography } from '@mui/material'
 import FeaturesLayout from '@src/components/FeaturesLayout'
 import { initSDK } from '@focus-reactive/storyblok-ai-sdk'
 import { initSDK as initContentSDK } from '@focus-reactive/content-ai-sdk'
+import StoryblokClient from 'storyblok-js-client'
+import { AppDataContext, language } from '@src/context/AppDataContext'
 
 type PageProps = {
   spaceId: number
   userId: number
   appSession: AppSession
+  languages: language[]
 }
 
 const Home: NextPage<PageProps> = (props) => {
@@ -56,18 +59,43 @@ const Home: NextPage<PageProps> = (props) => {
     initSDK({
       managementToken: props.appSession.accessToken,
       pluginName: 'focusreactive-ai-toolkit',
-      openAiToken: process.env.NEXT_PUBLIC_SANITY_STUDIO_OPENAI_TOKEN,
+      openAiToken: process.env.NEXT_PUBLIC_OPENAI_TOKEN,
       spaceId: String(props.spaceId),
     })
     initContentSDK({
-      openAiToken: process.env.NEXT_PUBLIC_SANITY_STUDIO_OPENAI_TOKEN,
+      openAiToken: process.env.NEXT_PUBLIC_OPENAI_TOKEN,
     })
   }, [])
 
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline />
-      <FeaturesLayout />
+      <AppDataContext.Provider value={{ languages: props.languages }}>
+        <div>
+          <FeaturesLayout />
+          <Typography
+            variant="body2"
+            style={{ marginTop: '24px' }}
+          >
+            How it works:{' '}
+            <Link
+              href="https://focusreactive.com/"
+              target="_blank"
+            >
+              Documentation
+            </Link>
+          </Typography>
+          <Typography variant="body2">
+            Created by:{' '}
+            <Link
+              href="https://focusreactive.com/"
+              target="_blank"
+            >
+              FocusReactive
+            </Link>
+          </Typography>
+        </div>
+      </AppDataContext.Provider>
     </ThemeProvider>
   )
 }
@@ -92,6 +120,15 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
   const sessionStore = sessionCookieStore(authHandlerParams)(context)
   const appSession = await sessionStore.get(query)
 
+  const SBManagementClient = new StoryblokClient({
+    oauthToken: `Bearer ${appSession.accessToken}`,
+    region: appSession.region,
+  })
+
+  const languages = await (
+    await SBManagementClient.get(`oauth/space_info`)
+  ).data.space.languages
+
   if (!appSession) {
     return initAuthFlow
   }
@@ -101,6 +138,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       appSession,
       spaceId: appSession.spaceId,
       userId: appSession.userId,
+      languages,
     },
   }
 }
