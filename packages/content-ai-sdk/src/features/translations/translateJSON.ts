@@ -75,9 +75,7 @@ export const translateJSON = async ({
   }
 
   const valuesToTranslate = Object.values(formattedContent as object);
-  console.log("valuesToTranslate", valuesToTranslate);
   const keys = Object.keys(formattedContent as object);
-  console.log("keys", keys);
 
   try {
     // !TODO work on symbols limitations
@@ -87,7 +85,6 @@ export const translateJSON = async ({
       valuesToTranslate,
       promptModifier,
     });
-    console.log("chatCompletion", chatCompletion);
 
     const translatedObject = keys.reduce((result, key, index) => {
       return {
@@ -95,7 +92,6 @@ export const translateJSON = async ({
         [key]: chatCompletion[index],
       };
     }, {});
-    console.log("translatedObject", translatedObject);
 
     if (isFlat) {
       return JSON.stringify(translatedObject);

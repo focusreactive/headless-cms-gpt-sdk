@@ -36,8 +36,6 @@ const Localization = () => {
         ? `Use this text as a context, do not add it to the result translation: "${storySummary}"`
         : '',
       cb: (updatedStory) => {
-        console.log('updatedStory', updatedStory)
-
         setIsLoading(false)
         setTargetLanguage('')
         setSuccessMessage(

@@ -1924,12 +1924,19 @@
   resolved "https://registry.yarnpkg.com/@floating-ui/utils/-/utils-0.1.6.tgz#22958c042e10b67463997bd6ea7115fe28cbcaf9"
   integrity sha512-OfX7E2oUDYxtBvsuS4e/jSn4Q9Qb6DzgeYtsAdkPZ47znpoNsMgZw0+tVijiv3uGNR6dgNlty6r9rzIzHjtd/A==
 
-"@focus-reactive/sanity-ai-sdk@link:packages/sanity-ai-toolkit/.yalc/@focus-reactive/sanity-ai-sdk":
-  version "0.0.0"
-  uid ""
+"@focus-reactive/content-ai-sdk@0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@focus-reactive/content-ai-sdk/-/content-ai-sdk-0.0.3.tgz#2c09855fd754bc7a8836d15b70d6278f94b6accd"
+  integrity sha512-ncxqcsP0kRAQEuowOCcauZafwgeZvpycv81By+RgdeGkAmzjen/hDT+Rd55q8KePU8OV5P/MBkdhh0jtriCccA==
+  dependencies:
+    flat "^6.0.1"
+    gpt-3-encoder "^1.1.4"
+    openai "^4.17.3"
 
-"@focus-reactive/sanity-ai-sdk@link:packages/sanity-studio-playground/.yalc/@focus-reactive/sanity-ai-sdk":
+"@focus-reactive/sanity-ai-sdk@0.0.4":
   version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@focus-reactive/sanity-ai-sdk/-/sanity-ai-sdk-0.0.4.tgz#d7a55b4da0df3ec51e8b4d30e2c5b29ffa00c561"
+  integrity sha512-vlw2QafemIGSpN1a6SZWmHBE7MByDnBJoHIfPq3WIHKWkTJbUdw1MDWUMzbZ/nmSAJgMe4rP9orautPM1kIcCw==
   dependencies:
     "@focus-reactive/content-ai-sdk" "0.0.3"
     react "^18.2.0"
