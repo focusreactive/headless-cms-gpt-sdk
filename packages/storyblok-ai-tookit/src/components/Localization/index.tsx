@@ -35,11 +35,11 @@ const Localization = () => {
       promptModifier: storySummary
         ? `Use this text as a context, do not add it to the result translation: "${storySummary}"`
         : '',
-      cb: (updatedStory) => {
+      cb: () => {
         setIsLoading(false)
         setTargetLanguage('')
         setSuccessMessage(
-          'Success! Please find your story on a same folder lvl',
+          'Success! Change the language to see the localized content.',
         )
       },
     })
