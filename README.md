@@ -74,7 +74,8 @@ Rename the file `.env.local.example` to `.env.local`. Open the file and set the 
 - `CLIENT_ID`: the client id from the app settings page.
 - `CLIENT_SECRET`: the client secret from the app settings page.
 - `BASE_URL`: The `baseUrl` from your secure tunnel.
-- `NEXT_PUBLIC_SANITY_STUDIO_OPENAI_TOKEN`: OpenAI token.
+- `NEXT_PUBLIC_OPENAI_TOKEN`: OpenAI token.
+- `NEXT_PUBLIC_SB_PREVIEW_TOKEN`: OpenAI token.
 
 Start the application with the script from the root folder
 
