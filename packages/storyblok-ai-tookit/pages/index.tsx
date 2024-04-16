@@ -12,7 +12,7 @@ import { CssBaseline, Link, ThemeProvider, Typography } from '@mui/material'
 import FeaturesLayout from '@src/components/FeaturesLayout'
 import { initSDK } from '@focus-reactive/storyblok-ai-sdk'
 import { initSDK as initContentSDK } from '@focus-reactive/content-ai-sdk'
-import StoryblokClient from 'storyblok-js-client'
+import StoryblokClient, { ISbStoryData } from 'storyblok-js-client'
 import { AppDataContext, Folder, language } from '@src/context/AppDataContext'
 
 type PageProps = {
@@ -25,6 +25,7 @@ type PageProps = {
 
 const Home: NextPage<PageProps> = (props) => {
   const [currentHeight, setCurrentHeight] = useState<number>(0)
+  const [currentStory, setCurrentStory] = useState<ISbStoryData>(null)
 
   useEffect(() => {
     const handleResize = () => {
@@ -68,11 +69,38 @@ const Home: NextPage<PageProps> = (props) => {
     })
   }, [])
 
+  useEffect(() => {
+    const handleMessage = (e: { data: { story: ISbStoryData } }) => {
+      setCurrentStory(e.data.story)
+
+      window.removeEventListener('message', handleMessage, false)
+    }
+
+    window.addEventListener('message', handleMessage, false)
+
+    window.parent.postMessage(
+      {
+        action: 'tool-changed',
+        tool: 'focusreactive-ai-toolkit',
+        event: 'getContext',
+      },
+      '*',
+    )
+
+    return () => window.removeEventListener('message', handleMessage, false)
+  }, [])
+
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline />
       <AppDataContext.Provider
-        value={{ languages: props.languages, folders: props.folders }}
+        value={{
+          languages: props.languages,
+          folders: props.folders.filter(
+            (folder) => !currentStory?.full_slug.startsWith(folder.slug + '/'),
+          ),
+          currentStory,
+        }}
       >
         <div>
           <FeaturesLayout />
@@ -149,6 +177,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       folders: foldersResponse.data.stories.map((folder) => ({
         name: folder.name,
         id: folder.id,
+        slug: folder.slug,
       })),
     },
   }

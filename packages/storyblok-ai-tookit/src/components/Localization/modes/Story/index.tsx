@@ -22,8 +22,8 @@ interface ILocalizeStoryModeProps {
   translationLevels: string[]
   setTranslationLevel: (value: string) => void
   translationLevel: string
-  targetFolder: string
-  setTargetFolder: (value: string) => void
+  targetFolderId: string
+  setTargetFolderId: (value: string) => void
   setUserTypedLanguage: (value: string) => void
   userTypedLanguage: string
   setTranslationMode: (value: string) => void
@@ -38,8 +38,8 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
   setTranslationLevel,
   translationLevels,
   translationLevel,
-  targetFolder,
-  setTargetFolder,
+  targetFolderId,
+  setTargetFolderId,
   setUserTypedLanguage,
   userTypedLanguage,
   setTranslationMode,
@@ -109,15 +109,14 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
       {translationLevel === 'folder' && (
         <div style={{ margin: '12px 0 20px', padding: '0 4px' }}>
           <FormControl fullWidth>
-            {/* remove current folder*/}
             <FormLabel>Please select language folder</FormLabel>
             <Select
               labelId="language-folder-select-label"
               id="language-folder-select"
-              value={targetFolder}
+              value={targetFolderId}
               label="Language folder"
               onChange={(e) => {
-                setTargetFolder(e.target.value)
+                setTargetFolderId(e.target.value)
               }}
             >
               {folders.map((folder) => (
@@ -162,7 +161,7 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
         fullWidth
         disabled={
           (!targetLanguage && translationLevel === 'field') ||
-          ((!targetFolder || !userTypedLanguage) &&
+          ((!targetFolderId || !userTypedLanguage) &&
             translationLevel === 'folder') ||
           isLoading
         }

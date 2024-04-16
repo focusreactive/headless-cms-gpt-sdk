@@ -13,7 +13,7 @@ type FieldLevelTranslation = {
 
 type FolderLevelTranslation = {
   type: "folder";
-  targetFolder: number;
+  targetFolderId: number;
 };
 
 export type TranslationLevels = FieldLevelTranslation | FolderLevelTranslation;
@@ -24,7 +24,7 @@ interface LocalizeStoryProps {
   cb: (newStoryData: { story: ISbStoryData }) => void;
   promptModifier?: string;
   mode: "createNew" | "update" | "returnData" | "test";
-  level: TranslationLevels;
+  translationLevel: TranslationLevels;
   translationMode: "selected" | "all";
 }
 
@@ -48,11 +48,11 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
 
     let story = e.data.story;
 
-    const isFolderLevel = props.level.type === "folder";
+    const isFolderLevel = props.translationLevel.type === "folder";
 
     try {
-      if (props.level.type === "folder") {
-        const folderId = props.level.targetFolder;
+      if (props.translationLevel.type === "folder") {
+        const folderId = props.translationLevel.targetFolderId;
 
         const storyData = (await SBManagementClient.put(
           `spaces/${SpaceInfo.spaceId}/stories/${story.id}/duplicate`,

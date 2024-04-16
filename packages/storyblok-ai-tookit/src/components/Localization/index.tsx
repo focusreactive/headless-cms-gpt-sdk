@@ -10,10 +10,10 @@ const Localization = () => {
   const [successMessage, setSuccessMessage] = React.useState<string>('')
   const [storySummary, setStorySummary] = React.useState<string>('')
   const [translationLevel, setTranslationLevel] = React.useState('field')
-  const [targetFolder, setTargetFolder] = React.useState(null)
-  const { languages, folders } = React.useContext(AppDataContext)
+  const [targetFolderId, setTargetFolderId] = React.useState(null)
   const [userTypedLanguage, setUserTypedLanguage] = React.useState(null)
   const [translationMode, setTranslationMode] = React.useState(null)
+  const { languages } = React.useContext(AppDataContext)
   const translationLevels = ['field', 'folder']
 
   const cratePageContext = async () => {
@@ -52,12 +52,12 @@ const Localization = () => {
           'Success! Change the language to see the localized content.',
         )
       },
-      level:
+      translationLevel:
         translationLevel === 'field'
           ? { type: 'field' }
           : {
               type: 'folder',
-              targetFolder,
+              targetFolderId,
             },
       translationMode,
     })
@@ -76,8 +76,8 @@ const Localization = () => {
         setTranslationLevel={setTranslationLevel}
         translationLevels={translationLevels}
         translationLevel={translationLevel}
-        targetFolder={targetFolder}
-        setTargetFolder={setTargetFolder}
+        targetFolderId={targetFolderId}
+        setTargetFolderId={setTargetFolderId}
         setUserTypedLanguage={setUserTypedLanguage}
         userTypedLanguage={userTypedLanguage}
         setTranslationMode={setTranslationMode}
