@@ -13,13 +13,14 @@ import FeaturesLayout from '@src/components/FeaturesLayout'
 import { initSDK } from '@focus-reactive/storyblok-ai-sdk'
 import { initSDK as initContentSDK } from '@focus-reactive/content-ai-sdk'
 import StoryblokClient from 'storyblok-js-client'
-import { AppDataContext, language } from '@src/context/AppDataContext'
+import { AppDataContext, Folder, language } from '@src/context/AppDataContext'
 
 type PageProps = {
   spaceId: number
   userId: number
   appSession: AppSession
   languages: language[]
+  folders: Folder[]
 }
 
 const Home: NextPage<PageProps> = (props) => {
@@ -70,7 +71,9 @@ const Home: NextPage<PageProps> = (props) => {
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline />
-      <AppDataContext.Provider value={{ languages: props.languages }}>
+      <AppDataContext.Provider
+        value={{ languages: props.languages, folders: props.folders }}
+      >
         <div>
           <FeaturesLayout />
           <Typography
@@ -129,6 +132,10 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     await SBManagementClient.get(`oauth/space_info`)
   ).data.space.languages
 
+  const foldersResponse = await SBManagementClient.get(
+    `spaces/${appSession.spaceId}/stories?folder_only=1&with_parent=0&per_page=100`,
+  )
+
   if (!appSession) {
     return initAuthFlow
   }
@@ -139,6 +146,10 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       spaceId: appSession.spaceId,
       userId: appSession.userId,
       languages,
+      folders: foldersResponse.data.stories.map((folder) => ({
+        name: folder.name,
+        id: folder.id,
+      })),
     },
   }
 }

@@ -1,5 +1,5 @@
 import { translateJSON } from "@focus-reactive/content-ai-sdk";
-import { ISbStoryData } from "storyblok-js-client";
+import { ISbContentMangmntAPI, ISbStoryData } from "storyblok-js-client";
 import lodashGet from "lodash.get";
 import lodashSet from "lodash.set";
 
@@ -7,12 +7,25 @@ import { SpaceInfo } from "../../../config/spaceData";
 import { SBManagementClient } from "../../../config/initClient";
 import { flatten, unflatten } from "flat";
 
+type FieldLevelTranslation = {
+  type: "field";
+};
+
+type FolderLevelTranslation = {
+  type: "folder";
+  targetFolder: number;
+};
+
+export type TranslationLevels = FieldLevelTranslation | FolderLevelTranslation;
+
 interface LocalizeStoryProps {
   targetLanguageCode: string;
   targetLanguageName: string;
   cb: (newStoryData: { story: ISbStoryData }) => void;
   promptModifier?: string;
   mode: "createNew" | "update" | "returnData" | "test";
+  level: TranslationLevels;
+  translationMode: "selected" | "all";
 }
 
 export const localizeStory = async (props: LocalizeStoryProps) => {
@@ -20,14 +33,40 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
     throw new Error("SDK is not initialised");
   }
 
+  let inProgress = false;
+
   const handleMessage = async (e: { data: { story: ISbStoryData } }) => {
     if (!SpaceInfo || !SBManagementClient) {
       throw new Error("SDK is not initialised");
     }
 
-    const story = e.data.story;
+    if (inProgress) {
+      return;
+    }
+
+    inProgress = true;
+
+    let story = e.data.story;
+
+    const isFolderLevel = props.level.type === "folder";
 
     try {
+      if (props.level.type === "folder") {
+        const folderId = props.level.targetFolder;
+
+        const storyData = (await SBManagementClient.put(
+          `spaces/${SpaceInfo.spaceId}/stories/${story.id}/duplicate`,
+          {
+            auto_create_folders: true,
+            target_dimension: folderId,
+            story: { group_id: story.group_id },
+            same_path: true,
+          } as unknown as ISbContentMangmntAPI
+        )) as unknown as { data: { story: ISbStoryData } };
+
+        story = storyData.data.story;
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { _editable, _uid, component, ...restContentToTranslate } =
         story.content;
@@ -49,7 +88,7 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
               const schema = component.schema[key];
 
               return (
-                schema.translatable &&
+                (schema.translatable || props.translationMode === "all") &&
                 (schema.type === "text" ||
                   schema.type === "richtext" ||
                   schema.type === "textarea")
@@ -79,6 +118,8 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
         key: string;
         fields: unknown;
       }[] = [];
+
+      const i18nSuffix = `__i18n__${props.targetLanguageCode}`;
 
       // then we need to find all the text fields that should be translated
       const filteredTextFields = Object.keys(flattenContent as object).reduce(
@@ -112,9 +153,9 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
           // if we are ok to translate the field, we add it to the list
           if (isCanBeTranslated) {
             acc[
-              `${
-                fieldPathString ? `${fieldPathString}.` : ""
-              }${fieldName}__i18n__${props.targetLanguageCode}`
+              `${fieldPathString ? `${fieldPathString}.` : ""}${fieldName}${
+                isFolderLevel ? "" : i18nSuffix
+              }`
             ] = value;
 
             return acc;
@@ -287,7 +328,7 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
 
         lodashSet(
           storyContent,
-          `${field.key}__i18n__${props.targetLanguageCode}`.split("."),
+          `${field.key}${isFolderLevel ? "" : i18nSuffix}`.split("."),
           translatedRichTextData
         );
 
@@ -343,9 +384,11 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
     } catch (e) {
       console.error("Failed to localize the document", e);
       throw new Error("Failed to localize the document");
-    }
+    } finally {
+      inProgress = false;
 
-    window.removeEventListener("message", handleMessage, false);
+      window.removeEventListener("message", handleMessage, false);
+    }
   };
 
   window.addEventListener("message", handleMessage, false);
