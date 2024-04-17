@@ -11,7 +11,7 @@ import {
   FormControlLabel,
 } from '@mui/material'
 import { AppDataContext } from '@src/context/AppDataContext'
-import React, { Dispatch } from 'react'
+import React, { Dispatch, PropsWithChildren } from 'react'
 import { LocalizationAction, LocalizationState } from '../..'
 import {
   TranslationLevels,
@@ -24,6 +24,40 @@ interface ILocalizeStoryModeProps {
   state: LocalizationState
   dispatch: Dispatch<LocalizationAction>
 }
+
+const style = { margin: '12px 0', padding: '0 2px' }
+
+const Form = ({
+  label,
+  selectOptions,
+  value,
+  onChange,
+  children,
+}: PropsWithChildren & {
+  label: string
+  selectOptions: JSX.Element | JSX.Element[] | null
+  value: string
+  onChange: (val: string) => void
+}) => (
+  <FormControl
+    fullWidth
+    sx={style}
+  >
+    <FormLabel>{label}</FormLabel>
+    {selectOptions && (
+      <Select
+        labelId={`${label}-label`}
+        id={label}
+        value={value}
+        label={label}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {selectOptions}
+      </Select>
+    )}
+    {children}
+  </FormControl>
+)
 
 const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
   localize,
@@ -48,116 +82,94 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
         Hey! Please select your target language and click the button. We will
         update the page with translations for it.
       </Typography>
-      <div style={{ margin: '12px 0 20px', padding: '0 4px' }}>
-        <FormControl fullWidth>
-          <FormLabel>Translation level</FormLabel>
-          <Select
-            labelId="translation-level-select-label"
-            id="translation-level-select"
-            value={state.translationLevel}
-            label="Translation level"
+      <Form
+        label="Translation level"
+        value={state.translationLevel}
+        onChange={(value) =>
+          dispatch({
+            type: 'setTranslationLevel',
+            payload: value as TranslationLevels,
+          })
+        }
+        selectOptions={translationLevels.map((level) => (
+          <MenuItem
+            key={level}
+            value={level}
+          >
+            {level}
+          </MenuItem>
+        ))}
+      />
+      {state.translationLevel === 'field' && (
+        <Form
+          label="Target language"
+          value={state.fieldLevelTranslation.targetLanguage}
+          onChange={(value) =>
+            dispatch({
+              type: 'setTargetLanguage',
+              payload: { language: value, languages },
+            })
+          }
+          selectOptions={languages.map((language) => (
+            <MenuItem
+              key={language.code}
+              value={language.code}
+            >
+              {language.name}
+            </MenuItem>
+          ))}
+        />
+      )}
+      {state.translationLevel === 'folder' && (
+        <Form
+          label="Language Folder"
+          value={String(state.folderLevelTranslation.targetFolderId)}
+          onChange={(value) =>
+            dispatch({ type: 'setTargetFolderId', payload: value })
+          }
+          selectOptions={folders.map((folder) => (
+            <MenuItem
+              key={folder.name}
+              value={folder.id}
+            >
+              {folder.name}
+            </MenuItem>
+          ))}
+        >
+          <FormLabel sx={style}>Please type language</FormLabel>
+          <TextField
+            value={state.folderLevelTranslation.userTypedLanguage}
             onChange={(e) =>
               dispatch({
-                type: 'setTranslationLevel',
-                payload: e.target.value as TranslationLevels,
+                type: 'setUserTypedLanguage',
+                payload: e.target.value,
+              })
+            }
+          />
+          <RadioGroup
+            sx={style}
+            aria-labelledby="translation-mode-radio-buttons-group-label"
+            defaultValue="selected"
+            name="radio-buttons-group"
+            onChange={(e) =>
+              dispatch({
+                type: 'setTranslationMode',
+                payload: e.target.value as TranslationModes,
               })
             }
           >
-            {translationLevels.map((level) => (
-              <MenuItem
-                key={level}
-                value={level}
-              >
-                {level}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </div>
-      {state.translationLevel === 'field' && (
-        <div style={{ margin: '12px 0 20px', padding: '0 4px' }}>
-          <FormControl fullWidth>
-            <FormLabel>Target language</FormLabel>
-            <Select
-              labelId="demo-simple-select-label"
-              id="demo-simple-select"
-              value={state.fieldLevelTranslation.targetLanguage}
-              label="Age"
-              onChange={(e) =>
-                dispatch({
-                  type: 'setTargetLanguage',
-                  payload: { language: e.target.value, languages },
-                })
-              }
-            >
-              {languages.map((language) => (
-                <MenuItem
-                  key={language.code}
-                  value={language.code}
-                >
-                  {language.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </div>
-      )}
-      {state.translationLevel === 'folder' && (
-        <div style={{ margin: '12px 0 20px', padding: '0 4px' }}>
-          <FormControl fullWidth>
-            <FormLabel>Please select language folder</FormLabel>
-            <Select
-              labelId="language-folder-select-label"
-              id="language-folder-select"
-              value={state.folderLevelTranslation.targetFolderId}
-              label="Language folder"
-              onChange={(e) =>
-                dispatch({ type: 'setTargetFolderId', payload: e.target.value })
-              }
-            >
-              {folders.map((folder) => (
-                <MenuItem
-                  key={folder.name}
-                  value={folder.id}
-                >
-                  {folder.name}
-                </MenuItem>
-              ))}
-            </Select>
-            <FormLabel>Please type language</FormLabel>
-            <TextField
-              value={state.folderLevelTranslation.userTypedLanguage}
-              onChange={(e) =>
-                dispatch({
-                  type: 'setUserTypedLanguage',
-                  payload: e.target.value,
-                })
-              }
+            <FormControlLabel
+              value="selected"
+              control={<Radio defaultChecked />}
+              label="Translate fields marked as translatable"
             />
-            <RadioGroup
-              aria-labelledby="translation-mode-radio-buttons-group-label"
-              defaultValue="selected"
-              name="radio-buttons-group"
-              onChange={(e) =>
-                dispatch({
-                  type: 'setTranslationMode',
-                  payload: e.target.value as TranslationModes,
-                })
-              }
-            >
-              <FormControlLabel
-                value="selected"
-                control={<Radio defaultChecked />}
-                label="Translate fields marked as translatable"
-              />
-              <FormControlLabel
-                value="all"
-                control={<Radio />}
-                label="All"
-              />
-            </RadioGroup>
-          </FormControl>
-        </div>
+            <FormControlLabel
+              value="all"
+              control={<Radio />}
+              label="All"
+            />
+          </RadioGroup>
+        </Form>
       )}
       <Button
         fullWidth

@@ -75,25 +75,24 @@ const reducer = (
   switch (action.type) {
     case 'setTargetLanguage':
       if (state.translationLevel === 'field') {
-        const targetLanguageCode = action.payload.language.replace('-', '_')
+        const targetLanguage = action.payload.language
+        const targetLanguageCode = targetLanguage.replace('-', '_')
 
         const targetLanguageName =
-          action.payload.languages.find(
-            (lang) => lang.code === action.payload.language,
-          )?.name || ''
+          action.payload.languages.find((lang) => lang.code === targetLanguage)
+            ?.name || ''
 
         return {
           ...state,
           fieldLevelTranslation: {
             ...state.fieldLevelTranslation,
-            targetLanguage: action.payload.language,
+            targetLanguage,
             targetLanguageCode,
             targetLanguageName,
           },
           targetLanguageCode,
           targetLanguageName,
-          isReadyToPerformLocalization:
-            !state.isLoading && !!action.payload.language,
+          isReadyToPerformLocalization: !state.isLoading && !!targetLanguage,
         }
       }
 
@@ -111,38 +110,44 @@ const reducer = (
         storySummary: action.payload,
       }
 
-    case 'setTranslationLevel':
+    case 'setTranslationLevel': {
+      const translationLevel = action.payload
+      const isFolderLevel = translationLevel === 'folder'
+      const isFieldLevel = translationLevel === 'field'
+      const userTypedLanguage = state.folderLevelTranslation.userTypedLanguage
+      const targetLanguageCode = state.fieldLevelTranslation.targetLanguageCode
+
       return {
         ...state,
-        translationLevel: action.payload,
-        targetLanguageCode:
-          action.payload === 'field'
-            ? state.fieldLevelTranslation.targetLanguageCode
-            : state.folderLevelTranslation.userTypedLanguage,
-        targetLanguageName:
-          action.payload === 'field'
-            ? state.fieldLevelTranslation.targetLanguageName
-            : state.folderLevelTranslation.userTypedLanguage,
+        translationLevel,
+        targetLanguageCode: isFieldLevel
+          ? targetLanguageCode
+          : userTypedLanguage,
+        targetLanguageName: isFieldLevel
+          ? state.fieldLevelTranslation.targetLanguageName
+          : userTypedLanguage,
         isReadyToPerformLocalization:
           !state.isLoading &&
-          ((state.fieldLevelTranslation.targetLanguage &&
-            action.payload === 'field') ||
+          ((targetLanguageCode && isFieldLevel) ||
             (state.folderLevelTranslation.targetFolderId &&
-              state.folderLevelTranslation.userTypedLanguage &&
-              action.payload === 'folder')),
+              userTypedLanguage &&
+              isFolderLevel)),
       }
+    }
 
     case 'setTargetFolderId':
       if (state.translationLevel === 'folder') {
+        const targetFolderId = action.payload
+
         return {
           ...state,
           folderLevelTranslation: {
             ...state.folderLevelTranslation,
-            targetFolderId: action.payload,
+            targetFolderId,
           },
           isReadyToPerformLocalization:
             !state.isLoading &&
-            !!action.payload &&
+            !!targetFolderId &&
             !!state.folderLevelTranslation.userTypedLanguage,
         }
       }
@@ -151,17 +156,19 @@ const reducer = (
 
     case 'setUserTypedLanguage':
       if (state.translationLevel === 'folder') {
+        const userTypedLanguage = action.payload
+
         return {
           ...state,
           folderLevelTranslation: {
             ...state.folderLevelTranslation,
-            userTypedLanguage: action.payload,
+            userTypedLanguage,
           },
-          targetLanguageCode: action.payload,
-          targetLanguageName: action.payload,
+          targetLanguageCode: userTypedLanguage,
+          targetLanguageName: userTypedLanguage,
           isReadyToPerformLocalization:
             !state.isLoading &&
-            !!action.payload &&
+            !!userTypedLanguage &&
             !!state.folderLevelTranslation.targetFolderId,
         }
       }
