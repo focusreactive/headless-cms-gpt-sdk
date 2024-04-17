@@ -49,12 +49,21 @@ We implemented localization functions that can be used to translate your stories
 **Parameters**
 
 ```typescript
+type TranslationModes = "selected" | "all";
+type TranslationLevels = "field" | "folder";
+
+type FolderTranslationData = {
+  targetFolderId: number | string;
+  translationMode: TranslationModes;
+};
+
 interface LocalizeStoryProps {
   targetLanguageCode: string;
   targetLanguageName: string;
   cb: (newStoryData: { story: ISbStoryData }) => void;
   promptModifier?: string;
-  mode: "createNew" | "update" | "returnData";
+  translationLevel: TranslationLevels;
+  folderLevelTranslation: FolderTranslationData;
 }
 ```
 
@@ -62,6 +71,8 @@ interface LocalizeStoryProps {
 - `cb` - Callback function that will be called with the result.
 - `hasToCreateNewStory` - Optional. If you want to create a new story, you can pass `true` here.
 - `promptModifier` - Optional. If you want to add some instructions to the prompt, you can pass the modifier here.
+- `translationLevel` - Can be a `field` or a `folder`. When `field` will perform field-level translation for the current history. When `folder`, translation will be done at the folder level. [Storyblok Internationalization docs](https://www.storyblok.com/docs/guide/in-depth/internationalization).
+- `folderLevelTranslation` - Data required for folder level translation: `targetFolderId` and `translationMode`. Where `translationMode` can have two options: `selected` and the`all`. When using the `selected` option, only text fields that are explicitly marked as translatable will be processed. Using `all` will translate all text fields regardless of the translatable flag.
 
 **Usage**
 
@@ -71,8 +82,10 @@ import { localizeStory } from "@focus-reactive/storyblok-ai-sdk";
 
 // 2. Call the function
 const localizedStory = localizeStory({
+  translationLevel,
   targetLanguageCode,
   targetLanguageName,
+  folderLevelTranslation,
   cb: (localizedStory) => {
     setIsLoading(false); // turn off the loading indicator
     console.log(localizedStory);

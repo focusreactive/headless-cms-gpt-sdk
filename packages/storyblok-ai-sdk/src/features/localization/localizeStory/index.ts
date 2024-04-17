@@ -6,26 +6,16 @@ import lodashSet from "lodash.set";
 import { SpaceInfo } from "../../../config/spaceData";
 import { SBManagementClient } from "../../../config/initClient";
 import { flatten, unflatten } from "flat";
-
-type FieldLevelTranslation = {
-  type: "field";
-};
-
-type FolderLevelTranslation = {
-  type: "folder";
-  targetFolderId: number;
-};
-
-export type TranslationLevels = FieldLevelTranslation | FolderLevelTranslation;
+import { FolderTranslationData, TranslationLevels } from "../../../config";
 
 interface LocalizeStoryProps {
-  targetLanguageCode: string;
-  targetLanguageName: string;
   cb: (newStoryData: { story: ISbStoryData }) => void;
   promptModifier?: string;
   mode: "createNew" | "update" | "returnData" | "test";
   translationLevel: TranslationLevels;
-  translationMode: "selected" | "all";
+  targetLanguageCode: string;
+  targetLanguageName: string;
+  folderLevelTranslation: FolderTranslationData;
 }
 
 export const localizeStory = async (props: LocalizeStoryProps) => {
@@ -46,13 +36,13 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
 
     inProgress = true;
 
+    const isFolderLevel = props.translationLevel === "folder";
+
     let story = e.data.story;
 
-    const isFolderLevel = props.translationLevel.type === "folder";
-
     try {
-      if (props.translationLevel.type === "folder") {
-        const folderId = props.translationLevel.targetFolderId;
+      if (isFolderLevel) {
+        const folderId = props.folderLevelTranslation.targetFolderId;
 
         const storyData = (await SBManagementClient.put(
           `spaces/${SpaceInfo.spaceId}/stories/${story.id}/duplicate`,
@@ -88,7 +78,9 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
               const schema = component.schema[key];
 
               return (
-                (schema.translatable || props.translationMode === "all") &&
+                (schema.translatable ||
+                  (isFolderLevel &&
+                    props.folderLevelTranslation.translationMode === "all")) &&
                 (schema.type === "text" ||
                   schema.type === "richtext" ||
                   schema.type === "textarea")
