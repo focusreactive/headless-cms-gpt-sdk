@@ -30,6 +30,7 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
       throw new Error("SDK is not initialised");
     }
 
+    // in case more than one handleMessage started, skip
     if (inProgress) {
       return;
     }

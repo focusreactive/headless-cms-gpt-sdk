@@ -71,7 +71,7 @@ interface LocalizeStoryProps {
 - `cb` - Callback function that will be called with the result.
 - `hasToCreateNewStory` - Optional. If you want to create a new story, you can pass `true` here.
 - `promptModifier` - Optional. If you want to add some instructions to the prompt, you can pass the modifier here.
-- `translationLevel` - Can be a `field` or a `folder`. When `field` will perform field-level translation for the current history. When `folder`, translation will be done at the folder level. [Storyblok Internationalization docs](https://www.storyblok.com/docs/guide/in-depth/internationalization).
+- `translationLevel` - Can be a `field` or a `folder`. When `field` will perform field-level translation for the current story. When `folder`, translation will be done at the folder level. [Storyblok Internationalization docs](https://www.storyblok.com/docs/guide/in-depth/internationalization).
 - `folderLevelTranslation` - Data required for folder level translation: `targetFolderId` and `translationMode`. Where `translationMode` can have two options: `selected` and the`all`. When using the `selected` option, only text fields that are explicitly marked as translatable will be processed. Using `all` will translate all text fields regardless of the translatable flag.
 
 **Usage**
