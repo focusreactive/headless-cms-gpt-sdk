@@ -67,7 +67,6 @@ export type LocalizationAction =
   | { type: 'loadingStarted' }
   | { type: 'loadingEnded' }
   | { type: 'endedSuccessfully'; payload: string }
-
 const reducer = (
   state: LocalizationState,
   action: LocalizationAction,
@@ -92,7 +91,6 @@ const reducer = (
           },
           targetLanguageCode,
           targetLanguageName,
-          isReadyToPerformLocalization: !state.isLoading && !!targetLanguage,
         }
       }
 
@@ -112,26 +110,18 @@ const reducer = (
 
     case 'setTranslationLevel': {
       const translationLevel = action.payload
-      const isFolderLevel = translationLevel === 'folder'
       const isFieldLevel = translationLevel === 'field'
       const userTypedLanguage = state.folderLevelTranslation.userTypedLanguage
-      const targetLanguageCode = state.fieldLevelTranslation.targetLanguageCode
 
       return {
         ...state,
         translationLevel,
         targetLanguageCode: isFieldLevel
-          ? targetLanguageCode
+          ? state.fieldLevelTranslation.targetLanguageCode
           : userTypedLanguage,
         targetLanguageName: isFieldLevel
           ? state.fieldLevelTranslation.targetLanguageName
           : userTypedLanguage,
-        isReadyToPerformLocalization:
-          !state.isLoading &&
-          ((targetLanguageCode && isFieldLevel) ||
-            (state.folderLevelTranslation.targetFolderId &&
-              userTypedLanguage &&
-              isFolderLevel)),
       }
     }
 
@@ -145,10 +135,6 @@ const reducer = (
             ...state.folderLevelTranslation,
             targetFolderId,
           },
-          isReadyToPerformLocalization:
-            !state.isLoading &&
-            !!targetFolderId &&
-            !!state.folderLevelTranslation.userTypedLanguage,
         }
       }
 
@@ -166,10 +152,6 @@ const reducer = (
           },
           targetLanguageCode: userTypedLanguage,
           targetLanguageName: userTypedLanguage,
-          isReadyToPerformLocalization:
-            !state.isLoading &&
-            !!userTypedLanguage &&
-            !!state.folderLevelTranslation.targetFolderId,
         }
       }
 
@@ -193,19 +175,12 @@ const reducer = (
         ...state,
         isLoading: true,
         successMessage: '',
-        isReadyToPerformLocalization: false,
       }
 
     case 'loadingEnded':
       return {
         ...state,
         isLoading: false,
-        isReadyToPerformLocalization:
-          (state.fieldLevelTranslation.targetLanguage &&
-            state.translationLevel === 'field') ||
-          ((state.folderLevelTranslation.targetFolderId ||
-            state.folderLevelTranslation.userTypedLanguage) &&
-            state.translationLevel === 'folder'),
       }
 
     case 'endedSuccessfully':
@@ -215,9 +190,25 @@ const reducer = (
       }
   }
 }
+const topReducer = (
+  state: LocalizationState,
+  action: LocalizationAction,
+): LocalizationState => {
+  const newState = reducer(state, action)
+
+  return {
+    ...newState,
+    isReadyToPerformLocalization:
+      (newState.fieldLevelTranslation.targetLanguageCode &&
+        newState.translationLevel === 'field') ||
+      (newState.folderLevelTranslation.targetFolderId &&
+        newState.folderLevelTranslation.userTypedLanguage &&
+        newState.translationLevel === 'folder'),
+  }
+}
 
 const Localization = () => {
-  const [state, dispatch] = React.useReducer(reducer, INITIAL_STATE)
+  const [state, dispatch] = React.useReducer(topReducer, INITIAL_STATE)
 
   const cratePageContext = async () => {
     await summariseStory({
