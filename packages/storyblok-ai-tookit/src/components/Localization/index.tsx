@@ -199,11 +199,12 @@ const topReducer = (
   return {
     ...newState,
     isReadyToPerformLocalization:
-      (newState.fieldLevelTranslation.targetLanguageCode &&
+      !newState.isLoading &&
+      ((newState.fieldLevelTranslation.targetLanguageCode &&
         newState.translationLevel === 'field') ||
-      (newState.folderLevelTranslation.targetFolderId &&
-        newState.folderLevelTranslation.userTypedLanguage &&
-        newState.translationLevel === 'folder'),
+        (newState.folderLevelTranslation.targetFolderId &&
+          newState.folderLevelTranslation.userTypedLanguage &&
+          newState.translationLevel === 'folder')),
   }
 }
 
