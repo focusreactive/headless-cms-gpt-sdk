@@ -65,7 +65,6 @@ export type LocalizationAction =
   | { type: 'setUserTypedLanguage'; payload: string }
   | { type: 'setTranslationMode'; payload: TranslationModes }
   | { type: 'loadingStarted' }
-  | { type: 'loadingEnded' }
   | { type: 'endedSuccessfully'; payload: string }
 const reducer = (
   state: LocalizationState,
@@ -175,12 +174,6 @@ const reducer = (
         ...state,
         isLoading: true,
         successMessage: '',
-      }
-
-    case 'loadingEnded':
-      return {
-        ...state,
-        isLoading: false,
       }
 
     case 'endedSuccessfully':
