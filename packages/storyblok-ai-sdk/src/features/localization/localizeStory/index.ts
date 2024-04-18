@@ -9,12 +9,12 @@ import { flatten, unflatten } from "flat";
 import { FolderTranslationData, TranslationLevels } from "../../../config";
 
 interface LocalizeStoryProps {
+  targetLanguageCode: string;
+  targetLanguageName: string;
   cb: (newStoryData: { story: ISbStoryData }) => void;
   promptModifier?: string;
   mode: "createNew" | "update" | "returnData" | "test";
   translationLevel: TranslationLevels;
-  targetLanguageCode: string;
-  targetLanguageName: string;
   folderLevelTranslation: FolderTranslationData;
 }
 
