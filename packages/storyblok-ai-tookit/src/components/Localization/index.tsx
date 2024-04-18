@@ -66,6 +66,7 @@ export type LocalizationAction =
   | { type: 'setTranslationMode'; payload: TranslationModes }
   | { type: 'loadingStarted' }
   | { type: 'endedSuccessfully'; payload: string }
+
 const reducer = (
   state: LocalizationState,
   action: LocalizationAction,
@@ -238,12 +239,11 @@ const Localization = () => {
       promptModifier: state.storySummary
         ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
         : '',
-      cb: () => {
+      cb: () =>
         dispatch({
           type: 'endedSuccessfully',
           payload: 'Success! Change the language to see the localized content.',
-        })
-      },
+        }),
       translationLevel: state.translationLevel,
     })
   }
