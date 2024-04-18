@@ -72,11 +72,9 @@ const Home: NextPage<PageProps> = (props) => {
   useEffect(() => {
     const handleMessage = (e: { data: { story: ISbStoryData } }) => {
       setCurrentStory(e.data.story)
-
-      window.removeEventListener('message', handleMessage, false)
     }
 
-    window.addEventListener('message', handleMessage, false)
+    window.addEventListener('message', handleMessage, { once: true })
 
     window.parent.postMessage(
       {
@@ -86,8 +84,6 @@ const Home: NextPage<PageProps> = (props) => {
       },
       '*',
     )
-
-    return () => window.removeEventListener('message', handleMessage, false)
   }, [])
 
   return (
