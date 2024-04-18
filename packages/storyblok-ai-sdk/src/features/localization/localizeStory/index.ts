@@ -23,19 +23,10 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
     throw new Error("SDK is not initialised");
   }
 
-  let inProgress = false;
-
   const handleMessage = async (e: { data: { story: ISbStoryData } }) => {
     if (!SpaceInfo || !SBManagementClient) {
       throw new Error("SDK is not initialised");
     }
-
-    // in case more than one handleMessage started, skip
-    if (inProgress) {
-      return;
-    }
-
-    inProgress = true;
 
     const isFolderLevel = props.translationLevel === "folder";
 
@@ -377,14 +368,10 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
     } catch (e) {
       console.error("Failed to localize the document", e);
       throw new Error("Failed to localize the document");
-    } finally {
-      inProgress = false;
-
-      window.removeEventListener("message", handleMessage, false);
     }
   };
 
-  window.addEventListener("message", handleMessage, false);
+  window.addEventListener("message", handleMessage, { once: true });
 
   window.parent.postMessage(
     {

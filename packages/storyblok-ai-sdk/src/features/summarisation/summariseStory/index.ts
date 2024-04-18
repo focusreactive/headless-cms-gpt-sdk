@@ -28,11 +28,9 @@ export const summariseStory = (props: SummariseStoryProps) => {
     }
 
     props.cb(summary);
-
-    window.removeEventListener("message", handleMessage, false);
   };
 
-  window.addEventListener("message", handleMessage, false);
+  window.addEventListener("message", handleMessage, { once: true });
 
   window.parent.postMessage(
     {

@@ -183,26 +183,39 @@ const reducer = (
       }
   }
 }
-const topReducer = (
+const mainReducer = (
   state: LocalizationState,
   action: LocalizationAction,
 ): LocalizationState => {
   const newState = reducer(state, action)
 
+  if (newState.isLoading) {
+    return { ...newState, isReadyToPerformLocalization: false }
+  }
+
+  if (
+    newState.translationLevel === 'field' &&
+    !newState.fieldLevelTranslation.targetLanguageCode
+  ) {
+    return { ...newState, isReadyToPerformLocalization: false }
+  }
+
+  const isFolderTranslationDataReady =
+    newState.folderLevelTranslation.targetFolderId &&
+    newState.folderLevelTranslation.userTypedLanguage
+
+  if (newState.translationLevel === 'folder' && !isFolderTranslationDataReady) {
+    return { ...newState, isReadyToPerformLocalization: false }
+  }
+
   return {
     ...newState,
-    isReadyToPerformLocalization:
-      !newState.isLoading &&
-      ((newState.fieldLevelTranslation.targetLanguageCode &&
-        newState.translationLevel === 'field') ||
-        (newState.folderLevelTranslation.targetFolderId &&
-          newState.folderLevelTranslation.userTypedLanguage &&
-          newState.translationLevel === 'folder')),
+    isReadyToPerformLocalization: true,
   }
 }
 
 const Localization = () => {
-  const [state, dispatch] = React.useReducer(topReducer, INITIAL_STATE)
+  const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
 
   const cratePageContext = async () => {
     await summariseStory({
