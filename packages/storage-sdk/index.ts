@@ -49,12 +49,12 @@ type UsageEventRecord = {
   eventName: Event;
 };
 
-interface UsageBasicProps {
+interface BasicProps {
   spaceId: number;
   pluginId: number;
 }
 
-interface UsagePlanProps extends UsageBasicProps {
+interface PlanProps extends BasicProps {
   planName: string;
 }
 
@@ -94,7 +94,7 @@ async function isUseAllowed(spaceUsage: UsageSpaceRecord) {
   return true;
 }
 
-async function getUsagePlan({ spaceId, pluginId, planName }: UsagePlanProps) {
+async function getUsagePlan({ pluginId, planName }: PlanProps) {
   const querySnapshot = await getDocs(
     query(
       collection(db, "UsagePlans"),
@@ -106,7 +106,7 @@ async function getUsagePlan({ spaceId, pluginId, planName }: UsagePlanProps) {
   return querySnapshot.docs[0]?.data();
 }
 
-async function initSpaceUsage({ spaceId, pluginId, planName }: UsagePlanProps) {
+async function initSpaceUsage({ spaceId, pluginId, planName }: PlanProps) {
   const usagePlan = await getUsagePlan({ spaceId, pluginId, planName });
 
   if (usagePlan) {
@@ -125,7 +125,7 @@ async function initSpaceUsage({ spaceId, pluginId, planName }: UsagePlanProps) {
   return false;
 }
 
-export async function checkSpaceUsage({ spaceId, pluginId }: UsageBasicProps) {
+export async function checkSpaceUsage({ spaceId, pluginId }: BasicProps) {
   const querySnapshot = await getDocs(
     query(
       collection(db, "UsageSpaces"),
