@@ -3,7 +3,6 @@
 
 import { resolve } from "path";
 import { defineConfig } from "vite";
-import { exec } from "child_process";
 import dts from "vite-plugin-dts";
 
 // https://vitejs.dev/guide/build.html#library-mode
@@ -15,15 +14,7 @@ export default defineConfig({
       fileName: "my-lib",
     },
   },
-  plugins: [
-    dts(),
-    {
-      name: "yalc-publish",
-      closeBundle() {
-        exec("yalc push");
-      },
-    },
-  ],
+  plugins: [dts()],
   test: {
     // ...
   },
