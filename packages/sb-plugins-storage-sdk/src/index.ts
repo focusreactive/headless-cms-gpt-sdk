@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 import { initializeApp } from "firebase/app";
 import {
   getFirestore,
@@ -13,6 +11,9 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
+
+import { config as dotEnvConfig } from "dotenv";
+dotEnvConfig();
 
 const firebaseConfig = {
   apiKey: process.env.API_KEY,
