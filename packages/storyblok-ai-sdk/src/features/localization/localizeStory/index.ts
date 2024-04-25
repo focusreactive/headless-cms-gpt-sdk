@@ -303,21 +303,23 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
         return objectsChunks;
       }
 
-      // restore rich text fields and replace the translated values key
-      richTextDefautFieldValues.forEach((field) => {
-        const translatedRichTextData = lodashGet(
-          storyContent,
-          field.key.split(".")
-        );
+      if (!isFolderLevel) {
+        // restore rich text fields and replace the translated values key
+        richTextDefautFieldValues.forEach((field) => {
+          const translatedRichTextData = lodashGet(
+            storyContent,
+            field.key.split(".")
+          );
 
-        lodashSet(
-          storyContent,
-          `${field.key}${isFolderLevel ? "" : i18nSuffix}`.split("."),
-          translatedRichTextData
-        );
+          lodashSet(
+            storyContent,
+            `${field.key}${i18nSuffix}`.split("."),
+            translatedRichTextData
+          );
 
-        lodashSet(storyContent, field.key.split("."), field.fields);
-      });
+          lodashSet(storyContent, field.key.split("."), field.fields);
+        });
+      }
 
       // next just process the story
 
