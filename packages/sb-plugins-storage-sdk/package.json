@@ -1,0 +1,42 @@
+{
+  "name": "@focus-reactive/sb-plugins-storage-sdk",
+  "description": "Storage SDK for FR Storybook plugins",
+  "author": "Alex Hramovich <alex@focusreactive.com>",
+  "license": "MIT",
+  "version": "0.0.4",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.9",
+    "@typescript-eslint/eslint-plugin": "^6.9.1",
+    "@typescript-eslint/parser": "^6.9.1",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "3.0.3",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-plugin-dts": "^3.6.3",
+    "vitest": "^0.34.6"
+  },
+  "main": "./dist/my-lib.umd.cjs",
+  "module": "./dist/my-lib.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/my-lib.js",
+      "require": "./dist/my-lib.umd.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "firebase": "^10.11.0",
+    "uuid": "^9.0.1"
+  }
+}
