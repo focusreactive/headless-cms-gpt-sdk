@@ -11,6 +11,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
+import type { Timestamp as TimestampType } from "firebase/firestore";
 
 import { config as dotEnvConfig } from "dotenv";
 dotEnvConfig();
@@ -30,7 +31,7 @@ type UsagePlanRecord = {
   pluginId: number;
   limit?: number;
   periodInDays?: number;
-  startDate?: Timestamp;
+  startDate?: TimestampType;
 };
 
 type UsageSpaceRecord = {
@@ -42,7 +43,7 @@ type UsageSpaceRecord = {
 type Event = "fieldLevelTranslation" | "folderLevelTranslation";
 
 type UsageEventRecord = {
-  date: Timestamp;
+  date: TimestampType;
   pluginId: number;
   spaceId: number;
   userId: number;
