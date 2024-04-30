@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
 import { translateJSON } from "@focus-reactive/content-ai-sdk";
 import {
   ISbContentMangmntAPI,
@@ -22,19 +20,17 @@ interface LocalizeStoryProps {
   folderLevelTranslation: FolderTranslationData;
 }
 
-interface HelperFunctionProps {
-  key: string;
-  newPath: string;
-  value: unknown;
-  object: unknown;
-}
-
 type HelperFunction = ({
   key,
   newPath,
   value,
   object,
-}: HelperFunctionProps) => unknown;
+}: {
+  key: string;
+  newPath: string;
+  value: unknown;
+  object: unknown;
+}) => unknown;
 
 type TraverseObject = {
   object: unknown;
@@ -173,7 +169,7 @@ function flattenFieldsForTranslation(
     condition: ({ key, value, newPath }) =>
       (key.includes("forTranslation") && typeof value === "string") ||
       newPath.match(/forTranslation.\d+.1/),
-  });
+  }) as [string, string][];
 
   const arrForTranslation = mapForTranslation.map((value) => ({
     [value[0]]: value[1],
@@ -199,7 +195,11 @@ function mergeTranslatedFields(
       translatedValue = value;
     });
 
-    replaceFieldValue(restoredFieldsAfterTranslation, path, translatedValue);
+    replaceFieldValue(
+      restoredFieldsAfterTranslation as unknown as Record<string, unknown>,
+      path,
+      translatedValue
+    );
   }
 
   const newData = structuredClone(object);
@@ -220,9 +220,17 @@ function mergeTranslatedFields(
         replaceFieldValue(translatedRichtext, field[0], field[1]);
       }
 
-      replaceFieldValue(newData, fieldPath, translatedRichtext);
+      replaceFieldValue(
+        newData as unknown as Record<string, unknown>,
+        fieldPath,
+        translatedRichtext
+      );
     } else {
-      replaceFieldValue(newData, fieldPath, translated);
+      replaceFieldValue(
+        newData as unknown as Record<string, unknown>,
+        fieldPath,
+        translated
+      );
     }
   }
 
@@ -281,8 +289,17 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
             return "string";
           }
 
+          function hasComponentField(
+            object: unknown
+          ): object is Record<"component", string> {
+            return Boolean(
+              typeof object === "object" && object && "component" in object
+            );
+          }
+
           return Object.entries(componentWithTranslatableFields).some(
             ([component, fields]) =>
+              hasComponentField(object) &&
               object.component === component &&
               fields.some(
                 (field) =>
@@ -314,7 +331,7 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
       const { arrForTranslation } =
         flattenFieldsForTranslation(fieldsForTranslation);
 
-      const translateJSONChunk = async (chunk: string) => {
+      const translateJSONChunk = async (chunk: Record<string, string>) => {
         return translateJSON({
           targetLanguage: props.targetLanguageName,
           content: chunk,
