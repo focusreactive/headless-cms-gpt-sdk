@@ -74,7 +74,7 @@ function traverseObject({
   return outputArr;
 }
 
-function findFieldInObject(
+function replaceFieldValue(
   object: Record<string, unknown>,
   pathToField: string,
   newValue: unknown
@@ -95,14 +95,6 @@ function findFieldInObject(
       return object[lastField];
     }
   }
-}
-
-function replaceFieldValue(
-  object: Record<string, unknown>,
-  pathToField: string,
-  newValue: unknown
-) {
-  return findFieldInObject(object, pathToField, newValue);
 }
 
 type ComponentField = {
@@ -308,7 +300,6 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
               )
           );
         },
-
         transformValue: ({ value }) => {
           if (typeof value === "object") {
             return {
