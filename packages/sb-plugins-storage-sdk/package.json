@@ -7,7 +7,8 @@
   "private": false,
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "pre-dev-sb-storage-sdk": "yarn build && yalc publish --push"
   },
   "devDependencies": {
     "@types/node": "^20.8.9",
@@ -35,6 +36,7 @@
     "dist"
   ],
   "dependencies": {
+    "@focus-reactive/content-ai-sdk": "link:.yalc/@focus-reactive/content-ai-sdk",
     "dotenv": "^16.4.5",
     "firebase": "^10.11.0",
     "uuid": "^9.0.1"
