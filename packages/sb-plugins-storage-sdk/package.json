@@ -36,7 +36,6 @@
     "dist"
   ],
   "dependencies": {
-    "@focus-reactive/content-ai-sdk": "link:.yalc/@focus-reactive/content-ai-sdk",
     "dotenv": "^16.4.5",
     "firebase": "^10.11.0",
     "uuid": "^9.0.1"
