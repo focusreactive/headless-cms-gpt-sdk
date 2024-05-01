@@ -40,7 +40,8 @@ const Localization = () => {
     setIsLoading(true)
     setSuccessMessage('')
 
-    const isUseAllowed = await fetch(`/api/usage?spaceId=${spaceId}`)
+    const response = await fetch(`/api/usage?spaceId=${spaceId}`)
+    const { isUseAllowed } = await response.json()
 
     if (isUseAllowed) {
       let errorMessage = ''
