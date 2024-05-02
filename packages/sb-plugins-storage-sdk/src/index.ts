@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require("dotenv").config();
+import { config as dotEnvConfig } from "dotenv";
 import { initializeApp } from "firebase/app";
 import {
   getFirestore,
@@ -13,6 +12,8 @@ import {
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import type { Timestamp as TimestampType } from "firebase/firestore";
+
+dotEnvConfig();
 
 const firebaseConfig = {
   apiKey: process.env.API_KEY,
