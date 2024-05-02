@@ -71,6 +71,8 @@ const Localization = () => {
         saveEvent({ spaceId, userId, errorMessage })
       }
     } else {
+      setTargetLanguage('')
+      setSuccessMessage('You have reached your free limit, please contact us')
       setIsLoading(false)
     }
   }
