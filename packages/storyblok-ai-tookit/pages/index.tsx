@@ -70,7 +70,13 @@ const Home: NextPage<PageProps> = (props) => {
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline />
-      <AppDataContext.Provider value={{ languages: props.languages }}>
+      <AppDataContext.Provider
+        value={{
+          languages: props.languages,
+          spaceId: props.spaceId,
+          userId: props.userId,
+        }}
+      >
         <div>
           <FeaturesLayout />
           <Typography

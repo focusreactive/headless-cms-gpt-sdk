@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require("dotenv").config();
 import { initializeApp } from "firebase/app";
 import {
   getFirestore,
@@ -5,16 +7,12 @@ import {
   where,
   query,
   getDocs,
-  getCountFromServer,
   setDoc,
   doc,
   Timestamp,
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import type { Timestamp as TimestampType } from "firebase/firestore";
-
-import { config as dotEnvConfig } from "dotenv";
-dotEnvConfig();
 
 const firebaseConfig = {
   apiKey: process.env.API_KEY,
@@ -42,7 +40,7 @@ type UsageSpaceRecord = {
 
 type Event = "fieldLevelTranslation" | "folderLevelTranslation";
 
-type UsageEventRecord = {
+export type UsageEventRecord = {
   date: TimestampType;
   pluginId: number;
   spaceId: number;
@@ -78,7 +76,7 @@ async function isUseAllowed(spaceUsage: UsageSpaceRecord) {
       new Date(currentTimestamp - period * 24 * 60 * 60 * 1000)
     );
 
-    const querySnapshot = await getCountFromServer(
+    const querySnapshot = await getDocs(
       query(
         collection(db, "UsageEvents"),
         where("date", ">", periodStartDate),
@@ -86,7 +84,7 @@ async function isUseAllowed(spaceUsage: UsageSpaceRecord) {
       )
     );
 
-    const count = querySnapshot.data().count;
+    const count = querySnapshot.docs.length;
 
     if (limit < count) {
       return false;

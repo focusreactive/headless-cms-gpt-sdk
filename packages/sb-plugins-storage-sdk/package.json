@@ -3,11 +3,12 @@
   "description": "Storage SDK for FR Storybook plugins",
   "author": "Alex Hramovich <alex@focusreactive.com>",
   "license": "MIT",
-  "version": "0.0.4",
+  "version": "0.0.7",
   "private": false,
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "pre-dev-sb-storage-sdk": "yarn build && yalc publish --push"
   },
   "devDependencies": {
     "@types/node": "^20.8.9",
