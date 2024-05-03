@@ -9,7 +9,8 @@ import {
   TranslationModes,
 } from '@focus-reactive/storyblok-ai-sdk'
 import LocalizeStoryMode from './modes/Story'
-import { language } from '@src/context/AppDataContext'
+import { AppDataContext, language } from '@src/context/AppDataContext'
+import { PLUGIN_ID } from '@src/constants'
 
 export type FieldTranslation = {
   targetLanguage: string
@@ -184,6 +185,7 @@ const reducer = (
       }
   }
 }
+
 const mainReducer = (
   state: LocalizationState,
   action: LocalizationAction,
@@ -214,9 +216,22 @@ const mainReducer = (
     isReadyToPerformLocalization: true,
   }
 }
+async function saveEvent({ spaceId, userId, errorMessage, eventName }) {
+  await fetch('/api/usage', {
+    method: 'POST',
+    body: JSON.stringify({
+      eventName,
+      pluginId: PLUGIN_ID,
+      spaceId,
+      userId,
+      errorMessage,
+    }),
+  })
+}
 
 const Localization = () => {
   const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
+  const { spaceId, userId } = React.useContext(AppDataContext)
 
   const cratePageContext = async () => {
     await summariseStory({
@@ -229,23 +244,50 @@ const Localization = () => {
   const localize = async () => {
     dispatch({ type: 'loadingStarted' })
 
-    await cratePageContext()
+    const response = await fetch(`/api/usage?spaceId=${spaceId}`)
+    const { isUseAllowed } = await response.json()
 
-    await localizeStory({
-      targetLanguageCode: state.targetLanguageCode,
-      targetLanguageName: state.targetLanguageName,
-      folderLevelTranslation: state.folderLevelTranslation,
-      mode: 'update',
-      promptModifier: state.storySummary
-        ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
-        : '',
-      cb: () =>
-        dispatch({
-          type: 'endedSuccessfully',
-          payload: 'Success! Change the language to see the localized content.',
-        }),
-      translationLevel: state.translationLevel,
-    })
+    if (isUseAllowed) {
+      let errorMessage = ''
+
+      try {
+        await cratePageContext()
+
+        await localizeStory({
+          targetLanguageCode: state.targetLanguageCode,
+          targetLanguageName: state.targetLanguageName,
+          folderLevelTranslation: state.folderLevelTranslation,
+          mode: 'update',
+          promptModifier: state.storySummary
+            ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
+            : '',
+          cb: () =>
+            dispatch({
+              type: 'endedSuccessfully',
+              payload:
+                'Success! Change the language to see the localized content.',
+            }),
+          translationLevel: state.translationLevel,
+        })
+      } catch (error) {
+        errorMessage = error.message
+      } finally {
+        saveEvent({
+          spaceId,
+          userId,
+          errorMessage,
+          eventName:
+            state.translationLevel === 'folder'
+              ? 'folderLevelTranslation'
+              : 'fieldLevelTranslation',
+        })
+      }
+    } else {
+      dispatch({
+        type: 'endedSuccessfully',
+        payload: 'You have reached your free limit, please contact us',
+      })
+    }
   }
 
   return (

@@ -96,6 +96,8 @@ const Home: NextPage<PageProps> = (props) => {
             (folder) => !currentStory?.full_slug.startsWith(folder.slug + '/'),
           ),
           currentStory,
+          spaceId: props.spaceId,
+          userId: props.userId,
         }}
       >
         <div>
