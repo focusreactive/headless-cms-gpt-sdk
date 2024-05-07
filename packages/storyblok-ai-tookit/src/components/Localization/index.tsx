@@ -1,15 +1,226 @@
 import { Typography } from '@mui/material'
 import React from 'react'
-import { localizeStory, summariseStory } from '@focus-reactive/storyblok-ai-sdk'
+import {
+  FolderTranslationData,
+  localizeStory,
+  summariseStory,
+  TRANSLATION_LEVELS,
+  TranslationLevels,
+  TranslationModes,
+} from '@focus-reactive/storyblok-ai-sdk'
 import LocalizeStoryMode from './modes/Story'
-import { AppDataContext } from '@src/context/AppDataContext'
+import { AppDataContext, language } from '@src/context/AppDataContext'
 import { PLUGIN_ID } from '@src/constants'
 
-async function saveEvent({ spaceId, userId, errorMessage }) {
+export type FieldTranslation = {
+  targetLanguage: string
+  targetLanguageCode: string
+  targetLanguageName: string
+}
+
+export type FolderTranslation = FolderTranslationData & {
+  userTypedLanguage: string
+}
+
+export type LocalizationState = {
+  fieldLevelTranslation: FieldTranslation
+  folderLevelTranslation: FolderTranslation
+  isLoading: boolean
+  successMessage: string
+  storySummary: string
+  translationLevel: TranslationLevels
+  isReadyToPerformLocalization: boolean
+  targetLanguageCode: string
+  targetLanguageName: string
+}
+
+const INITIAL_STATE: LocalizationState = {
+  fieldLevelTranslation: {
+    targetLanguageCode: '',
+    targetLanguageName: '',
+    targetLanguage: '',
+  },
+  folderLevelTranslation: {
+    targetFolderId: 0,
+    userTypedLanguage: '',
+    translationMode: 'selected',
+  },
+  targetLanguageCode: '',
+  targetLanguageName: '',
+  isLoading: false,
+  successMessage: '',
+  storySummary: '',
+  translationLevel: 'field',
+  isReadyToPerformLocalization: false,
+}
+
+export type LocalizationAction =
+  | {
+      type: 'setTargetLanguage'
+      payload: { language: string; languages: language[] }
+    }
+  | { type: 'setSuccessMessage'; payload: string }
+  | { type: 'setStorySummary'; payload: string }
+  | { type: 'setTranslationLevel'; payload: TranslationLevels }
+  | { type: 'setTargetFolderId'; payload: number | string }
+  | { type: 'setUserTypedLanguage'; payload: string }
+  | { type: 'setTranslationMode'; payload: TranslationModes }
+  | { type: 'loadingStarted' }
+  | { type: 'endedSuccessfully'; payload: string }
+
+const reducer = (
+  state: LocalizationState,
+  action: LocalizationAction,
+): LocalizationState => {
+  switch (action.type) {
+    case 'setTargetLanguage':
+      if (state.translationLevel === 'field') {
+        const targetLanguage = action.payload.language
+        const targetLanguageCode = targetLanguage.replace('-', '_')
+
+        const targetLanguageName =
+          action.payload.languages.find((lang) => lang.code === targetLanguage)
+            ?.name || ''
+
+        return {
+          ...state,
+          fieldLevelTranslation: {
+            ...state.fieldLevelTranslation,
+            targetLanguage,
+            targetLanguageCode,
+            targetLanguageName,
+          },
+          targetLanguageCode,
+          targetLanguageName,
+        }
+      }
+
+      return state
+
+    case 'setSuccessMessage':
+      return {
+        ...state,
+        successMessage: action.payload,
+      }
+
+    case 'setStorySummary':
+      return {
+        ...state,
+        storySummary: action.payload,
+      }
+
+    case 'setTranslationLevel': {
+      const translationLevel = action.payload
+      const isFieldLevel = translationLevel === 'field'
+      const userTypedLanguage = state.folderLevelTranslation.userTypedLanguage
+
+      return {
+        ...state,
+        translationLevel,
+        targetLanguageCode: isFieldLevel
+          ? state.fieldLevelTranslation.targetLanguageCode
+          : userTypedLanguage,
+        targetLanguageName: isFieldLevel
+          ? state.fieldLevelTranslation.targetLanguageName
+          : userTypedLanguage,
+      }
+    }
+
+    case 'setTargetFolderId':
+      if (state.translationLevel === 'folder') {
+        const targetFolderId = action.payload
+
+        return {
+          ...state,
+          folderLevelTranslation: {
+            ...state.folderLevelTranslation,
+            targetFolderId,
+          },
+        }
+      }
+
+      return state
+
+    case 'setUserTypedLanguage':
+      if (state.translationLevel === 'folder') {
+        const userTypedLanguage = action.payload
+
+        return {
+          ...state,
+          folderLevelTranslation: {
+            ...state.folderLevelTranslation,
+            userTypedLanguage,
+          },
+          targetLanguageCode: userTypedLanguage,
+          targetLanguageName: userTypedLanguage,
+        }
+      }
+
+      return state
+
+    case 'setTranslationMode':
+      if (state.translationLevel === 'folder') {
+        return {
+          ...state,
+          folderLevelTranslation: {
+            ...state.folderLevelTranslation,
+            translationMode: action.payload,
+          },
+        }
+      }
+
+      return state
+
+    case 'loadingStarted':
+      return {
+        ...state,
+        isLoading: true,
+        successMessage: '',
+      }
+
+    case 'endedSuccessfully':
+      return {
+        ...INITIAL_STATE,
+        successMessage: action.payload,
+      }
+  }
+}
+
+const mainReducer = (
+  state: LocalizationState,
+  action: LocalizationAction,
+): LocalizationState => {
+  const newState = reducer(state, action)
+
+  if (newState.isLoading) {
+    return { ...newState, isReadyToPerformLocalization: false }
+  }
+
+  if (
+    newState.translationLevel === 'field' &&
+    !newState.fieldLevelTranslation.targetLanguageCode
+  ) {
+    return { ...newState, isReadyToPerformLocalization: false }
+  }
+
+  const isFolderTranslationDataReady =
+    newState.folderLevelTranslation.targetFolderId &&
+    newState.folderLevelTranslation.userTypedLanguage
+
+  if (newState.translationLevel === 'folder' && !isFolderTranslationDataReady) {
+    return { ...newState, isReadyToPerformLocalization: false }
+  }
+
+  return {
+    ...newState,
+    isReadyToPerformLocalization: true,
+  }
+}
+async function saveEvent({ spaceId, userId, errorMessage, eventName }) {
   await fetch('/api/usage', {
     method: 'POST',
     body: JSON.stringify({
-      eventName: 'fieldLevelTranslation',
+      eventName,
       pluginId: PLUGIN_ID,
       spaceId,
       userId,
@@ -19,26 +230,19 @@ async function saveEvent({ spaceId, userId, errorMessage }) {
 }
 
 const Localization = () => {
-  const [targetLanguage, setTargetLanguage] = React.useState<string>('')
-  const [isLoading, setIsLoading] = React.useState<boolean>(false)
-  const [successMessage, setSuccessMessage] = React.useState<string>('')
-  const [storySummary, setStorySummary] = React.useState<string>('')
-  const { languages, spaceId, userId } = React.useContext(AppDataContext)
-  const spaceLanguages = languages || []
+  const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
+  const { spaceId, userId } = React.useContext(AppDataContext)
 
   const cratePageContext = async () => {
     await summariseStory({
       contentTitle: 'Website page',
       promptModifier: 'Summary should be short and concise.',
-      cb: (summary) => {
-        setStorySummary(summary)
-      },
+      cb: (summary) => dispatch({ type: 'setStorySummary', payload: summary }),
     })
   }
 
   const localize = async () => {
-    setIsLoading(true)
-    setSuccessMessage('')
+    dispatch({ type: 'loadingStarted' })
 
     const response = await fetch(`/api/usage?spaceId=${spaceId}`)
     const { isUseAllowed } = await response.json()
@@ -48,32 +252,41 @@ const Localization = () => {
 
       try {
         await cratePageContext()
+
         await localizeStory({
-          targetLanguageCode: targetLanguage.replace('-', '_'),
-          targetLanguageName:
-            spaceLanguages.find((lang) => lang.code === targetLanguage)?.name ||
-            '',
+          targetLanguageCode: state.targetLanguageCode,
+          targetLanguageName: state.targetLanguageName,
+          folderLevelTranslation: state.folderLevelTranslation,
           mode: 'update',
-          promptModifier: storySummary
-            ? `Use this text as a context, do not add it to the result translation: "${storySummary}"`
+          promptModifier: state.storySummary
+            ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
             : '',
-          cb: () => {
-            setIsLoading(false)
-            setTargetLanguage('')
-            setSuccessMessage(
-              'Success! Change the language to see the localized content.',
-            )
-          },
+          cb: () =>
+            dispatch({
+              type: 'endedSuccessfully',
+              payload:
+                'Success! Change the language to see the localized content.',
+            }),
+          translationLevel: state.translationLevel,
         })
       } catch (error) {
         errorMessage = error.message
       } finally {
-        saveEvent({ spaceId, userId, errorMessage })
+        saveEvent({
+          spaceId,
+          userId,
+          errorMessage,
+          eventName:
+            state.translationLevel === 'folder'
+              ? 'folderLevelTranslation'
+              : 'fieldLevelTranslation',
+        })
       }
     } else {
-      setTargetLanguage('')
-      setSuccessMessage('You have reached your free limit, please contact us')
-      setIsLoading(false)
+      dispatch({
+        type: 'endedSuccessfully',
+        payload: 'You have reached your free limit, please contact us',
+      })
     }
   }
 
@@ -82,11 +295,10 @@ const Localization = () => {
       <Typography variant="h1">Localization</Typography>
 
       <LocalizeStoryMode
-        targetLanguage={targetLanguage}
-        isLoading={isLoading}
-        setTargetLanguage={setTargetLanguage}
         localize={localize}
-        successMessage={successMessage}
+        translationLevels={TRANSLATION_LEVELS}
+        dispatch={dispatch}
+        state={state}
       />
     </div>
   )

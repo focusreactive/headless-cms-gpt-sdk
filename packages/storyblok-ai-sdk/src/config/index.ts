@@ -20,3 +20,14 @@ export const initSDK = (props: InitSDKProps) => {
   });
   configure({ openAiToken: props.openAiToken });
 };
+
+export const TRANSLATION_MODES = ["selected", "all"];
+export const TRANSLATION_LEVELS = ["field", "folder"];
+
+export type TranslationModes = "selected" | "all";
+export type TranslationLevels = "field" | "folder";
+
+export type FolderTranslationData = {
+  targetFolderId: number | string;
+  translationMode: TranslationModes;
+};

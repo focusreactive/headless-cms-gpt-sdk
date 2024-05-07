@@ -12,18 +12,20 @@ import { CssBaseline, Link, ThemeProvider, Typography } from '@mui/material'
 import FeaturesLayout from '@src/components/FeaturesLayout'
 import { initSDK } from '@focus-reactive/storyblok-ai-sdk'
 import { initSDK as initContentSDK } from '@focus-reactive/content-ai-sdk'
-import StoryblokClient from 'storyblok-js-client'
-import { AppDataContext, language } from '@src/context/AppDataContext'
+import StoryblokClient, { ISbStoryData } from 'storyblok-js-client'
+import { AppDataContext, Folder, language } from '@src/context/AppDataContext'
 
 type PageProps = {
   spaceId: number
   userId: number
   appSession: AppSession
   languages: language[]
+  folders: Folder[]
 }
 
 const Home: NextPage<PageProps> = (props) => {
   const [currentHeight, setCurrentHeight] = useState<number>(0)
+  const [currentStory, setCurrentStory] = useState<ISbStoryData>(null)
 
   useEffect(() => {
     const handleResize = () => {
@@ -67,12 +69,33 @@ const Home: NextPage<PageProps> = (props) => {
     })
   }, [])
 
+  useEffect(() => {
+    const handleMessage = (e: { data: { story: ISbStoryData } }) => {
+      setCurrentStory(e.data.story)
+    }
+
+    window.addEventListener('message', handleMessage, { once: true })
+
+    window.parent.postMessage(
+      {
+        action: 'tool-changed',
+        tool: 'focusreactive-ai-toolkit',
+        event: 'getContext',
+      },
+      '*',
+    )
+  }, [])
+
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline />
       <AppDataContext.Provider
         value={{
           languages: props.languages,
+          folders: props.folders.filter(
+            (folder) => !currentStory?.full_slug.startsWith(folder.slug + '/'),
+          ),
+          currentStory,
           spaceId: props.spaceId,
           userId: props.userId,
         }}
@@ -135,6 +158,10 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     await SBManagementClient.get(`oauth/space_info`)
   ).data.space.languages
 
+  const foldersResponse = await SBManagementClient.get(
+    `spaces/${appSession.spaceId}/stories?folder_only=1&with_parent=0&per_page=100`,
+  )
+
   if (!appSession) {
     return initAuthFlow
   }
@@ -145,6 +172,11 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       spaceId: appSession.spaceId,
       userId: appSession.userId,
       languages,
+      folders: foldersResponse.data.stories.map((folder) => ({
+        name: folder.name,
+        id: folder.id,
+        slug: folder.slug,
+      })),
     },
   }
 }
