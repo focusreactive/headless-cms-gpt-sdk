@@ -2311,6 +2311,10 @@
     gpt-3-encoder "^1.1.4"
     openai "^4.17.3"
 
+"@focus-reactive/content-ai-sdk@link:.yalc/@focus-reactive/content-ai-sdk":
+  version "0.0.0"
+  uid ""
+
 "@focus-reactive/sanity-ai-sdk@0.0.4":
   version "0.0.4"
   resolved "https://registry.yarnpkg.com/@focus-reactive/sanity-ai-sdk/-/sanity-ai-sdk-0.0.4.tgz#d7a55b4da0df3ec51e8b4d30e2c5b29ffa00c561"
