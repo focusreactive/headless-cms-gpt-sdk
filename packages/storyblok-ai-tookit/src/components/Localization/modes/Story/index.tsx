@@ -9,6 +9,7 @@ import {
   Radio,
   RadioGroup,
   FormControlLabel,
+  Alert,
 } from '@mui/material'
 import { AppDataContext } from '@src/context/AppDataContext'
 import React, { Dispatch, PropsWithChildren } from 'react'
@@ -168,6 +169,17 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
               control={<Radio />}
               label="All"
             />
+            {state.folderLevelTranslation.translationMode === 'all' && (
+              <Alert
+                severity="info"
+                color="warning"
+              >
+                Not safe. The data on the resulting page may be corrupted. The
+                current page will remain untouched. In this mode, ALL text
+                fields will be translated regardless of whether they are
+                "translatable".
+              </Alert>
+            )}
           </RadioGroup>
         </Form>
       )}
