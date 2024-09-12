@@ -1,0 +1,1 @@
+export { summariseEntry } from './summarisation';
