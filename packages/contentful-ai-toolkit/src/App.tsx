@@ -2,11 +2,9 @@ import { locations } from '@contentful/app-sdk'
 import { useSDK } from '@contentful/react-apps-toolkit'
 import { useMemo } from 'react'
 import Sidebar from './locations/Sidebar'
-import Field from './locations/Field'
 
 const ComponentLocationSettings = {
   [locations.LOCATION_ENTRY_SIDEBAR]: Sidebar,
-  [locations.LOCATION_ENTRY_FIELD]: Field,
 }
 
 const App = () => {
