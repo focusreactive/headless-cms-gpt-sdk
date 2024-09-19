@@ -1,6 +1,5 @@
 import { summariseContent } from '@focus-reactive/content-ai-sdk';
-import { getContentfulClient } from '../../../config/contentfulClient';
-import { EntryProps, KeyValueMap } from 'contentful-management';
+import { getContentfulClient } from '../../config/contentfulClient';
 
 interface SummariseEntryProps {
   entryId: string;
@@ -13,7 +12,7 @@ export const summariseEntry = async (props: SummariseEntryProps) => {
     throw new Error('Sanity client is not initialized');
   }
 
-  const entryData: EntryProps<KeyValueMap> | undefined = await contentfulClient.entry.get({
+  const entryData = await contentfulClient.entry.get({
     entryId: props.entryId,
   });
   if (!entryData) {

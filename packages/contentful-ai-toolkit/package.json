@@ -8,10 +8,12 @@
     "@contentful/react-apps-toolkit": "1.2.16",
     "@focus-reactive/content-ai-sdk": "0.0.4",
     "@focus-reactive/contentful-ai-sdk": "link:.yalc/@focus-reactive/contentful-ai-sdk",
+    "@tanstack/react-query": "^5.56.2",
     "contentful-management": "10.46.4",
     "emotion": "10.0.27",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-hook-form": "^7.53.0",
     "react-scripts": "5.0.1"
   },
   "scripts": {

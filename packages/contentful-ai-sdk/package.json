@@ -12,7 +12,8 @@
   },
   "type": "module",
   "dependencies": {
-    "@focus-reactive/content-ai-sdk": "0.0.4",
+    "@focus-reactive/content-ai-sdk": "link:.yalc/@focus-reactive/content-ai-sdk",
+    "contentful-management": "10.46.4",
     "vite-plugin-dts": "^3.6.3"
   },
   "devDependencies": {

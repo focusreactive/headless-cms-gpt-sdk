@@ -2,7 +2,7 @@ import { SidebarAppSDK } from '@contentful/app-sdk'
 import {
   Form,
   FormControl,
-  SectionHeading,
+  Subheading,
   Paragraph,
   TextInput,
   Button,
@@ -37,7 +37,7 @@ const Summary = () => {
 
   return (
     <>
-      <SectionHeading>Summary</SectionHeading>
+      <Subheading>Summary</Subheading>
       <Paragraph>
         Please enter the Entry title and click the button. We&apos;ll generate a
         content summary for you.
@@ -64,7 +64,7 @@ const Summary = () => {
       {!!contentSummary && (
         <Box marginTop="spacingL">
           <Card>
-            <SectionHeading>Result:</SectionHeading>
+            <Subheading>Result:</Subheading>
             <Text fontSize="fontSizeM">{contentSummary}</Text>
           </Card>
         </Box>
