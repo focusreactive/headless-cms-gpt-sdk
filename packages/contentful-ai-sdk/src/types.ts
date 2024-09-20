@@ -5,3 +5,7 @@ export type EntryFieldSysLink = {
 };
 
 export type EntryField = Record<string, string | { sys: EntryFieldSysLink }>;
+
+export type KeyValueMap = {
+  [key: string]: any;
+};

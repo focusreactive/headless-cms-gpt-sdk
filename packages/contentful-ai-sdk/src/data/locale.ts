@@ -1,6 +1,6 @@
-import { getContentfulClient } from '../../config/contentfulClient';
+import { getContentfulClient } from '@/config/contentfulClient';
 
-export default async function getLocales() {
+export async function getLocales() {
   const contentfulClient = getContentfulClient();
   if (!contentfulClient) {
     throw new Error('Contentful client is not initialized');

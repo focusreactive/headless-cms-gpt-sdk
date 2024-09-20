@@ -1,40 +1,8 @@
-// const traverseObject = ({
-//   object,
-//   condition,
-//   transformKey = ({ newPath }) => newPath,
-//   transformValue = ({ value }) => value,
-//   path = "",
-//   outputArr = [],
-// }: TraverseObject) => {
-//   if (object && typeof object === "object") {
-//     for (const [key, value] of Object.entries(object)) {
-//       const newPath = [path, key].filter(Boolean).join(".");
+import { KeyValueMap } from '../../../types';
 
-//       if (condition({ key, value, object, newPath })) {
-//         outputArr.push([
-//           transformKey({ key, newPath, value, object }),
-//           transformValue({ key, newPath, value, object }),
-//         ]);
-//       } else if (value && typeof value === "object") {
-//         traverseObject({
-//           object: value,
-//           condition,
-//           transformKey,
-//           transformValue,
-//           path: newPath,
-//           outputArr,
-//         });
-//       }
-//     }
-//   }
+type Callback = (args: { key: string; value: any; parent: KeyValueMap; path: string[] }) => void | boolean;
 
-//   return outputArr;
-// }
-
-type NonEmptyObject = { [key: string]: any };
-type Callback = (args: { key: string; value: any; parent: NonEmptyObject; path: string[] }) => void | boolean;
-
-export const traverseObject = (root: NonEmptyObject, callback: Callback) => {
+export const traverseObject = (root: KeyValueMap, callback: Callback) => {
   try {
     _traverse(root, callback);
   } catch (error) {
@@ -47,7 +15,7 @@ export const traverseObject = (root: NonEmptyObject, callback: Callback) => {
 
 export class StopTraversalError extends Error {}
 
-const _traverse = (root: NonEmptyObject, callback: Callback, path: string[] = []) => {
+const _traverse = (root: KeyValueMap, callback: Callback, path: string[] = []) => {
   for (const [key, value] of Object.entries(root)) {
     if (typeof value === 'object') {
       const result = callback({ key, value, parent: root, path });
@@ -64,7 +32,7 @@ const _traverse = (root: NonEmptyObject, callback: Callback, path: string[] = []
   }
 };
 
-export const getProperty = (root: NonEmptyObject, path: string[]) => {
+export const getProperty = (root: KeyValueMap, path: string[]) => {
   let value = root;
   for (const key of path) {
     value = value[key];
@@ -72,7 +40,7 @@ export const getProperty = (root: NonEmptyObject, path: string[]) => {
   return value;
 };
 
-export const setProperty = (root: NonEmptyObject, path: string[], value: any) => {
+export const setProperty = (root: KeyValueMap, path: string[], value: any) => {
   let current = root;
   for (let i = 0; i < path.length - 1; i++) {
     const key = path[i];
@@ -84,7 +52,7 @@ export const setProperty = (root: NonEmptyObject, path: string[], value: any) =>
   current[path[path.length - 1]] = value;
 };
 
-export const deleteProperty = (root: NonEmptyObject, path: string[]) => {
+export const deleteProperty = (root: KeyValueMap, path: string[]) => {
   let current = root;
   for (let i = 0; i < path.length - 1; i++) {
     const key = path[i];

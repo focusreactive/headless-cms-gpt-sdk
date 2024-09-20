@@ -12,9 +12,8 @@ import {
 import { useSDK } from '@contentful/react-apps-toolkit'
 import { useEffect } from 'react'
 import { FormProvider, useForm, useFormContext } from 'react-hook-form'
-import { resolveEntries } from '@focus-reactive/contentful-ai-sdk'
+import { resolveEntries, localize } from '@focus-reactive/contentful-ai-sdk'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { localize } from '@focus-reactive/contentful-ai-sdk'
 
 enum TranslationLevels {
   Field = 'field',
@@ -40,9 +39,6 @@ export default function Translate() {
       localEntryId: data.local,
       globalEntryId: data.global,
     })
-    // sdk.cma.entry.get({ entryId: data.global }).then((entry) => {
-    //   console.log('entry', entry)
-    // })
   }
 
   const { locales } = sdk

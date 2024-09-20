@@ -1,6 +1,6 @@
-import { EntryField } from '../../types';
-import getEntry from '../../core/queries/getEntry';
+import { getEntry } from '../../data/entry';
 import { getContentfulClient } from '../../config/contentfulClient';
+import isGlobalEntry from './utils/isGlobalEntry';
 
 type RecognizedEntry = {
   id: string;
@@ -16,9 +16,9 @@ type RecognizedEntry = {
  * @returns An object containing global, local, and current entry details.
  * @throws Will throw an error if no translatable entries can be recognized.
  */
-const resolveEntries = async (
+export default async function resolveEntries(
   entryId: string
-): Promise<{ global: RecognizedEntry; local: RecognizedEntry; current: RecognizedEntry }> => {
+): Promise<{ global: RecognizedEntry; local: RecognizedEntry; current: RecognizedEntry }> {
   const entry = await getEntry(entryId);
 
   const { result: isGlobal, linkField } = isGlobalEntry(entry);
@@ -47,33 +47,4 @@ const resolveEntries = async (
   }
 
   throw new Error('Failed to recognize translatable entries');
-};
-
-/**
- * Determines if an entry is a globally translatable entry.
- * This function checks if any field in the entry is a localized link according to the content schema.
- *
- * @param entry - The entry to check.
- * @returns An object containing the result and the link field if applicable.
- */
-const isGlobalEntry = (entry: Awaited<ReturnType<typeof getEntry>>) => {
-  const {
-    defaultLocale,
-    _schema: { fields: schemaFields },
-    _entry: { fields: entryFields },
-  } = entry;
-
-  for (const [id, locales] of Object.entries(entryFields) as [string, EntryField][]) {
-    const _field = locales[defaultLocale.code];
-    const isLink = typeof _field === 'object' && 'sys' in _field && _field.sys.type === 'Link';
-    const isLocalized = schemaFields.find(item => item.id === id)!.localized;
-
-    if (isLink && isLocalized) {
-      return { result: true, linkField: { id, value: _field.sys.id } };
-    }
-  }
-
-  return { result: false, linkField: null };
-};
-
-export default resolveEntries;
+}

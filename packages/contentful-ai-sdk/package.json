@@ -14,7 +14,8 @@
   "dependencies": {
     "@focus-reactive/content-ai-sdk": "link:.yalc/@focus-reactive/content-ai-sdk",
     "contentful-management": "10.46.4",
-    "vite-plugin-dts": "^3.6.3"
+    "vite-plugin-dts": "^3.6.3",
+    "vite-tsconfig-paths": "^5.0.1"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.0.0",

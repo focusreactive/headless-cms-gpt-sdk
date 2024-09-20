@@ -22,9 +22,6 @@ const Sidebar = () => {
 
   useEffect(() => {
     initSDK({ client: sdk.cma, openAiKey: process.env.REACT_APP_OPENAI_TOKEN! })
-    sdk.cma.entry.get({ entryId: sdk.entry.getSys().id }).then((entry) => {
-      console.log('entry', entry)
-    })
   }, [])
 
   return <ContentLayout />
