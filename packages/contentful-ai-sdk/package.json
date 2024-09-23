@@ -13,7 +13,6 @@
   "type": "module",
   "dependencies": {
     "@focus-reactive/content-ai-sdk": "link:.yalc/@focus-reactive/content-ai-sdk",
-    "contentful-management": "10.46.4",
     "vite-plugin-dts": "^3.6.3",
     "vite-tsconfig-paths": "^5.0.1"
   },
@@ -27,7 +26,8 @@
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {
-    "@contentful/app-sdk": "^4.29.1"
+    "@contentful/app-sdk": "^4.29.1",
+    "contentful-management": "10.46.4"
   },
   "files": [
     "dist"

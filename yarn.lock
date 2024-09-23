@@ -1843,7 +1843,7 @@
   dependencies:
     contentful-management ">=7.30.0"
 
-"@contentful/rich-text-types@^16.3.0", "@contentful/rich-text-types@^16.6.1":
+"@contentful/rich-text-types@^16.6.1":
   version "16.8.5"
   resolved "https://registry.yarnpkg.com/@contentful/rich-text-types/-/rich-text-types-16.8.5.tgz#832c8b428612f5181908bc1033c6ef9f48f1ce83"
   integrity sha512-q18RJuJCOuYveGiCIjE5xLCQc5lZ3L2Qgxrlg/H2YEobDFqdtmklazRi1XwEWaK3tMg6yVXBzKKkQfLB4qW14A==
@@ -3029,8 +3029,8 @@
   version "0.0.1"
   dependencies:
     "@focus-reactive/content-ai-sdk" "link:packages/contentful-ai-toolkit/.yalc/@focus-reactive/contentful-ai-sdk/.yalc/@focus-reactive/content-ai-sdk"
-    contentful-management "10.46.4"
     vite-plugin-dts "^3.6.3"
+    vite-tsconfig-paths "^5.0.1"
 
 "@focus-reactive/sanity-ai-sdk@link:packages/sanity-ai-toolkit/.yalc/@focus-reactive/sanity-ai-sdk":
   version "0.0.6"
@@ -5767,11 +5767,6 @@
   dependencies:
     "@types/istanbul-lib-report" "*"
 
-"@types/json-patch@0.0.30":
-  version "0.0.30"
-  resolved "https://registry.yarnpkg.com/@types/json-patch/-/json-patch-0.0.30.tgz#7c562173216c50529e70126ceb8e7a533f865e9b"
-  integrity sha512-MhCUjojzDhVLnZnxwPwa+rETFRDQ0ffjxYdrqOP6TBO2O0/Z64PV5tNeYApo4bc4y4frbWOrRwv/eEkXlI13Rw==
-
 "@types/json-schema@*", "@types/json-schema@^7.0.12", "@types/json-schema@^7.0.4", "@types/json-schema@^7.0.5", "@types/json-schema@^7.0.8", "@types/json-schema@^7.0.9":
   version "7.0.15"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.15.tgz#596a1747233694d50f6ad8a7869fcb6f56cf5841"
@@ -7091,7 +7086,7 @@ axe-core@^4.10.0:
   resolved "https://registry.yarnpkg.com/axe-core/-/axe-core-4.10.0.tgz#d9e56ab0147278272739a000880196cdfe113b59"
   integrity sha512-Mr2ZakwQ7XUAjp7pAwQWRhhK8mQQ6JAaNWSjmjxil0R8BPioMtQsTLOolGYkji1rcL++3dCqZA3zWqpT+9Ew6g==
 
-axios@^1.0.0, axios@^1.4.0, axios@^1.7.4:
+axios@^1.0.0, axios@^1.7.4:
   version "1.7.7"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.7.tgz#2f554296f9892a72ac8d8e4c5b79c14a91d0a47f"
   integrity sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==
@@ -8170,19 +8165,6 @@ content-type@~1.0.4, content-type@~1.0.5:
   resolved "https://registry.yarnpkg.com/content-type/-/content-type-1.0.5.tgz#8b773162656d1d1086784c8f23a54ce6d73d7918"
   integrity sha512-nTjqfcBFEipKdXCv4YDQWCfmcLZKm81ldF0pAopTvyrFGVbcR6P/VAAd5G7N+0tTr8QqiU0tFadD6FK4NtJwOA==
 
-contentful-management@10.46.4:
-  version "10.46.4"
-  resolved "https://registry.yarnpkg.com/contentful-management/-/contentful-management-10.46.4.tgz#1b7beadd30717d7578c9a7e23b0a42526aebf652"
-  integrity sha512-swOTlKO6AeCRnD5w237ey6wKDXty8shFVm0AisKO2w5seQINlFytgCkZd89E0lxjg4zgjb9maa7AScUtyQUd5w==
-  dependencies:
-    "@contentful/rich-text-types" "^16.3.0"
-    "@types/json-patch" "0.0.30"
-    axios "^1.4.0"
-    contentful-sdk-core "^8.1.0"
-    fast-copy "^3.0.0"
-    lodash.isplainobject "^4.0.6"
-    type-fest "^4.0.0"
-
 contentful-management@11.31.9:
   version "11.31.9"
   resolved "https://registry.yarnpkg.com/contentful-management/-/contentful-management-11.31.9.tgz#4500f761c7d3c1cf2c8eec4b1d51f23a3facc4a2"
@@ -8203,7 +8185,7 @@ contentful-management@>=7.30.0:
     contentful-sdk-core "^8.3.1"
     fast-copy "^3.0.0"
 
-contentful-sdk-core@^8.1.0, contentful-sdk-core@^8.3.1:
+contentful-sdk-core@^8.3.1:
   version "8.3.1"
   resolved "https://registry.yarnpkg.com/contentful-sdk-core/-/contentful-sdk-core-8.3.1.tgz#773d59f286d1bd8e50a3ffd9e3f4f410da6fb929"
   integrity sha512-HYy4ecFA76ERxz7P0jW7hgDcL8jH+bRckv2QfAwQ4k1yPP9TvxpZwrKnlLM69JOStxVkCXP37HvbjbFnjcoWdg==
@@ -18588,11 +18570,6 @@ type-fest@^0.8.1:
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.8.1.tgz#09e249ebde851d3b1e48d27c105444667f17b83d"
   integrity sha512-4dbzIzqvjtgiM5rw1k5rEHtBANKmdudhGyBEajN01fEyhaAIhsoKNy6y7+IN93IfpFtwY9iqi7kD+xwKhQsNJA==
-
-type-fest@^4.0.0:
-  version "4.26.1"
-  resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-4.26.1.tgz#a4a17fa314f976dd3e6d6675ef6c775c16d7955e"
-  integrity sha512-yOGpmOAL7CkKe/91I5O3gPICmJNLJ1G4zFYVAsRHg7M64biSnPtRj0WNQt++bRkjYOqjWXrhnUw1utzmVErAdg==
 
 type-is@~1.6.18:
   version "1.6.18"

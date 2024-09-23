@@ -2,11 +2,11 @@ import { getEntry } from '../../data/entry';
 import { getContentfulClient } from '../../config/contentfulClient';
 import isGlobalEntry from './utils/isGlobalEntry';
 
-type RecognizedEntry = {
+export type RecognizedEntry = {
   id: string;
   name: string;
   contentType: { id: string; name: string };
-};
+} | null;
 
 /**
  * Identifies global, local, and current (currently focused) entries based on the given entry ID.
@@ -18,7 +18,7 @@ type RecognizedEntry = {
  */
 export default async function resolveEntries(
   entryId: string
-): Promise<{ global: RecognizedEntry; local: RecognizedEntry; current: RecognizedEntry }> {
+): Promise<{ global: RecognizedEntry; local: RecognizedEntry }> {
   const entry = await getEntry(entryId);
 
   const { result: isGlobal, linkField } = isGlobalEntry(entry);
@@ -28,7 +28,7 @@ export default async function resolveEntries(
     const global = { id: entry.id, name: entry.name, contentType: entry.contentType };
     const local = { id: referencedEntry.id, name: referencedEntry.name, contentType: referencedEntry.contentType };
 
-    return { global, local, current: global };
+    return { global, local };
   }
 
   const client = getContentfulClient()!;
@@ -42,9 +42,9 @@ export default async function resolveEntries(
       const global = { id: parentEntry.id, name: parentEntry.name, contentType: parentEntry.contentType };
       const local = { id: entry.id, name: entry.name, contentType: entry.contentType };
 
-      return { global, local, current: local };
+      return { global, local };
     }
   }
 
-  throw new Error('Failed to recognize translatable entries');
+  return { global: null, local: null };
 }

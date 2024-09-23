@@ -8,11 +8,16 @@ import {
   Paragraph,
   Select,
   Subheading,
+  Text,
 } from '@contentful/f36-components'
 import { useSDK } from '@contentful/react-apps-toolkit'
 import { useEffect } from 'react'
 import { FormProvider, useForm, useFormContext } from 'react-hook-form'
-import { resolveEntries, localize } from '@focus-reactive/contentful-ai-sdk'
+import {
+  resolveEntries,
+  localize,
+  RecognizedEntry,
+} from '@focus-reactive/contentful-ai-sdk'
 import { useMutation, useQuery } from '@tanstack/react-query'
 
 enum TranslationLevels {
@@ -23,13 +28,27 @@ enum TranslationLevels {
 export default function Translate() {
   const sdk = useSDK<SidebarAppSDK>()
   const formMethods = useForm({
-    defaultValues: { translationLevel: 'field', targetLanguage: '' },
+    defaultValues: {
+      translationLevel: TranslationLevels.Field,
+      targetLanguage: '',
+    },
   })
-  const { register, handleSubmit, watch } = formMethods
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { isValid },
+  } = formMethods
 
   const watchedTranslationLevel = watch('translationLevel')
 
-  const { mutate, isSuccess, isPending } = useMutation({ mutationFn: localize })
+  const { mutate, isSuccess, isPending, error, reset } = useMutation({
+    mutationFn: localize,
+  })
+
+  useEffect(() => {
+    reset()
+  }, [watchedTranslationLevel])
 
   const onSubmit = (data) => {
     mutate({
@@ -90,12 +109,27 @@ export default function Translate() {
             type="submit"
             isFullWidth
             isLoading={isPending}
+            isDisabled={!isValid}
           >
             Localize
           </Button>
           {isSuccess && (
             <Box marginTop="spacingL">
-              <Note>Translation completed!</Note>
+              <Note title="Translation completed">
+                {watchedTranslationLevel === TranslationLevels.Field
+                  ? `If the changes aren't visible, please reload the page.`
+                  : `A new local entry was created, and the global entry was updated accordingly.`}
+              </Note>
+            </Box>
+          )}
+          {error && (
+            <Box marginTop="spacingL">
+              <Note
+                variant="negative"
+                title="Translation failed"
+              >
+                {error.message}
+              </Note>
             </Box>
           )}
         </Form>
@@ -105,20 +139,20 @@ export default function Translate() {
 }
 
 const EntryLevelSection = () => {
-  const { register, setValue, resetField } = useFormContext()
+  const { setValue, resetField } = useFormContext()
   const sdk = useSDK<SidebarAppSDK>()
 
-  const { data, isLoading } = useQuery({
+  const { data: resolved, isLoading } = useQuery({
     queryKey: ['resolveEntries'],
     queryFn: () => resolveEntries(sdk.entry.getSys().id),
   })
 
   useEffect(() => {
-    if (data) {
-      setValue('global', data.global.id)
-      setValue('local', data.local.id)
+    if (resolved && resolved.global && resolved.local) {
+      setValue('global', resolved.global.id)
+      setValue('local', resolved.local.id)
     }
-  }, [data])
+  }, [resolved])
 
   useEffect(() => {
     return () => {
@@ -129,45 +163,72 @@ const EntryLevelSection = () => {
 
   return (
     <>
-      <FormControl isDisabled={isLoading}>
-        <FormControl.Label>Source local entry</FormControl.Label>
-        <Select {...register('local')}>
-          {isLoading ? (
-            <Select.Option>...Loading</Select.Option>
-          ) : (
-            <EntrySelectOption entry={data!.local} />
-          )}
-        </Select>
-        <FormControl.HelpText>
-          Local entry was identified automatically
-        </FormControl.HelpText>
-      </FormControl>
-
-      <FormControl isDisabled={isLoading}>
-        <FormControl.Label>Global entry</FormControl.Label>
-        <Select {...register('global')}>
-          {isLoading ? (
-            <Select.Option>...Loading</Select.Option>
-          ) : (
-            <EntrySelectOption entry={data!.global} />
-          )}
-        </Select>
-        <FormControl.HelpText>
-          Global entry was identified automatically
-        </FormControl.HelpText>
-      </FormControl>
+      <EntrySelectControl
+        controlName="local"
+        label="Source Local Entry"
+        helperText="Content in your default locale used for the translation"
+        entry={resolved?.local}
+        isLoading={isLoading}
+      />
+      <EntrySelectControl
+        controlName="global"
+        label="Global Entry"
+        helperText="Container for your localized content"
+        entry={resolved?.global}
+        isLoading={isLoading}
+      />
     </>
   )
 }
 
-const EntrySelectOption = ({
+const EntrySelectControl = ({
+  controlName,
+  label,
+  isLoading,
   entry,
+  helperText,
 }: {
-  entry: { id: string; name: string; contentType: { id: string; name: string } }
+  entry?: RecognizedEntry | null
+  controlName: string
+  label: string
+  isLoading?: boolean
+  helperText?: string
 }) => {
+  const { register, setValue } = useFormContext()
+
+  useEffect(() => {
+    if (entry) {
+      setValue(controlName, entry.id)
+    }
+  }, [entry])
+
   return (
-    <Select.Option value={entry.id}>
-      {`${entry.name} (${entry.contentType.name})`}
-    </Select.Option>
+    <FormControl
+      isDisabled
+      {...register(controlName, { required: true })}
+    >
+      <FormControl.Label>{label}</FormControl.Label>
+      {helperText ? (
+        <Paragraph
+          marginBottom="spacingS"
+          style={{ color: '#67728A' }}
+        >
+          {helperText}
+        </Paragraph>
+      ) : null}
+      {!isLoading && !entry ? (
+        <Note variant="negative">Failed to resolve entries</Note>
+      ) : (
+        <Select>
+          {isLoading ? (
+            <Select.Option>...Loading</Select.Option>
+          ) : (
+            <Select.Option value={entry!.id}>
+              {`${entry!.name} (${entry!.contentType.name})`}
+            </Select.Option>
+          )}
+        </Select>
+      )}
+    </FormControl>
   )
 }

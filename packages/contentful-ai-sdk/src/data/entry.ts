@@ -1,6 +1,6 @@
 import { getContentfulClient } from '@/config/contentfulClient';
-import { KeyValueMap } from '@/types';
-import { EntryMetaSysProps, MetadataProps } from 'contentful-management';
+import type { KeyValueMap } from '@/types';
+import type { ContentTypeProps, EntryMetaSysProps, EntryProps, MetadataProps } from 'contentful-management';
 
 type Entry = {
   fields: KeyValueMap;
@@ -8,12 +8,12 @@ type Entry = {
   metadata?: MetadataProps;
 };
 
-const client = getContentfulClient();
-if (!client) {
-  throw new Error('Contentful client is not initialized');
-}
-
 export const getEntry = async (entryId: string) => {
+  const client = getContentfulClient();
+  if (!client) {
+    throw new Error('Contentful client is not initialized');
+  }
+
   const entry = await client.entry.get({ entryId });
   if (!entry) {
     throw new Error('Entry not found');
@@ -42,16 +42,26 @@ export const getEntry = async (entryId: string) => {
       })),
     },
 
-    _entry: entry,
-    _schema: schema,
+    _entry: entry as EntryProps<KeyValueMap>,
+    _schema: schema as ContentTypeProps,
   };
 };
 
 export const updateEntry = async (entry: { id: string } & Entry) => {
+  const client = getContentfulClient();
+  if (!client) {
+    throw new Error('Contentful client is not initialized');
+  }
+
   const { id, ...data } = entry;
   await client.entry.update({ entryId: entry.id }, data);
 };
 
 export const createEntry = async (contentTypeId: string, entry: Entry) => {
+  const client = getContentfulClient();
+  if (!client) {
+    throw new Error('Contentful client is not initialized');
+  }
+
   return await client.entry.create({ contentTypeId }, entry);
 };
