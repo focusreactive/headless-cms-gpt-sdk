@@ -12,7 +12,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@focus-reactive/content-ai-sdk": "link:.yalc/@focus-reactive/content-ai-sdk",
+    "@focus-reactive/content-ai-sdk": "0.0.4",
     "vite-plugin-dts": "^3.6.3",
     "vite-tsconfig-paths": "^5.0.1"
   },

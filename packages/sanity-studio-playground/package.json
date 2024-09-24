@@ -18,14 +18,14 @@
   ],
   "dependencies": {
     "@focus-reactive/sanity-ai-toolkit": "0.0.3",
-    "@sanity/ui": "^1.9.0",
+    "@sanity/ui": "2.0.0",
     "@sanity/vision": "^3.18.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^3.11.0",
     "react-is": "^18.2.0",
     "sanity": "^3.21.1",
-    "styled-components": "^5.3.9"
+    "styled-components": "^6.1"
   },
   "devDependencies": {
     "@sanity/eslint-config-studio": "^3.0.1",

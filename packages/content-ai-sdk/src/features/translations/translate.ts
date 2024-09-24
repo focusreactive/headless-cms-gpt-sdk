@@ -1,4 +1,4 @@
-import { getOpenAiClient } from "../../config/openAi";
+import { getOpenAiClient } from '../../config/openAi';
 
 interface TranslateOptions {
   targetLanguage: string;
@@ -7,31 +7,26 @@ interface TranslateOptions {
   promptModifier?: string;
 }
 
-export const translate = async ({
-  targetLanguage,
-  currentLanguage,
-  content,
-  promptModifier,
-}: TranslateOptions) => {
+export const translate = async ({ targetLanguage, currentLanguage, content, promptModifier }: TranslateOptions) => {
   const openAiClient = getOpenAiClient();
 
   if (!openAiClient) {
-    throw new Error("OpenAI client is not configurated");
+    throw new Error('OpenAI client is not configurated');
   }
 
   // !TODO work on symbols limitations
   const chatCompletion = await openAiClient.chat.completions.create({
     messages: [
       {
-        role: "system",
+        role: 'system',
         content: `The user will provide you with a text or a single word in the next message, and your task is to translate it${
-          currentLanguage ? " from " + currentLanguage : ""
+          currentLanguage ? ' from ' + currentLanguage : ''
         } into ${targetLanguage}. Act like a native ${targetLanguage} speaker and rephase the text in a way that it sounds natural. ${promptModifier}`,
       },
-      { role: "user", content },
+      { role: 'user', content },
     ],
-    model: "gpt-3.5-turbo-1106",
-    response_format: { type: "text" },
+    model: 'gpt-4o',
+    response_format: { type: 'text' },
     temperature: 0,
     top_p: 1,
     frequency_penalty: 0,

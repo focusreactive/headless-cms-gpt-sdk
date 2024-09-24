@@ -51,7 +51,8 @@
   "dependencies": {
     "@focus-reactive/sanity-ai-sdk": "0.0.4",
     "@sanity/incompatible-plugin": "^1.0.4",
-    "@sanity/ui": "^1.9.3"
+    "@sanity/ui": "2.0.0",
+    "styled-components": "6.0.0"
   },
   "devDependencies": {
     "@sanity/pkg-utils": "^3.3.5",
