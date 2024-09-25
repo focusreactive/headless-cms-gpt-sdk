@@ -9,11 +9,11 @@ export type RecognizedEntry = {
 } | null;
 
 /**
- * Identifies global, local, and current (currently focused) entries based on the given entry ID.
+ * Identifies global and local entries based on the given entry ID.
  * This approach uses separate local entries for each locale, while global entries reference these local entries.
  *
  * @param entryId - The ID of the entry to recognize.
- * @returns An object containing global, local, and current entry details.
+ * @returns An object containing global and local entry details.
  * @throws Will throw an error if no translatable entries can be recognized.
  */
 export default async function resolveEntries(

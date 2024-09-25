@@ -23,8 +23,7 @@ export const summariseEntry = async (props: SummariseEntryProps) => {
   try {
     const summary = await summariseContent({
       content: fields,
-      promptModifier:
-        'Do not work with technical fields of the data, they starts with a _ symbol. The content you provided with is a movie overview.',
+      promptModifier: 'Do not work with technical fields like `nodeType`.',
       contentTitle: props.entryTitle,
     });
 

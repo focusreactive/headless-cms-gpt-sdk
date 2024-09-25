@@ -1,3 +1,5 @@
+# Contentful AI Toolkit
+
 This project was bootstrapped with [Create Contentful App](https://github.com/contentful/create-contentful-app).
 
 ## How to use

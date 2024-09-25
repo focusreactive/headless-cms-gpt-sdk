@@ -8,7 +8,6 @@ import {
   Paragraph,
   Select,
   Subheading,
-  Text,
 } from '@contentful/f36-components'
 import { useSDK } from '@contentful/react-apps-toolkit'
 import { useEffect } from 'react'
