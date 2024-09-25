@@ -2989,9 +2989,15 @@
   resolved "https://registry.yarnpkg.com/@floating-ui/utils/-/utils-0.2.8.tgz#21a907684723bbbaa5f0974cf7730bd797eb8e62"
   integrity sha512-kym7SodPp8/wloecOpcmSnWJsK7M0E5Wg8UcFA+uO4B9s5d0ywXOEro/8HM9x0rW+TljRzul/14UYz3TleT3ig==
 
+"@focus-reactive/content-ai-sdk@link:packages/contentful-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
+  version "0.0.4"
+  dependencies:
+    flat "^6.0.1"
+    gpt-3-encoder "^1.1.4"
+    openai "^4.17.3"
+
 "@focus-reactive/content-ai-sdk@link:packages/contentful-ai-toolkit/.yalc/@focus-reactive/contentful-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
   version "0.0.0"
-  uid ""
 
 "@focus-reactive/content-ai-sdk@link:packages/sanity-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
   version "0.0.4"
@@ -3002,6 +3008,7 @@
 
 "@focus-reactive/content-ai-sdk@link:packages/sanity-ai-toolkit/.yalc/@focus-reactive/sanity-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
   version "0.0.0"
+  uid ""
 
 "@focus-reactive/content-ai-sdk@link:packages/sanity-studio-playground/.yalc/@focus-reactive/sanity-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
   version "0.0.0"

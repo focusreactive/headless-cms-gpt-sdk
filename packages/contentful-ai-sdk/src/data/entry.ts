@@ -1,6 +1,6 @@
 import { getContentfulClient } from '@/config/contentfulClient';
 import type { KeyValueMap } from '@/types';
-import type { ContentTypeProps, EntryMetaSysProps, EntryProps, MetadataProps } from 'contentful-management';
+import type { EntryMetaSysProps, MetadataProps, EntryProps, ContentTypeProps } from 'contentful-management';
 
 type Entry = {
   fields: KeyValueMap;

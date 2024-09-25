@@ -39,8 +39,8 @@ const Summary = () => {
     <>
       <Subheading>Summary</Subheading>
       <Paragraph>
-        Please enter the Entry title and click the button. We&apos;ll generate a
-        content summary for you.
+        Please enter the Entry title and click the button to generate a content
+        summary.
       </Paragraph>
 
       <Form onSubmit={onSubmit}>
