@@ -8,7 +8,12 @@ type ApplyTagsProps = {
 export default async function applyTags(props: ApplyTagsProps) {
   const entry = await getEntry(props.entryId);
 
-  const tags = props.tags.map(tag => ({ sys: { type: 'Link' as const, linkType: 'Tag' as const, id: tag.id } }));
-  console.log('update entry', { id: entry.id, ...entry._entry, metadata: { ...entry._entry.metadata, tags } });
-  await updateEntry({ id: entry.id, ...entry._entry, metadata: { ...entry._entry.metadata, tags } });
+  const tags = props.tags.map((tag) => ({
+    sys: { type: 'Link' as const, linkType: 'Tag' as const, id: tag.id },
+  }));
+  await updateEntry({
+    id: entry.id,
+    ...entry._entry,
+    metadata: { ...entry._entry.metadata, tags },
+  });
 }

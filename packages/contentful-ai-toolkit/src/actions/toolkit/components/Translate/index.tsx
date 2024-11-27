@@ -12,12 +12,10 @@ import {
 import { useSDK } from '@contentful/react-apps-toolkit'
 import { useEffect } from 'react'
 import { FormProvider, useForm, useFormContext } from 'react-hook-form'
-import {
-  resolveEntries,
-  localize,
-  RecognizedEntry,
-} from '@focus-reactive/contentful-ai-sdk'
+import { resolveEntries, localize, RecognizedEntry } from '@focus-reactive/contentful-ai-sdk'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import useDebug from '@/hooks/useDebug'
+import ContactSupport from '@/components/ContactSupport'
 
 enum TranslationLevels {
   Field = 'field',
@@ -26,6 +24,7 @@ enum TranslationLevels {
 
 export default function Translate() {
   const sdk = useSDK<SidebarAppSDK>()
+  const { $debugContext, $setDebugMeta } = useDebug()
   const formMethods = useForm({
     defaultValues: {
       translationLevel: TranslationLevels.Field,
@@ -43,6 +42,9 @@ export default function Translate() {
 
   const { mutate, isSuccess, isPending, error, reset } = useMutation({
     mutationFn: localize,
+    onError: (error, variables) => {
+      $setDebugMeta({ function: 'localize', input: variables, error })
+    },
   })
 
   useEffect(() => {
@@ -64,8 +66,8 @@ export default function Translate() {
     <>
       <Subheading>Localization</Subheading>
       <Paragraph>
-        Please select your target language and click the button. We will update
-        the page with translations once it's ready.
+        Please select your target language and click the button. We will update the page with
+        translations once it's ready.
       </Paragraph>
 
       <FormProvider {...formMethods}>
@@ -73,12 +75,8 @@ export default function Translate() {
           <FormControl isRequired>
             <FormControl.Label>Translation level</FormControl.Label>
             <Select {...register('translationLevel')}>
-              <Select.Option value={TranslationLevels.Field}>
-                Field
-              </Select.Option>
-              <Select.Option value={TranslationLevels.Entry}>
-                Entry
-              </Select.Option>
+              <Select.Option value={TranslationLevels.Field}>Field</Select.Option>
+              <Select.Option value={TranslationLevels.Entry}>Entry</Select.Option>
             </Select>
           </FormControl>
 
@@ -99,9 +97,7 @@ export default function Translate() {
             </Select>
           </FormControl>
 
-          {watchedTranslationLevel === TranslationLevels.Entry && (
-            <EntryLevelSection />
-          )}
+          {watchedTranslationLevel === TranslationLevels.Entry && <EntryLevelSection />}
 
           <Button
             variant="primary"
@@ -123,12 +119,7 @@ export default function Translate() {
           )}
           {error && (
             <Box marginTop="spacingL">
-              <Note
-                variant="negative"
-                title="Translation failed"
-              >
-                {error.message}
-              </Note>
+              <ContactSupport message={$debugContext} />
             </Box>
           )}
         </Form>

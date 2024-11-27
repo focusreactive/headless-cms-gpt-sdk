@@ -12,13 +12,10 @@ export enum FeatureName {
 interface BaseFeatureConfig {
   name: FeatureName
   title: string
-}
-
-interface TranslateFeatureConfig extends BaseFeatureConfig {
   component: React.FunctionComponent
 }
 
-export const FeaturesConfig: TranslateFeatureConfig[] = [
+export const FeaturesConfig: BaseFeatureConfig[] = [
   {
     name: FeatureName.Translate,
     title: 'Translate',

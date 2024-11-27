@@ -1,5 +1,6 @@
 import { summariseContent } from '@focus-reactive/content-ai-sdk';
 import { getContentfulClient } from '../../config/contentfulClient';
+import { ExtendedError } from '@/errors';
 
 interface SummariseEntryProps {
   entryId: string;
@@ -28,7 +29,7 @@ export const summariseEntry = async (props: SummariseEntryProps) => {
     });
 
     return summary;
-  } catch {
-    throw new Error('Failed to summarise entry');
+  } catch (error) {
+    throw new Error('Failed to summarise entry', { cause: error });
   }
 };

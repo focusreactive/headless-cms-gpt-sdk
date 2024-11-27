@@ -1,3 +1,5 @@
+import ContactSupport from '@/components/ContactSupport'
+import useDebug from '@/hooks/useDebug'
 import { SidebarAppSDK } from '@contentful/app-sdk'
 import {
   Box,
@@ -10,10 +12,7 @@ import {
   TextInput,
 } from '@contentful/f36-components'
 import { useSDK } from '@contentful/react-apps-toolkit'
-import {
-  applyTags as _applyTags,
-  findTags,
-} from '@focus-reactive/contentful-ai-sdk'
+import { applyTags as _applyTags, findTags } from '@focus-reactive/contentful-ai-sdk'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -31,12 +30,16 @@ const Tags = () => {
     handleSubmit,
     formState: { isSubmitting },
   } = useForm()
+  const { $debugContext, $setDebugMeta } = useDebug()
   const queryClient = useQueryClient()
 
   const [tags, setTags] = useState<Tag[]>()
 
-  const { mutateAsync: applyTags } = useMutation({
+  const { mutateAsync: applyTags, error } = useMutation({
     mutationFn: _applyTags,
+    onError: (error, variables) => {
+      $setDebugMeta({ function: 'applyTags', input: variables, error })
+    },
   })
 
   const onFindTags = async (values) => {
@@ -48,9 +51,7 @@ const Tags = () => {
     })
 
     const assignedTags = sdk.entry.getMetadata()!.tags.map((tag) => tag.sys.id)
-    setTags(
-      data.map((tag) => ({ ...tag, checked: assignedTags.includes(tag.id) })),
-    )
+    setTags(data.map((tag) => ({ ...tag, checked: assignedTags.includes(tag.id) })))
   }
 
   const onApplyTags = async (values) => {
@@ -66,8 +67,8 @@ const Tags = () => {
     <>
       <Subheading>Tags</Subheading>
       <Paragraph>
-        Please enter a content title and click the button to find the most
-        relevant tags for this document.
+        Please enter a content title and click the button to find the most relevant tags for this
+        document.
       </Paragraph>
 
       <Form onSubmit={handleSubmit(onFindTags)}>
@@ -77,9 +78,7 @@ const Tags = () => {
             placeholder="Rock'n'rolla movie review"
             {...register('contentTitle')}
           />
-          <FormControl.HelpText>
-            Entry title will be used if not provided
-          </FormControl.HelpText>
+          <FormControl.HelpText>Entry title will be used if not provided</FormControl.HelpText>
         </FormControl>
 
         <Button
@@ -96,6 +95,11 @@ const Tags = () => {
           tags={tags}
           onSubmit={onApplyTags}
         />
+      )}
+      {error && (
+        <Box marginTop="spacingL">
+          <ContactSupport message={$debugContext} />
+        </Box>
       )}
     </>
   )

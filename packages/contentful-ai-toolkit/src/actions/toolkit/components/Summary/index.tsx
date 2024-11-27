@@ -12,35 +12,43 @@ import {
 } from '@contentful/f36-components'
 import { useSDK } from '@contentful/react-apps-toolkit'
 import { summariseEntry } from '@focus-reactive/contentful-ai-sdk'
-import { SyntheticEvent, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { SyntheticEvent } from 'react'
+import ContactSupport from '../../../../components/ContactSupport'
+import useDebug from '../../../../hooks/useDebug'
 
 const Summary = () => {
   const sdk = useSDK<SidebarAppSDK>()
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [contentSummary, setContentSummary] = useState('')
+  const { $debugContext, $setDebugMeta } = useDebug()
 
-  const onSubmit = async ({
-    currentTarget: { elements },
-  }: SyntheticEvent<HTMLFormElement>) => {
+  const {
+    mutate,
+    isPending,
+    error,
+    isSuccess,
+    data: contentSummary,
+  } = useMutation({
+    mutationFn: summariseEntry,
+    onError: (error, variables) => {
+      $setDebugMeta({ function: 'summariseEntry', input: variables, error })
+    },
+  })
+
+  const onSubmit = async ({ currentTarget: { elements } }: SyntheticEvent<HTMLFormElement>) => {
     const entryId = sdk.entry.getSys().id
     const formElements = elements as typeof elements & {
       entryTitle: { value: string }
     }
 
-    setIsLoading(true)
-    summariseEntry({ entryId, entryTitle: formElements.entryTitle.value })
-      .then((result) => setContentSummary(result))
-      .catch((error) => console.error(error))
-      .then(() => setIsLoading(false))
+    mutate({ entryId, entryTitle: formElements.entryTitle.value })
   }
 
   return (
     <>
       <Subheading>Summary</Subheading>
       <Paragraph>
-        Please enter the Entry title and click the button to generate a content
-        summary.
+        Please enter the Entry title and click the button to generate a content summary.
       </Paragraph>
 
       <Form onSubmit={onSubmit}>
@@ -56,17 +64,22 @@ const Summary = () => {
           variant="primary"
           type="submit"
           isFullWidth
-          isLoading={isLoading}
+          isLoading={isPending}
         >
           Generate summary
         </Button>
       </Form>
-      {!!contentSummary && (
+      {isSuccess && !!contentSummary && (
         <Box marginTop="spacingL">
           <Card>
             <Subheading>Result:</Subheading>
             <Text fontSize="fontSizeM">{contentSummary}</Text>
           </Card>
+        </Box>
+      )}
+      {error && (
+        <Box marginTop="spacingL">
+          <ContactSupport message={$debugContext} />
         </Box>
       )}
     </>
