@@ -1,7 +1,10 @@
 {
   "name": "@focus-reactive/contentful-ai-sdk",
-  "version": "1.0.0",
+  "description": "Content AI SDK adapter for Contentful",
+  "version": "0.0.1",
   "private": false,
+  "license": "MIT",
+  "type": "module",
   "scripts": {
     "dev:cf": "vite build --watch",
     "pre-dev-contentful-sdk": "yalc add --link @focus-reactive/content-ai-sdk && yarn build && yalc publish --push",
@@ -10,7 +13,6 @@
     "preview": "vite preview",
     "yalc-check": "yalc check"
   },
-  "type": "module",
   "dependencies": {
     "@focus-reactive/content-ai-sdk": "0.0.4",
     "vite-plugin-dts": "^3.6.3",
