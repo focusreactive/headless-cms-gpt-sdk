@@ -104,11 +104,11 @@ type LocalizeProps = LocalizeFieldsProps | LocalizeEntryProps;
 
 - `targetLanguage` - language (or locale) to which you want to translate your entry. **Available locales must be configured in space settings.**
 - `translationLevel` - which localization level to use.
-  -  `field` - add target localization to the current entry
-     -  `entryId` - ID of the entry that you want to translate.
-  -  `entry` -  create a new entry with translated values stored in the default locale and link the global entry (container) with the newly created entry
-     -  `localEntryId` - ID of the entry that will be used as a data source.
-     -  `globalEntryId` - ID of the entry that will be used as a container for the newly created entry.
+  - `field` - add target localization to the current entry
+     - `entryId` - ID of the entry that you want to translate.
+  - `entry` -  create a new entry with translated values stored in the default locale and link the global entry (container) with the newly created entry
+     - `localEntryId` - ID of the entry that will be used as a data source.
+     - `globalEntryId` - ID of the entry that will be used as a container for the newly created entry.
 
 #### **Return**
 

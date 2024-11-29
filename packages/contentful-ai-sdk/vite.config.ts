@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig } from 'vite';
@@ -5,7 +7,7 @@ import dts from 'vite-plugin-dts';
 import { exec } from 'child_process';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-export default defineConfig({
+export default defineConfig(() => ({
   plugins: [
     react(),
     dts({
@@ -24,7 +26,8 @@ export default defineConfig({
       entry: path.resolve(__dirname, 'src/lib/index.ts'),
       name: 'sanity-ai-sdk',
       formats: ['es', 'umd'],
-      fileName: format => `contentful-ai-sdk.${format}.js`,
+      fileName: (format) => `contentful-ai-sdk.${format}.js`,
     },
   },
-});
+  test: {},
+}));

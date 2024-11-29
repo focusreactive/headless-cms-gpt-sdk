@@ -1,7 +1,7 @@
 import { createEntry, getEntry, updateEntry } from '@/data/entry';
 import { getLocales } from '@/data/locale';
 import { setProperty, traverseObject } from '../utils/traverse';
-import { translate, translateJSON } from '@focus-reactive/content-ai-sdk';
+import { translateJSON } from '@focus-reactive/content-ai-sdk';
 import addLocalization from '../utils/addLocalization';
 import isGlobalEntry from '../utils/isGlobalEntry';
 import { ExtendedError } from '@/errors';

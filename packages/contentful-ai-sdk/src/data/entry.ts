@@ -1,6 +1,11 @@
 import { getContentfulClient } from '@/config/contentfulClient';
 import type { KeyValueMap } from '@/types';
-import type { EntryMetaSysProps, MetadataProps, EntryProps, ContentTypeProps } from 'contentful-management';
+import type {
+  EntryMetaSysProps,
+  MetadataProps,
+  EntryProps,
+  ContentTypeProps,
+} from 'contentful-management';
 
 type Entry = {
   fields: KeyValueMap;
@@ -34,7 +39,7 @@ export const getEntry = async (entryId: string) => {
     contentType: {
       id: schema.sys.id,
       name,
-      fields: schema.fields.map(field => ({
+      fields: schema.fields.map((field) => ({
         id: field.id,
         name: field.name,
         type: field.type,
@@ -54,7 +59,11 @@ export const updateEntry = async (entry: { id: string } & Entry) => {
   }
 
   const { id, ...data } = entry;
-  await client.entry.update({ entryId: entry.id }, data);
+  try {
+    await client.entry.update({ entryId: entry.id }, data);
+  } catch (error) {
+    throw new EntryMutationError('Failed to update entry', entry.id, data, { cause: error });
+  }
 };
 
 export const createEntry = async (contentTypeId: string, entry: Entry) => {
@@ -63,5 +72,21 @@ export const createEntry = async (contentTypeId: string, entry: Entry) => {
     throw new Error('Contentful client is not initialized');
   }
 
-  return await client.entry.create({ contentTypeId }, entry);
+  try {
+    return await client.entry.create({ contentTypeId }, entry);
+  } catch (error) {
+    throw new EntryMutationError('Failed to create entry', contentTypeId, entry, error);
+  }
 };
+
+export class EntryMutationError extends Error {
+  id: string;
+  data: any;
+
+  constructor(message: string, entityId: string, data: any, cause: unknown) {
+    super(message, { cause });
+
+    this.id = entityId;
+    this.data = data;
+  }
+}

@@ -1,6 +1,5 @@
 import { summariseContent } from '@focus-reactive/content-ai-sdk';
 import { getContentfulClient } from '../../config/contentfulClient';
-import { ExtendedError } from '@/errors';
 
 interface SummariseEntryProps {
   entryId: string;
