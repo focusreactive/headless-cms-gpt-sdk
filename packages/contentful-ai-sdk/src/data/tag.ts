@@ -10,12 +10,12 @@ export const getTags = async () => {
   let left = 0;
   const tags: TagProps[] = [];
   do {
-    const { items, total } = await client.tag.getMany({ skip: tags.length });
+    const { items, total } = await client.tag.getMany({ query: { skip: tags.length } });
     left = total - tags.length;
     tags.push(...items);
   } while (left > 0);
 
-  return tags.map(t => ({
+  return tags.map((t) => ({
     id: t.sys.id,
     title: t.name,
   }));

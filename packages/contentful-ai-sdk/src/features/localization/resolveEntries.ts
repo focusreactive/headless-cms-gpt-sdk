@@ -17,7 +17,7 @@ export type RecognizedEntry = {
  * @throws Will throw an error if no translatable entries can be recognized.
  */
 export default async function resolveEntries(
-  entryId: string
+  entryId: string,
 ): Promise<{ global: RecognizedEntry; local: RecognizedEntry }> {
   const entry = await getEntry(entryId);
 
@@ -26,7 +26,11 @@ export default async function resolveEntries(
     const referencedEntry = await getEntry(linkField.value);
 
     const global = { id: entry.id, name: entry.name, contentType: entry.contentType };
-    const local = { id: referencedEntry.id, name: referencedEntry.name, contentType: referencedEntry.contentType };
+    const local = {
+      id: referencedEntry.id,
+      name: referencedEntry.name,
+      contentType: referencedEntry.contentType,
+    };
 
     return { global, local };
   }
@@ -39,7 +43,11 @@ export default async function resolveEntries(
     const { result: isGlobal, linkField } = isGlobalEntry(parentEntry);
 
     if (isGlobal && linkField?.value === entry.id) {
-      const global = { id: parentEntry.id, name: parentEntry.name, contentType: parentEntry.contentType };
+      const global = {
+        id: parentEntry.id,
+        name: parentEntry.name,
+        contentType: parentEntry.contentType,
+      };
       const local = { id: entry.id, name: entry.name, contentType: entry.contentType };
 
       return { global, local };

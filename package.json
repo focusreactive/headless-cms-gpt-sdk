@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "lerna run pre-dev-sdk && lerna run pre-dev-sanity-sdk && lerna run pre-dev-sanity-ai-tookit && lerna run --parallel dev",
     "dev:sb": "lerna run pre-dev-sdk && lerna run pre-dev-sb-sdk && lerna run pre-dev-sb-storage-sdk && lerna run --parallel dev:sb",
-    "dev:cf": "lerna run pre-dev-sdk && lerna run pre-dev-contentful-sdk && lerna run pre-dev-contentful-ai-tookit && lerna run --parallel dev:cf",
+    "dev:cf": "lerna run pre-dev-sdk && lerna run pre-dev-contentful-sdk && lerna run --parallel dev:cf",
     "dev:ngrok": "cd ./packages/storyblok-ai-tookit && ngrok http 3000",
     "clean": "lerna run --parallel yalc-clean"
   },

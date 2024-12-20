@@ -19,8 +19,10 @@
     "vite-tsconfig-paths": "^5.0.1"
   },
   "devDependencies": {
+    "@contentful/app-sdk": "^4.29.1",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "contentful-management": "10.46.4",
     "eslint": "^8.45.0",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
