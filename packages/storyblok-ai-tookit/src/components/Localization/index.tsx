@@ -12,6 +12,112 @@ import LocalizeStoryMode from './modes/Story'
 import { AppDataContext, language } from '@src/context/AppDataContext'
 import { PLUGIN_ID } from '@src/constants'
 
+const Localization = () => {
+  const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
+  const { spaceId, userId } = React.useContext(AppDataContext)
+
+  React.useEffect(() => {
+    fetch(`/api/space-settings?spaceId=${spaceId}`, {
+      method: 'GET',
+    })
+      .then((data) => data.json())
+      .then((spaceSettings) =>
+        dispatch({
+          type: 'setNotTranslatableWords',
+          payload: spaceSettings.notTranslatableWords,
+        }),
+      )
+  }, [])
+
+  const cratePageContext = async () => {
+    await summariseStory({
+      contentTitle: 'Website page',
+      promptModifier: 'Summary should be short and concise.',
+      cb: (summary) => dispatch({ type: 'setStorySummary', payload: summary }),
+    })
+  }
+
+  const localize = async () => {
+    dispatch({ type: 'loadingStarted' })
+
+    const notTranslatableWords = Array.from(state.notTranslatableWords.set)
+
+    await fetch(`/api/space-settings`, {
+      method: 'POST',
+      body: JSON.stringify({
+        spaceId,
+        pluginId: PLUGIN_ID,
+        notTranslatableWords: {
+          limit: state.notTranslatableWords.limit,
+          set: notTranslatableWords,
+        },
+      }),
+    })
+
+    const response = await fetch(`/api/usage?spaceId=${spaceId}`)
+    const { isUseAllowed } = await response.json()
+
+    const basePrompt = `Do not translate the following words: ${notTranslatableWords.join(
+      ', ',
+    )}\n`
+
+    if (isUseAllowed) {
+      let errorMessage = ''
+      try {
+        await cratePageContext()
+        await localizeStory({
+          targetLanguageCode: state.targetLanguageCode,
+          targetLanguageName: state.targetLanguageName,
+          folderLevelTranslation: state.folderLevelTranslation,
+          mode: 'update',
+          promptModifier: state.storySummary
+            ? `${basePrompt} Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
+            : basePrompt,
+          cb: () =>
+            dispatch({
+              type: 'endedSuccessfully',
+              payload:
+                'Success! Change the language to see the localized content.',
+            }),
+          translationLevel: state.translationLevel,
+        })
+      } catch (error) {
+        errorMessage = error.message
+      } finally {
+        saveEvent({
+          spaceId,
+          userId,
+          errorMessage,
+          eventName:
+            state.translationLevel === 'folder'
+              ? 'folderLevelTranslation'
+              : 'fieldLevelTranslation',
+        })
+      }
+    } else {
+      dispatch({
+        type: 'endedSuccessfully',
+        payload: 'You have reached your free limit, please contact us',
+      })
+    }
+  }
+
+  return (
+    <div>
+      <Typography variant="h1">Localization</Typography>
+
+      <LocalizeStoryMode
+        localize={localize}
+        translationLevels={TRANSLATION_LEVELS}
+        dispatch={dispatch}
+        state={state}
+      />
+    </div>
+  )
+}
+
+export default Localization
+
 export type FieldTranslation = {
   targetLanguage: string
   targetLanguageCode: string
@@ -20,6 +126,12 @@ export type FieldTranslation = {
 
 export type FolderTranslation = FolderTranslationData & {
   userTypedLanguage: string
+}
+
+type NotTranslatableWords = {
+  set: Set<string>
+  new: string | null
+  limit: number | null
 }
 
 export type LocalizationState = {
@@ -32,6 +144,7 @@ export type LocalizationState = {
   isReadyToPerformLocalization: boolean
   targetLanguageCode: string
   targetLanguageName: string
+  notTranslatableWords: NotTranslatableWords
 }
 
 const INITIAL_STATE: LocalizationState = {
@@ -52,6 +165,7 @@ const INITIAL_STATE: LocalizationState = {
   storySummary: '',
   translationLevel: 'field',
   isReadyToPerformLocalization: false,
+  notTranslatableWords: { set: new Set(), new: null, limit: null },
 }
 
 export type LocalizationAction =
@@ -67,6 +181,9 @@ export type LocalizationAction =
   | { type: 'setTranslationMode'; payload: TranslationModes }
   | { type: 'loadingStarted' }
   | { type: 'endedSuccessfully'; payload: string }
+  | { type: 'addNotTranslatableWord' }
+  | { type: 'setNewNotTranslatableWord'; payload: string }
+  | { type: 'setNotTranslatableWords'; payload: NotTranslatableWords }
 
 const reducer = (
   state: LocalizationState,
@@ -178,6 +295,43 @@ const reducer = (
         successMessage: '',
       }
 
+    case 'addNotTranslatableWord':
+      if (state.notTranslatableWords.new) {
+        const updatedListOfWords = [
+          ...Array.from(state.notTranslatableWords.set),
+          state.notTranslatableWords.new,
+        ]
+
+        return {
+          ...state,
+          notTranslatableWords: {
+            ...state.notTranslatableWords,
+            set: new Set(updatedListOfWords),
+          },
+        }
+      }
+
+      return state
+
+    case 'setNewNotTranslatableWord':
+      return {
+        ...state,
+        notTranslatableWords: {
+          ...state.notTranslatableWords,
+          new: action.payload,
+        },
+      }
+
+    case 'setNotTranslatableWords':
+      return {
+        ...state,
+        notTranslatableWords: {
+          ...state.notTranslatableWords,
+          ...action.payload,
+          set: new Set(action.payload.set),
+        },
+      }
+
     case 'endedSuccessfully':
       return {
         ...INITIAL_STATE,
@@ -228,80 +382,3 @@ async function saveEvent({ spaceId, userId, errorMessage, eventName }) {
     }),
   })
 }
-
-const Localization = () => {
-  const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
-  const { spaceId, userId } = React.useContext(AppDataContext)
-
-  const cratePageContext = async () => {
-    await summariseStory({
-      contentTitle: 'Website page',
-      promptModifier: 'Summary should be short and concise.',
-      cb: (summary) => dispatch({ type: 'setStorySummary', payload: summary }),
-    })
-  }
-
-  const localize = async () => {
-    dispatch({ type: 'loadingStarted' })
-
-    const response = await fetch(`/api/usage?spaceId=${spaceId}`)
-    const { isUseAllowed } = await response.json()
-
-    if (isUseAllowed) {
-      let errorMessage = ''
-
-      try {
-        await cratePageContext()
-
-        await localizeStory({
-          targetLanguageCode: state.targetLanguageCode,
-          targetLanguageName: state.targetLanguageName,
-          folderLevelTranslation: state.folderLevelTranslation,
-          mode: 'update',
-          promptModifier: state.storySummary
-            ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
-            : '',
-          cb: () =>
-            dispatch({
-              type: 'endedSuccessfully',
-              payload:
-                'Success! Change the language to see the localized content.',
-            }),
-          translationLevel: state.translationLevel,
-        })
-      } catch (error) {
-        errorMessage = error.message
-      } finally {
-        saveEvent({
-          spaceId,
-          userId,
-          errorMessage,
-          eventName:
-            state.translationLevel === 'folder'
-              ? 'folderLevelTranslation'
-              : 'fieldLevelTranslation',
-        })
-      }
-    } else {
-      dispatch({
-        type: 'endedSuccessfully',
-        payload: 'You have reached your free limit, please contact us',
-      })
-    }
-  }
-
-  return (
-    <div>
-      <Typography variant="h1">Localization</Typography>
-
-      <LocalizeStoryMode
-        localize={localize}
-        translationLevels={TRANSLATION_LEVELS}
-        dispatch={dispatch}
-        state={state}
-      />
-    </div>
-  )
-}
-
-export default Localization

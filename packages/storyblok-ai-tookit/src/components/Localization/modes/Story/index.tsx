@@ -10,6 +10,9 @@ import {
   RadioGroup,
   FormControlLabel,
   Alert,
+  List,
+  ListItem,
+  ListSubheader,
 } from '@mui/material'
 import { AppDataContext } from '@src/context/AppDataContext'
 import React, { Dispatch, PropsWithChildren } from 'react'
@@ -121,6 +124,71 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
           ))}
         />
       )}
+      {state.notTranslatableWords.set.size > 0 && (
+        <List
+          component="nav"
+          aria-labelledby="nested-list-subheader"
+          subheader={
+            <ListSubheader
+              component="div"
+              id="nested-list-subheader"
+            >
+              Words that should not be translated. You can add{' '}
+              {state.notTranslatableWords.limit -
+                state.notTranslatableWords.set.size}{' '}
+              more words
+            </ListSubheader>
+          }
+        >
+          {Array.from(state.notTranslatableWords.set).map(
+            (notTranslatableWord) => (
+              <ListItem
+                key={notTranslatableWord}
+                sx={{ fontSize: '14px' }}
+              >
+                {notTranslatableWord}
+              </ListItem>
+            ),
+          )}
+        </List>
+      )}
+      <FormLabel sx={style}>Enter a word that should be left as is</FormLabel>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          margin: '10px 0',
+          gap: '10px',
+        }}
+      >
+        <TextField
+          size="small"
+          value={state.notTranslatableWords.new}
+          onChange={(e) =>
+            dispatch({
+              type: 'setNewNotTranslatableWord',
+              payload: e.target.value,
+            })
+          }
+        />
+        <Button
+          size="small"
+          disabled={
+            !state.notTranslatableWords.new ||
+            state.notTranslatableWords.new?.length === 0 ||
+            state.notTranslatableWords.set.size >=
+              state.notTranslatableWords.limit
+          }
+          onClick={() =>
+            dispatch({
+              type: 'addNotTranslatableWord',
+            })
+          }
+        >
+          Add
+        </Button>
+      </div>
       {state.translationLevel === 'folder' && (
         <Form
           label="Language Folder"

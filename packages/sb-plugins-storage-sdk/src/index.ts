@@ -8,6 +8,7 @@ import {
   setDoc,
   doc,
   Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import type { Timestamp as TimestampType } from "firebase/firestore";
@@ -21,40 +22,6 @@ const firebaseConfig = {
   messagingSenderId: process.env.MESSENGER_SENDER_ID,
   appId: process.env.APP_ID,
 };
-
-type UsagePlanRecord = {
-  name: string;
-  pluginId: number;
-  limit?: number;
-  periodInDays?: number;
-  startDate?: TimestampType;
-};
-
-type UsageSpaceRecord = {
-  plan: UsagePlanRecord;
-  pluginId: number;
-  spaceId: number;
-};
-
-type Event = "fieldLevelTranslation" | "folderLevelTranslation";
-
-export type UsageEventRecord = {
-  date: TimestampType;
-  pluginId: number;
-  spaceId: number;
-  userId: number;
-  errorMessage?: string;
-  eventName: Event;
-};
-
-interface BasicProps {
-  spaceId: number;
-  pluginId: number;
-}
-
-interface PlanProps extends BasicProps {
-  planName: string;
-}
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -101,7 +68,7 @@ async function getUsagePlan({ pluginId, planName }: PlanProps) {
     )
   );
 
-  return querySnapshot.docs[0]?.data();
+  return querySnapshot.docs[0]?.data() as UsagePlanRecord;
 }
 
 async function initSpaceUsage({ spaceId, pluginId, planName }: PlanProps) {
@@ -123,7 +90,7 @@ async function initSpaceUsage({ spaceId, pluginId, planName }: PlanProps) {
   return false;
 }
 
-export async function checkSpaceUsage({ spaceId, pluginId }: BasicProps) {
+async function getSpaceUsage({ spaceId, pluginId }: BasicProps) {
   const querySnapshot = await getDocs(
     query(
       collection(db, "UsageSpaces"),
@@ -132,7 +99,11 @@ export async function checkSpaceUsage({ spaceId, pluginId }: BasicProps) {
     )
   );
 
-  const spaceUsage = querySnapshot.docs[0]?.data() as UsageSpaceRecord;
+  return (querySnapshot.docs[0]?.data() || {}) as UsageSpaceRecord;
+}
+
+export async function checkSpaceUsage({ spaceId, pluginId }: BasicProps) {
+  const spaceUsage = await getSpaceUsage({ spaceId, pluginId });
 
   if (!spaceUsage) {
     const planName = "free";
@@ -171,4 +142,120 @@ export async function saveUsage({
   }
 
   await setDoc(doc(usageEventsRef, uuidv4()), { ...document });
+}
+
+export async function getSpaceSettings({ pluginId, spaceId }: BasicProps) {
+  const querySnapshot = await getDocs(
+    query(
+      collection(db, "SpaceSettings"),
+      where("spaceId", "==", spaceId),
+      where("pluginId", "==", pluginId)
+    )
+  );
+
+  const spaceSettings = ({
+    ...querySnapshot.docs[0]?.data(),
+    id: querySnapshot.docs[0]?.id,
+  } || {}) as SpaceSettings;
+
+  if (Object.keys(spaceSettings).length) {
+    // not empty
+    return spaceSettings;
+  }
+
+  const spaceUsage = await getSpaceUsage({ pluginId, spaceId });
+
+  const planDetails = await getUsagePlan({
+    pluginId,
+    planName: spaceUsage?.plan?.name || "free",
+  });
+
+  return {
+    id: undefined,
+    createdAt: Timestamp.fromDate(new Date(Date.now())),
+    pluginId,
+    spaceId,
+    notTranslatableWords: {
+      set: [],
+      limit: planDetails.notTranslatableWordsLimit,
+    },
+  };
+}
+
+export async function saveSpaceSettings({
+  pluginId,
+  spaceId,
+  notTranslatableWords,
+}: SpaceSettingsProps) {
+  const spaceSettings = await getSpaceSettings({ pluginId, spaceId });
+  const modified = Timestamp.fromDate(new Date(Date.now()));
+
+  if (Object.keys(spaceSettings).length && spaceSettings.id) {
+    await updateDoc(doc(db, "SpaceSettings", spaceSettings.id), {
+      modified,
+      notTranslatableWords,
+    });
+  } else {
+    await setDoc(doc(collection(db, "SpaceSettings"), uuidv4()), {
+      ...spaceSettings,
+      modified,
+      notTranslatableWords,
+    });
+  }
+}
+
+type NotTranslatableWords = {
+  set: string[];
+  limit: number;
+};
+
+type SpaceSettings = {
+  id?: string;
+  createdAt: string;
+  modified: string;
+  pluginId: number;
+  spaceId: number;
+  notTranslatableWords?: NotTranslatableWords;
+};
+
+type SpaceSettingsProps = {
+  pluginId: number;
+  spaceId: number;
+  notTranslatableWords?: NotTranslatableWords;
+};
+
+type UsagePlanRecord = {
+  name: string;
+  pluginId: number;
+  limit?: number;
+  periodInDays?: number;
+  startDate?: TimestampType;
+  notTranslatableWordsLimit: number;
+};
+
+type UsageSpaceRecord = {
+  createdAt: string;
+  plan: UsagePlanRecord;
+  pluginId: number;
+  spaceId: number;
+};
+
+type Event = "fieldLevelTranslation" | "folderLevelTranslation";
+
+export type UsageEventRecord = {
+  date: TimestampType;
+  pluginId: number;
+  spaceId: number;
+  userId: number;
+  errorMessage?: string;
+  eventName: Event;
+};
+
+interface BasicProps {
+  spaceId?: number;
+  pluginId: number;
+}
+
+interface PlanProps extends BasicProps {
+  planName: string;
 }
