@@ -109,6 +109,7 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
           content: chunk,
           promptModifier: props.promptModifier ? props.promptModifier : "",
           isFlat: true,
+          notTranslatableWords: props.notTranslatableWords,
         }).then((translatedChunk) => {
           return JSON.parse(translatedChunk);
         });
@@ -199,6 +200,7 @@ interface LocalizeStoryProps {
   mode: "createNew" | "update" | "returnData" | "test";
   translationLevel: TranslationLevels;
   folderLevelTranslation: FolderTranslationData;
+  notTranslatableWords: string[];
 }
 
 type HelperFunction = ({

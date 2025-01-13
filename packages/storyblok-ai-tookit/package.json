@@ -17,9 +17,9 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@focus-reactive/content-ai-sdk": "^0.0.4",
-    "@focus-reactive/sb-plugins-storage-sdk": "^0.0.10",
-    "@focus-reactive/storyblok-ai-sdk": "^0.0.6",
+    "@focus-reactive/content-ai-sdk": "link:.yalc/@focus-reactive/content-ai-sdk",
+    "@focus-reactive/sb-plugins-storage-sdk": "link:.yalc/@focus-reactive/sb-plugins-storage-sdk",
+    "@focus-reactive/storyblok-ai-sdk": "link:.yalc/@focus-reactive/storyblok-ai-sdk",
     "@mui/material": "^5.14.18",
     "@storyblok/app-extension-auth": "1.0.2",
     "@storyblok/mui": "0.2.0",

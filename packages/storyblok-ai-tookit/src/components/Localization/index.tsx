@@ -57,10 +57,6 @@ const Localization = () => {
     const response = await fetch(`/api/usage?spaceId=${spaceId}`)
     const { isUseAllowed } = await response.json()
 
-    const basePrompt = `Do not translate the following words: ${notTranslatableWords.join(
-      ', ',
-    )}\n`
-
     if (isUseAllowed) {
       let errorMessage = ''
       try {
@@ -71,8 +67,8 @@ const Localization = () => {
           folderLevelTranslation: state.folderLevelTranslation,
           mode: 'update',
           promptModifier: state.storySummary
-            ? `${basePrompt} Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
-            : basePrompt,
+            ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
+            : '',
           cb: () =>
             dispatch({
               type: 'endedSuccessfully',
@@ -80,6 +76,7 @@ const Localization = () => {
                 'Success! Change the language to see the localized content.',
             }),
           translationLevel: state.translationLevel,
+          notTranslatableWords,
         })
       } catch (error) {
         errorMessage = error.message
