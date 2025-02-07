@@ -21,11 +21,13 @@ const Localization = () => {
       method: 'GET',
     })
       .then((data) => data.json())
-      .then((spaceSettings) =>
-        dispatch({
-          type: 'setNotTranslatableWords',
-          payload: spaceSettings.notTranslatableWords,
-        }),
+      .then(
+        (spaceSettings) =>
+          spaceSettings.notTranslatableWords &&
+          dispatch({
+            type: 'setNotTranslatableWords',
+            payload: spaceSettings.notTranslatableWords,
+          }),
       )
   }, [])
 
