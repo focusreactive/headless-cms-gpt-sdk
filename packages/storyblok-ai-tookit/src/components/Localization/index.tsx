@@ -164,7 +164,7 @@ const INITIAL_STATE: LocalizationState = {
   storySummary: '',
   translationLevel: 'field',
   isReadyToPerformLocalization: false,
-  notTranslatableWords: { set: new Set(), new: null, limit: null },
+  notTranslatableWords: { set: new Set(), new: null, limit: 10 },
 }
 
 export type LocalizationAction =
