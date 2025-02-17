@@ -82,3 +82,30 @@ Start the application with the script from the root folder
 ```shell
 yarn dev:sb
 ```
+
+## Contentful Development
+
+### Installation
+
+To install the dependencies, run the following command from the root folder:
+
+```sh
+yarn
+```
+
+### Environment Setup
+
+Create a `.env` file inside the `contentful-ai-toolkit` package directory. Add the environment variable `REACT_APP_OPENAI_TOKEN` with your valid OpenAI token:
+
+```dosini
+# .env
+REACT_APP_OPENAI_TOKEN=sk-**********************************
+```
+
+### Running the Development Server
+
+Start the development server by executing the following command from the root folder:
+
+```sh
+yarn dev:cf
+```
