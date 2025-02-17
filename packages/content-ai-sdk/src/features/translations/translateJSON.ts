@@ -1,6 +1,6 @@
-import { flatten, unflatten } from 'flat';
+import { flatten, unflatten } from "flat";
 
-import { getOpenAiClient } from '../../config/openAi';
+import { getOpenAiClient } from "../../config/openAi";
 
 interface ApiCalloptions {
   targetLanguage: string;
@@ -9,34 +9,40 @@ interface ApiCalloptions {
   valuesToTranslate: unknown;
 }
 
-const apiCall = async ({ currentLanguage, targetLanguage, valuesToTranslate, promptModifier = '' }: ApiCalloptions) => {
+const apiCall = async ({
+  currentLanguage,
+  targetLanguage,
+  valuesToTranslate,
+  promptModifier = "",
+}: ApiCalloptions) => {
   const openAiClient = getOpenAiClient();
 
   if (!openAiClient) {
-    throw new Error('OpenAI client is not configurated');
+    throw new Error("OpenAI client is not configurated");
   }
 
   return await openAiClient.chat.completions
     .create({
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: `Translate the values from the JSON array that the user will send you ${
-            currentLanguage ? ' from ' + currentLanguage : ''
+            currentLanguage ? " from " + currentLanguage : ""
           } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: [string, string, string]}.`,
         },
-        { role: 'system', content: promptModifier },
-        { role: 'user', content: JSON.stringify(valuesToTranslate) },
+        { role: "system", content: promptModifier },
+        { role: "user", content: JSON.stringify(valuesToTranslate) },
       ],
-      model: 'gpt-4o',
+      model: "gpt-3.5-turbo-1106",
       temperature: 0,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
-      response_format: { type: 'json_object' },
+      response_format: { type: "json_object" },
     })
-    .then(res => {
-      return JSON.parse(res.choices[0].message.content as string).translations as string[];
+    .then((res) => {
+      return JSON.parse(res.choices[0].message.content as string)
+        .translations as string[];
     });
 };
 
@@ -53,15 +59,15 @@ export const translateJSON = async ({
   currentLanguage,
   content,
   isFlat = false,
-  promptModifier = '',
+  promptModifier = "",
 }: TranslateOptions) => {
   let formattedContent;
-  if (typeof content === 'object' && !isFlat) {
+  if (typeof content === "object" && !isFlat) {
     formattedContent = flatten(content);
   }
 
   if (!formattedContent && !isFlat) {
-    throw new Error('The provided data is not a valid');
+    throw new Error("The provided data is not a valid");
   }
 
   if (isFlat) {
@@ -93,6 +99,6 @@ export const translateJSON = async ({
       return JSON.stringify(unflatten(translatedObject));
     }
   } catch {
-    throw new Error('Failed to translate JSON');
+    throw new Error("Failed to translate JSON");
   }
 };
