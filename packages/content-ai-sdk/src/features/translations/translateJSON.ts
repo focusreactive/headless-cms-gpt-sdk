@@ -33,7 +33,7 @@ const apiCall = async ({
         { role: "system", content: promptModifier },
         { role: "user", content: JSON.stringify(valuesToTranslate) },
       ],
-      model: "gpt-3.5-turbo-1106",
+      model: "gpt-4o",
       temperature: 0,
       top_p: 1,
       frequency_penalty: 0,

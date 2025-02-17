@@ -37,7 +37,7 @@ export const summariseContent = async ({
         },
         { role: "user", content: JSON.stringify(content) },
       ],
-      model: "gpt-3.5-turbo-1106",
+      model: "gpt-4o",
       temperature: 0.3,
       top_p: 1,
       frequency_penalty: 0,
