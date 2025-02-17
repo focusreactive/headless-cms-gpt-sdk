@@ -53,7 +53,7 @@ export const applyTags = async ({
           )}. Then sort these tags based on their relevance. Return a JSON object with only one key "tags", this should be an array of sorted tags. Tags should have exact the same format as they were provided. Return maximum ${resultAmount} tags.`,
         },
       ],
-      model: "gpt-3.5-turbo-1106",
+      model: "gpt-4o",
       temperature: 0,
       top_p: 1,
       frequency_penalty: 0,
