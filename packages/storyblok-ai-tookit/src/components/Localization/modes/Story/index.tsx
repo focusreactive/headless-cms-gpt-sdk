@@ -10,6 +10,10 @@ import {
   RadioGroup,
   FormControlLabel,
   Alert,
+  List,
+  ListItem,
+  ListSubheader,
+  Stack,
 } from '@mui/material'
 import { AppDataContext } from '@src/context/AppDataContext'
 import React, { Dispatch, PropsWithChildren } from 'react'
@@ -67,6 +71,8 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
   dispatch,
 }) => {
   const { languages, folders } = React.useContext(AppDataContext)
+  const [showNotTranslatableWords, setShowNotTranslatableWords] =
+    React.useState(false)
 
   React.useEffect(() => {
     if (languages.length > 0) {
@@ -120,6 +126,109 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
             </MenuItem>
           ))}
         />
+      )}
+      {showNotTranslatableWords ? (
+        <Stack
+          direction="column"
+          spacing={{ xs: 1, sm: 2 }}
+          sx={style}
+        >
+          <Alert
+            severity="info"
+            color="warning"
+          >
+            The untranslatable words feature is not yet stable and is intended
+            for testing purposes only.
+          </Alert>
+          {state.notTranslatableWords.set.size > 0 && (
+            <List
+              component="nav"
+              aria-labelledby="nested-list-subheader"
+              subheader={
+                <ListSubheader
+                  component="div"
+                  id="nested-list-subheader"
+                >
+                  Words that should not be translated. You can add{' '}
+                  {state.notTranslatableWords.limit -
+                    state.notTranslatableWords.set.size}{' '}
+                  more words
+                </ListSubheader>
+              }
+            >
+              {Array.from(state.notTranslatableWords.set).map(
+                (notTranslatableWord) => (
+                  <ListItem
+                    key={notTranslatableWord}
+                    sx={{ fontSize: '14px' }}
+                  >
+                    {notTranslatableWord}
+                  </ListItem>
+                ),
+              )}
+            </List>
+          )}
+          <Button
+            onClick={() =>
+              setShowNotTranslatableWords(!showNotTranslatableWords)
+            }
+          >
+            Hide not translatable words
+          </Button>
+          <FormLabel sx={style}>
+            Enter a word that should be left as is
+          </FormLabel>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              margin: '10px 0',
+              gap: '10px',
+            }}
+          >
+            <TextField
+              size="small"
+              value={state.notTranslatableWords.new}
+              onChange={(e) =>
+                dispatch({
+                  type: 'setNewNotTranslatableWord',
+                  payload: e.target.value,
+                })
+              }
+            />
+            <Button
+              size="small"
+              disabled={
+                !state.notTranslatableWords.new ||
+                state.notTranslatableWords.new?.length === 0 ||
+                state.notTranslatableWords.set.size >=
+                  state.notTranslatableWords.limit
+              }
+              onClick={() =>
+                dispatch({
+                  type: 'addNotTranslatableWord',
+                })
+              }
+            >
+              Add
+            </Button>
+          </div>
+        </Stack>
+      ) : (
+        <Stack
+          direction="column"
+          spacing={{ xs: 1, sm: 2 }}
+          sx={style}
+        >
+          <Button
+            onClick={() =>
+              setShowNotTranslatableWords(!showNotTranslatableWords)
+            }
+          >
+            Show not translatable words
+          </Button>
+        </Stack>
       )}
       {state.translationLevel === 'folder' && (
         <Form

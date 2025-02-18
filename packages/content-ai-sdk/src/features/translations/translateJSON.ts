@@ -7,6 +7,7 @@ interface ApiCalloptions {
   currentLanguage?: string;
   promptModifier?: string;
   valuesToTranslate: unknown;
+  notTranslatableWords: string[];
 }
 
 const apiCall = async ({
@@ -14,11 +15,18 @@ const apiCall = async ({
   targetLanguage,
   valuesToTranslate,
   promptModifier = "",
+  notTranslatableWords,
 }: ApiCalloptions) => {
   const openAiClient = getOpenAiClient();
 
   if (!openAiClient) {
     throw new Error("OpenAI client is not configurated");
+  }
+
+  let updatedContent = JSON.stringify(valuesToTranslate);
+
+  for (const word of notTranslatableWords) {
+    updatedContent = updatedContent.replaceAll(word, `{{${word}}}`);
   }
 
   return await openAiClient.chat.completions
@@ -30,8 +38,13 @@ const apiCall = async ({
             currentLanguage ? " from " + currentLanguage : ""
           } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: [string, string, string]}.`,
         },
+        {
+          role: "system",
+          content:
+            "Words or phrases inside double curly braces (e.g., {{example}}) should remain untranslated.",
+        },
         { role: "system", content: promptModifier },
-        { role: "user", content: JSON.stringify(valuesToTranslate) },
+        { role: "user", content: updatedContent },
       ],
       model: "gpt-4o",
       temperature: 0,
@@ -41,8 +54,63 @@ const apiCall = async ({
       response_format: { type: "json_object" },
     })
     .then((res) => {
-      return JSON.parse(res.choices[0].message.content as string)
-        .translations as string[];
+      const restoredContent = JSON.parse(
+        res.choices[0].message.content as string
+      ).translations as string[];
+
+      const translations = [];
+
+      for (let translation of restoredContent) {
+        for (const word of notTranslatableWords) {
+          translation = translation.replaceAll(`{{${word}}}`, word);
+        }
+
+        translations.push(translation);
+      }
+
+      // Fix spaces and untranslated words
+      const beforeTranslationContent = JSON.parse(updatedContent);
+
+      for (let i = 0; i < translations.length; i++) {
+        if (beforeTranslationContent[i].startsWith(" ")) {
+          translations[i] = " " + translations[i];
+        }
+
+        if (beforeTranslationContent[i].endsWith(" ")) {
+          translations[i] += " ";
+        }
+
+        // TODO: Fix untranslatable words for deeply nested cases
+
+        // We assume that the words order is the same. (This is not the case)
+        if (
+          beforeTranslationContent[i].includes("{{") &&
+          beforeTranslationContent[i].includes("}}")
+        ) {
+          // const re = /{{\w+}}/;
+          const wordsBefore = beforeTranslationContent[i].split(/\s/);
+          const wordsAfter: string[] = translations[i].split(/\s/);
+
+          if (Array.isArray(wordsAfter) && Array.isArray(wordsBefore)) {
+            for (let j = 0; j < wordsAfter.length; j++) {
+              if (/{{\w+}}/.test(wordsBefore[j])) {
+                translations[i] = translations[i].replace(
+                  wordsAfter[j],
+                  wordsBefore[j].replace("{{", "").replace("}}", "")
+                );
+              }
+            }
+          }
+        }
+
+        if (translations[i].includes("{{") && translations[i].includes("}}")) {
+          translations[i] = translations[i]
+            .replaceAll("{{", "")
+            .replaceAll("}}", "");
+        }
+      }
+
+      return translations;
     });
 };
 
@@ -52,6 +120,7 @@ interface TranslateOptions {
   content: object;
   promptModifier?: string;
   isFlat?: boolean;
+  notTranslatableWords: string[];
 }
 
 export const translateJSON = async ({
@@ -60,6 +129,7 @@ export const translateJSON = async ({
   content,
   isFlat = false,
   promptModifier = "",
+  notTranslatableWords,
 }: TranslateOptions) => {
   let formattedContent;
   if (typeof content === "object" && !isFlat) {
@@ -84,6 +154,7 @@ export const translateJSON = async ({
       targetLanguage,
       valuesToTranslate,
       promptModifier,
+      notTranslatableWords,
     });
 
     const translatedObject = keys.reduce((result, key, index) => {
