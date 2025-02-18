@@ -2311,21 +2311,7 @@
     gpt-3-encoder "^1.1.4"
     openai "^4.17.3"
 
-"@focus-reactive/content-ai-sdk@link:packages/storyblok-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
-  version "0.0.4"
-  dependencies:
-    flat "^6.0.1"
-    gpt-3-encoder "^1.1.4"
-    openai "^4.17.3"
-
-"@focus-reactive/content-ai-sdk@link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/content-ai-sdk":
-  version "0.0.4"
-  dependencies:
-    flat "^6.0.1"
-    gpt-3-encoder "^1.1.4"
-    openai "^4.17.3"
-
-"@focus-reactive/content-ai-sdk@link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/storyblok-ai-sdk/.yalc/@focus-reactive/content-ai-sdk":
+"@focus-reactive/content-ai-sdk@link:.yalc/@focus-reactive/content-ai-sdk":
   version "0.0.0"
   uid ""
 
@@ -2337,25 +2323,6 @@
     "@focus-reactive/content-ai-sdk" "0.0.3"
     react "^18.2.0"
     react-dom "^18.2.0"
-    vite-plugin-dts "^3.6.3"
-
-"@focus-reactive/sb-plugins-storage-sdk@link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/sb-plugins-storage-sdk":
-  version "0.0.10"
-  dependencies:
-    firebase "^10.11.0"
-    uuid "^9.0.1"
-
-"@focus-reactive/storyblok-ai-sdk@link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/storyblok-ai-sdk":
-  version "0.0.6"
-  dependencies:
-    "@focus-reactive/content-ai-sdk" "link:packages/storyblok-ai-tookit/.yalc/@focus-reactive/storyblok-ai-sdk/.yalc/@focus-reactive/content-ai-sdk"
-    "@storyblok/app-extension-auth" "^1.0.0-alpha.1"
-    flat "^6.0.1"
-    lodash.get "^4.4.2"
-    lodash.set "^4.3.2"
-    react "^18.2.0"
-    react-dom "^18.2.0"
-    storyblok-js-client "^6.2.0"
     vite-plugin-dts "^3.6.3"
 
 "@gar/promisify@^1.1.3":
