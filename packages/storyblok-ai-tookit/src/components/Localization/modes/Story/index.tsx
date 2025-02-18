@@ -133,6 +133,13 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
           spacing={{ xs: 1, sm: 2 }}
           sx={style}
         >
+          <Alert
+            severity="info"
+            color="warning"
+          >
+            The untranslatable words feature is not yet stable and is intended
+            for testing purposes only.
+          </Alert>
           {state.notTranslatableWords.set.size > 0 && (
             <List
               component="nav"
