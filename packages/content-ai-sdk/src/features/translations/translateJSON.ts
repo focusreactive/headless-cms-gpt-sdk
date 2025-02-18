@@ -68,6 +68,48 @@ const apiCall = async ({
         translations.push(translation);
       }
 
+      // Fix spaces and untranslated words
+      const beforeTranslationContent = JSON.parse(updatedContent);
+
+      for (let i = 0; i < translations.length; i++) {
+        if (beforeTranslationContent[i].startsWith(" ")) {
+          translations[i] = " " + translations[i];
+        }
+
+        if (beforeTranslationContent[i].endsWith(" ")) {
+          translations[i] += " ";
+        }
+
+        // TODO: Fix untranslatable words for deeply nested cases
+
+        // We assume that the words order is the same. (This is not the case)
+        if (
+          beforeTranslationContent[i].includes("{{") &&
+          beforeTranslationContent[i].includes("}}")
+        ) {
+          // const re = /{{\w+}}/;
+          const wordsBefore = beforeTranslationContent[i].split(/\s/);
+          const wordsAfter: string[] = translations[i].split(/\s/);
+
+          if (Array.isArray(wordsAfter) && Array.isArray(wordsBefore)) {
+            for (let j = 0; j < wordsAfter.length; j++) {
+              if (/{{\w+}}/.test(wordsBefore[j])) {
+                translations[i] = translations[i].replace(
+                  wordsAfter[j],
+                  wordsBefore[j].replace("{{", "").replace("}}", "")
+                );
+              }
+            }
+          }
+        }
+
+        if (translations[i].includes("{{") && translations[i].includes("}}")) {
+          translations[i] = translations[i]
+            .replaceAll("{{", "")
+            .replaceAll("}}", "");
+        }
+      }
+
       return translations;
     });
 };
