@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/storyblok-ai-sdk",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": false,
   "scripts": {
     "dev:sb": "vite build --watch",
