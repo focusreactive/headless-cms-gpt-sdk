@@ -74,8 +74,8 @@ const apiCall = async ({
 
       for (let i = 0; i < translations.length; i++) {
         const { groups } =
-          beforeTranslationContent[i].match(
-            /^(?<start>\s+)(?<middle>.*)(?<end>\s+)$/
+          beforeTranslationContent[i]?.match(
+            /^(?<start>\s*)(?<middle>.*)(?<end>\s*)$/
           ) || {};
 
         const { start, end } = groups || {};
