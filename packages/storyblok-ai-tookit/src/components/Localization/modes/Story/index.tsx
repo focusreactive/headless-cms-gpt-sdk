@@ -71,8 +71,7 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
   dispatch,
 }) => {
   const { languages, folders } = React.useContext(AppDataContext)
-  const [showNotTranslatableWords, setShowNotTranslatableWords] =
-    React.useState(false)
+  const [showIgnoredWords, setShowIgnoredWords] = React.useState(false)
 
   React.useEffect(() => {
     if (languages.length > 0) {
@@ -127,19 +126,12 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
           ))}
         />
       )}
-      {showNotTranslatableWords ? (
+      {showIgnoredWords ? (
         <Stack
           direction="column"
           spacing={{ xs: 1, sm: 2 }}
           sx={style}
         >
-          <Alert
-            severity="info"
-            color="warning"
-          >
-            The untranslatable words feature is not yet stable and is intended
-            for testing purposes only.
-          </Alert>
           {state.notTranslatableWords.set.size > 0 && (
             <List
               component="nav"
@@ -168,12 +160,8 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
               )}
             </List>
           )}
-          <Button
-            onClick={() =>
-              setShowNotTranslatableWords(!showNotTranslatableWords)
-            }
-          >
-            Hide not translatable words
+          <Button onClick={() => setShowIgnoredWords(!showIgnoredWords)}>
+            Hide ignored words
           </Button>
           <FormLabel sx={style}>
             Enter a word that should be left as is
@@ -221,12 +209,8 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
           spacing={{ xs: 1, sm: 2 }}
           sx={style}
         >
-          <Button
-            onClick={() =>
-              setShowNotTranslatableWords(!showNotTranslatableWords)
-            }
-          >
-            Show not translatable words
+          <Button onClick={() => setShowIgnoredWords(!showIgnoredWords)}>
+            Show ignored words
           </Button>
         </Stack>
       )}

@@ -25,8 +25,11 @@ const apiCall = async ({
 
   let updatedContent = JSON.stringify(valuesToTranslate);
 
-  for (const word of notTranslatableWords) {
-    updatedContent = updatedContent.replaceAll(word, `{{${word}}}`);
+  for (let i = 0; i < notTranslatableWords.length; i++) {
+    updatedContent = updatedContent.replaceAll(
+      notTranslatableWords[i],
+      `{{${i}}}`
+    );
   }
 
   return await openAiClient.chat.completions
@@ -37,11 +40,6 @@ const apiCall = async ({
           content: `Translate the values from the JSON array that the user will send you ${
             currentLanguage ? " from " + currentLanguage : ""
           } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: [string, string, string]}.`,
-        },
-        {
-          role: "system",
-          content:
-            "Words or phrases inside double curly braces (e.g., {{example}}) should remain untranslated.",
         },
         { role: "system", content: promptModifier },
         { role: "user", content: updatedContent },
@@ -61,52 +59,34 @@ const apiCall = async ({
       const translations = [];
 
       for (let translation of restoredContent) {
-        for (const word of notTranslatableWords) {
-          translation = translation.replaceAll(`{{${word}}}`, word);
+        for (let i = 0; i < notTranslatableWords.length; i++) {
+          translation = translation.replaceAll(
+            `{{${i}}}`,
+            notTranslatableWords[i]
+          );
         }
 
         translations.push(translation);
       }
 
-      // Fix spaces and untranslated words
+      // Fix spaces
       const beforeTranslationContent = JSON.parse(updatedContent);
 
       for (let i = 0; i < translations.length; i++) {
-        if (beforeTranslationContent[i].startsWith(" ")) {
-          translations[i] = " " + translations[i];
-        }
+        const { groups } =
+          beforeTranslationContent[i].match(
+            /^(?<start>\s+)(?<middle>.*)(?<end>\s+)$/
+          ) || {};
 
-        if (beforeTranslationContent[i].endsWith(" ")) {
-          translations[i] += " ";
-        }
+        const { start, end } = groups || {};
 
-        // TODO: Fix untranslatable words for deeply nested cases
-
-        // We assume that the words order is the same. (This is not the case)
         if (
-          beforeTranslationContent[i].includes("{{") &&
-          beforeTranslationContent[i].includes("}}")
+          (start?.length || end?.length) &&
+          translations[i].length === translations[i].trimStart().length
         ) {
-          // const re = /{{\w+}}/;
-          const wordsBefore = beforeTranslationContent[i].split(/\s/);
-          const wordsAfter: string[] = translations[i].split(/\s/);
-
-          if (Array.isArray(wordsAfter) && Array.isArray(wordsBefore)) {
-            for (let j = 0; j < wordsAfter.length; j++) {
-              if (/{{\w+}}/.test(wordsBefore[j])) {
-                translations[i] = translations[i].replace(
-                  wordsAfter[j],
-                  wordsBefore[j].replace("{{", "").replace("}}", "")
-                );
-              }
-            }
-          }
-        }
-
-        if (translations[i].includes("{{") && translations[i].includes("}}")) {
-          translations[i] = translations[i]
-            .replaceAll("{{", "")
-            .replaceAll("}}", "");
+          translations[i] = `${start ? start : ""}${translations[i]}${
+            end ? end : ""
+          }`;
         }
       }
 

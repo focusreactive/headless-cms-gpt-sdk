@@ -11,29 +11,34 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  if (req.method === 'POST') {
-    const { eventName, pluginId, spaceId, userId, errorMessage } = JSON.parse(
-      req.body,
-    )
+  try {
+    if (req.method === 'POST') {
+      const { eventName, pluginId, spaceId, userId, errorMessage } = JSON.parse(
+        req.body,
+      )
 
-    await saveUsage({
-      eventName,
-      pluginId,
-      spaceId,
-      userId,
-      errorMessage,
-    } as UsageEventRecord)
+      await saveUsage({
+        eventName,
+        pluginId,
+        spaceId,
+        userId,
+        errorMessage,
+      } as UsageEventRecord)
 
-    res.status(200).end()
-  } else if (req.method === 'GET') {
-    const { spaceId } = req.query
+      res.status(200).end()
+    } else if (req.method === 'GET') {
+      const { spaceId } = req.query
 
-    const isUseAllowed = await checkSpaceUsage({
-      spaceId: +spaceId,
-      pluginId: PLUGIN_ID,
-    })
+      const isUseAllowed = await checkSpaceUsage({
+        spaceId: +spaceId,
+        pluginId: PLUGIN_ID,
+      })
 
-    res.status(200).json({ isUseAllowed })
+      res.status(200).json({ isUseAllowed })
+      res.end()
+    }
+  } catch (error) {
+    res.status(500).json(error)
     res.end()
   }
 }
