@@ -99,7 +99,12 @@ async function getSpaceUsage({ spaceId, pluginId }: BasicProps) {
     )
   );
 
-  return (querySnapshot.docs[0]?.data() || {}) as UsageSpaceRecord;
+  if (
+    Array.isArray(querySnapshot?.docs) &&
+    typeof querySnapshot?.docs[0]?.data === "function"
+  ) {
+    return querySnapshot?.docs[0]?.data() as UsageSpaceRecord;
+  }
 }
 
 export async function checkSpaceUsage({ spaceId, pluginId }: BasicProps) {
@@ -153,14 +158,21 @@ export async function getSpaceSettings({ pluginId, spaceId }: BasicProps) {
     )
   );
 
-  const spaceSettings = ({
-    ...querySnapshot.docs[0]?.data(),
-    id: querySnapshot.docs[0]?.id,
-  } || {}) as SpaceSettings;
+  let spaceSettings: SpaceSettings | null = null;
 
-  if (Object.keys(spaceSettings).length) {
+  if (
+    Array.isArray(querySnapshot?.docs) &&
+    typeof querySnapshot?.docs[0]?.data === "function"
+  ) {
+    spaceSettings = querySnapshot?.docs[0]?.data() as SpaceSettings;
+  }
+
+  if (spaceSettings) {
     // not empty
-    return spaceSettings;
+    return {
+      ...spaceSettings,
+      id: querySnapshot.docs[0].id,
+    };
   }
 
   const spaceUsage = await getSpaceUsage({ pluginId, spaceId });
@@ -197,8 +209,9 @@ export async function saveSpaceSettings({
     });
   } else {
     await setDoc(doc(collection(db, "SpaceSettings"), uuidv4()), {
-      ...spaceSettings,
-      modified,
+      pluginId,
+      spaceId,
+      createdAt: modified,
       notTranslatableWords,
     });
   }
