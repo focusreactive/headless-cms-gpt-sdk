@@ -72,17 +72,29 @@ const apiCall = async ({
       // Fix spaces
       const beforeTranslationContent: string[] = JSON.parse(updatedContent);
 
-      for (let i = 0; i < translations.length; i++) {
-        const [start, end] = beforeTranslationContent[i].split(
-          beforeTranslationContent[i].trim()
-        );
+      // TODO: fix an issue where beforeTranslationContent.length and translations.length are not equal
+      try {
+        for (let i = 0; i < translations.length; i++) {
+          const [start, end] = beforeTranslationContent[i].split(
+            beforeTranslationContent[i].trim()
+          );
 
-        if (
-          (start || end) &&
-          translations[i].length === translations[i].trim().length
-        ) {
-          translations[i] = `${start}${translations[i]}${end}`;
+          if (
+            start &&
+            translations[i].length === translations[i].trimStart().length
+          ) {
+            translations[i] = start + translations[i];
+          }
+
+          if (
+            end &&
+            translations[i].length === translations[i].trimEnd().length
+          ) {
+            translations[i] += end;
+          }
         }
+      } catch (error) {
+        console.log(error);
       }
 
       return translations;
