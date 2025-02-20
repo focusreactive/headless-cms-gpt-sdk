@@ -56,7 +56,7 @@ const apiCall = async ({
         res.choices[0].message.content as string
       ).translations as string[];
 
-      const translations = [];
+      const translations: string[] = [];
 
       for (let translation of restoredContent) {
         for (let i = 0; i < notTranslatableWords.length; i++) {
@@ -95,6 +95,106 @@ const apiCall = async ({
         }
       } catch (error) {
         console.log(error);
+      }
+
+      // TODO: delete after debug
+
+      const slackWebhookUrl = process.env.SLACK_INCOMING_WEBHOOK_URL_AI_TOOL;
+
+      if (slackWebhookUrl) {
+        try {
+          fetch(slackWebhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              blocks: [
+                {
+                  type: "header",
+                  text: {
+                    type: "plain_text",
+                    text: `SB AI Tool Usage`,
+                  },
+                },
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text:
+                      "```" +
+                      `**BeforeTranslationContent**: ${JSON.stringify(
+                        beforeTranslationContent,
+                        null,
+                        "\t"
+                      )}          
+            \n**translations**: ${JSON.stringify(
+              translations,
+              null,
+              "\t"
+            )}  \n**Time**: ${new Date(Date.now()).toISOString()} ` +
+                      "```",
+                  },
+                },
+              ],
+            }),
+          }).catch((error) => {
+            console.log("Error during slack submit: ", error);
+          });
+        } catch (error) {
+          console.log("Error during slack submit: ", error);
+        }
+      }
+
+      for (let k = 0; k < beforeTranslationContent.length; k++) {
+        if (
+          notTranslatableWords.some(
+            (notTranslatableWord) =>
+              beforeTranslationContent[k]?.includes(notTranslatableWord)
+          ) &&
+          !notTranslatableWords.some(
+            (notTranslatableWord) =>
+              translations[k]?.includes(notTranslatableWord)
+          )
+        ) {
+          if (slackWebhookUrl) {
+            try {
+              fetch(slackWebhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  blocks: [
+                    {
+                      type: "header",
+                      text: {
+                        type: "plain_text",
+                        text: `SB AI Tool Ignore words error`,
+                      },
+                    },
+                    {
+                      type: "section",
+                      text: {
+                        type: "mrkdwn",
+                        text:
+                          "```" +
+                          `**BeforeTranslationContent**: ${JSON.stringify(
+                            beforeTranslationContent,
+                            null,
+                            "\t"
+                          )}            
+                \n**translations**: ${JSON.stringify(translations, null, "\t")}
+                \n**Time**: ${new Date(Date.now()).toISOString()}` +
+                          "```",
+                      },
+                    },
+                  ],
+                }),
+              }).catch((error) => {
+                console.log("Error during slack submit: ", error);
+              });
+            } catch (error) {
+              console.log("Error during slack submit: ", error);
+            }
+          }
+        }
       }
 
       return translations;
