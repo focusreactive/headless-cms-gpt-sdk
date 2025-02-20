@@ -8,6 +8,7 @@ interface ApiCalloptions {
   promptModifier?: string;
   valuesToTranslate: unknown;
   notTranslatableWords: string[];
+  slackWebhookURL: string;
 }
 
 const apiCall = async ({
@@ -16,6 +17,7 @@ const apiCall = async ({
   valuesToTranslate,
   promptModifier = "",
   notTranslatableWords,
+  slackWebhookURL,
 }: ApiCalloptions) => {
   const openAiClient = getOpenAiClient();
 
@@ -99,11 +101,9 @@ const apiCall = async ({
 
       // TODO: delete after debug
 
-      const slackWebhookUrl = process.env.SLACK_INCOMING_WEBHOOK_URL_AI_TOOL;
-
-      if (slackWebhookUrl) {
+      if (slackWebhookURL) {
         try {
-          fetch(slackWebhookUrl, {
+          fetch(slackWebhookURL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -155,9 +155,9 @@ const apiCall = async ({
               translations[k]?.includes(notTranslatableWord)
           )
         ) {
-          if (slackWebhookUrl) {
+          if (slackWebhookURL) {
             try {
-              fetch(slackWebhookUrl, {
+              fetch(slackWebhookURL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -208,6 +208,7 @@ interface TranslateOptions {
   promptModifier?: string;
   isFlat?: boolean;
   notTranslatableWords: string[];
+  slackWebhookURL: string;
 }
 
 export const translateJSON = async ({
@@ -217,6 +218,7 @@ export const translateJSON = async ({
   isFlat = false,
   promptModifier = "",
   notTranslatableWords,
+  slackWebhookURL,
 }: TranslateOptions) => {
   let formattedContent;
   if (typeof content === "object" && !isFlat) {
@@ -242,6 +244,7 @@ export const translateJSON = async ({
       valuesToTranslate,
       promptModifier,
       notTranslatableWords,
+      slackWebhookURL,
     });
 
     const translatedObject = keys.reduce((result, key, index) => {
