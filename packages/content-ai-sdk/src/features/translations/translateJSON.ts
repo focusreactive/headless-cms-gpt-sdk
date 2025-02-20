@@ -70,23 +70,18 @@ const apiCall = async ({
       }
 
       // Fix spaces
-      const beforeTranslationContent = JSON.parse(updatedContent);
+      const beforeTranslationContent: string[] = JSON.parse(updatedContent);
 
       for (let i = 0; i < translations.length; i++) {
-        const { groups } =
-          beforeTranslationContent[i]?.match(
-            /^(?<start>\s*)(?<middle>.*)(?<end>\s*)$/
-          ) || {};
-
-        const { start, end } = groups || {};
+        const [start, end] = beforeTranslationContent[i].split(
+          beforeTranslationContent[i].trim()
+        );
 
         if (
-          (start?.length || end?.length) &&
-          translations[i].length === translations[i].trimStart().length
+          (start || end) &&
+          translations[i].length === translations[i].trim().length
         ) {
-          translations[i] = `${start ? start : ""}${translations[i]}${
-            end ? end : ""
-          }`;
+          translations[i] = `${start}${translations[i]}${end}`;
         }
       }
 
