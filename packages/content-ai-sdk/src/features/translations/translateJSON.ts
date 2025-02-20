@@ -8,7 +8,6 @@ interface ApiCalloptions {
   promptModifier?: string;
   valuesToTranslate: unknown;
   notTranslatableWords: string[];
-  slackWebhookURL: string;
 }
 
 const apiCall = async ({
@@ -17,7 +16,6 @@ const apiCall = async ({
   valuesToTranslate,
   promptModifier = "",
   notTranslatableWords,
-  slackWebhookURL,
 }: ApiCalloptions) => {
   const openAiClient = getOpenAiClient();
 
@@ -101,12 +99,11 @@ const apiCall = async ({
 
       // TODO: delete after debug
 
-      if (slackWebhookURL) {
-        try {
-          fetch(slackWebhookURL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+      try {
+        fetch("/api/slack-channel", {
+          method: "POST",
+          body: JSON.stringify({
+            message: {
               blocks: [
                 {
                   type: "header",
@@ -126,22 +123,22 @@ const apiCall = async ({
                         null,
                         "\t"
                       )}          
-            \n**translations**: ${JSON.stringify(
-              translations,
-              null,
-              "\t"
-            )}  \n**Time**: ${new Date(Date.now()).toISOString()} ` +
+              \n**translations**: ${JSON.stringify(
+                translations,
+                null,
+                "\t"
+              )}  \n**Time**: ${new Date(Date.now()).toISOString()} ` +
                       "```",
                   },
                 },
               ],
-            }),
-          }).catch((error) => {
-            console.log("Error during slack submit: ", error);
-          });
-        } catch (error) {
+            },
+          }),
+        }).catch((error) => {
           console.log("Error during slack submit: ", error);
-        }
+        });
+      } catch (error) {
+        console.log("Error during slack submit: ", error);
       }
 
       for (let k = 0; k < beforeTranslationContent.length; k++) {
@@ -155,12 +152,11 @@ const apiCall = async ({
               translations[k]?.includes(notTranslatableWord)
           )
         ) {
-          if (slackWebhookURL) {
-            try {
-              fetch(slackWebhookURL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+          try {
+            fetch("/api/slack-channel", {
+              method: "POST",
+              body: JSON.stringify({
+                message: {
                   blocks: [
                     {
                       type: "header",
@@ -186,13 +182,13 @@ const apiCall = async ({
                       },
                     },
                   ],
-                }),
-              }).catch((error) => {
-                console.log("Error during slack submit: ", error);
-              });
-            } catch (error) {
+                },
+              }),
+            }).catch((error) => {
               console.log("Error during slack submit: ", error);
-            }
+            });
+          } catch (error) {
+            console.log("Error during slack submit: ", error);
           }
         }
       }
@@ -208,7 +204,6 @@ interface TranslateOptions {
   promptModifier?: string;
   isFlat?: boolean;
   notTranslatableWords: string[];
-  slackWebhookURL: string;
 }
 
 export const translateJSON = async ({
@@ -218,7 +213,6 @@ export const translateJSON = async ({
   isFlat = false,
   promptModifier = "",
   notTranslatableWords,
-  slackWebhookURL,
 }: TranslateOptions) => {
   let formattedContent;
   if (typeof content === "object" && !isFlat) {
@@ -244,7 +238,6 @@ export const translateJSON = async ({
       valuesToTranslate,
       promptModifier,
       notTranslatableWords,
-      slackWebhookURL,
     });
 
     const translatedObject = keys.reduce((result, key, index) => {

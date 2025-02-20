@@ -79,8 +79,6 @@ const Localization = () => {
             }),
           translationLevel: state.translationLevel,
           notTranslatableWords,
-          slackWebhookURL:
-            process.env.NEXT_PUBLIC_SLACK_INCOMING_WEBHOOK_URL_AI_TOOL,
         })
       } catch (error) {
         errorMessage = error.message

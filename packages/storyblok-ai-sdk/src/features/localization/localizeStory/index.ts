@@ -110,7 +110,6 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
           promptModifier: props.promptModifier ? props.promptModifier : "",
           isFlat: true,
           notTranslatableWords: props.notTranslatableWords,
-          slackWebhookURL: props.slackWebhookURL ?? "",
         }).then((translatedChunk) => {
           return JSON.parse(translatedChunk);
         });
@@ -202,7 +201,6 @@ interface LocalizeStoryProps {
   translationLevel: TranslationLevels;
   folderLevelTranslation: FolderTranslationData;
   notTranslatableWords: string[];
-  slackWebhookURL?: string;
 }
 
 type HelperFunction = ({
