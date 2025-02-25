@@ -58,44 +58,18 @@ const notTranslatableWords = [
   "comfort+",
 ];
 
-// TODO: fetch languages
-// const languages = await (
-//   await SBManagementClient.get(`oauth/space_info`)
-// ).data.space.languages;
-const languages = [
-  // {
-  //   code: "en",
-  //   name: "English",
-  //   default: true,
-  // },
-  {
-    code: "nl",
-    name: "Dutch",
-    default: false,
-  },
-  {
-    code: "it",
-    name: "Italian",
-    default: false,
-  },
-  {
-    code: "de",
-    name: "German",
-    default: false,
-  },
-  {
-    code: "es",
-    name: "Spanish",
-    default: false,
-  },
-];
-
 const SBManagementClient = new StoryblokClient({
   oauthToken: env.SB_ACCESS_TOKEN,
   region: env.SB_REGION,
 });
 
 async function localizeFolder({ folderSlug }: { folderSlug: string }) {
+  const spaceResponse = await SBManagementClient.get(
+    `spaces/${env.SB_SPACE_ID}`,
+  );
+  const space = spaceResponse.data.space;
+  const languages = space.languages as { code: string; name: string }[];
+
   const foldersResponse = (await SBManagementClient.get(
     `spaces/${env.SB_SPACE_ID}/stories?starts_with=${folderSlug}&folder_only=1&per_page=100`,
   )) as unknown as {
