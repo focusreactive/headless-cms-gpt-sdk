@@ -30,22 +30,7 @@ const envSchema = z.object({
 const env = envSchema.parse(rawEnv.parsed);
 configure({ openAiToken: env.OPENAI_TOKEN });
 
-// TODO: fetch `notTranslatableWords`
-// React.useEffect(() => {
-//   fetch(`/api/space-settings?spaceId=${spaceId}`, {
-//     method: 'GET',
-//   })
-//       .then((data) => data.json())
-//       .then(
-//           (spaceSettings) =>
-//               spaceSettings.notTranslatableWords &&
-//               dispatch({
-//                 type: 'setNotTranslatableWords',
-//                 payload: spaceSettings.notTranslatableWords,
-//               }),
-//       )
-// }, [])
-const notTranslatableWords = [
+const NOT_TRANSLATABLE_WORDS = [
   "Firsty",
   "Firsty Free",
   "Comfort +",
@@ -170,7 +155,7 @@ async function localizeStory({
       content: chunk,
       promptModifier: "",
       isFlat: true,
-      notTranslatableWords,
+      notTranslatableWords: NOT_TRANSLATABLE_WORDS,
       captureError: (context) => {
         console.log("captureError", context);
       },
