@@ -1,5 +1,6 @@
+// yarn dev:sb
 // cd packages/storyblok-ai-sdk
-// pnpx tsx src/scripts/localizeFolder.ts
+// npx tsx src/scripts/localizeFolder.ts
 
 import StoryblokClient, { ISbStoryData } from "storyblok-js-client";
 import { translateJSON } from "@focus-reactive/content-ai-sdk";
@@ -76,11 +77,6 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     throw new Error("Folder not found");
   }
 
-  // TODO: remove this
-  if (folder.id !== 631205228) {
-    throw new Error("FOLDER DISABLED IN TEST MODE");
-  }
-
   console.log("localizeFolder: localize folder", folder.name);
 
   const storiesResponse = (await SBManagementClient.get(
@@ -98,7 +94,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     const storyWithContentResponse = (await SBManagementClient.get(
       `spaces/${env.SB_SPACE_ID}/stories/${story.id}`,
     )) as unknown as { data: { story: ISbStoryData } };
-    const storyWithContent = storyWithContentResponse.data.story;
+    let currentStory = storyWithContentResponse.data.story;
 
     for (const language of languages) {
       console.log(
@@ -106,13 +102,25 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
         story.name,
         language.name,
       );
-      const updatedStory = await localizeStory({
-        story: storyWithContent,
+      currentStory = await localizeStory({
+        story: currentStory,
         targetLanguageName: language.name,
         targetLanguageCode: language.code,
       });
-      updatedStories.push(updatedStory);
+      updatedStories.push(currentStory);
     }
+
+    return await SBManagementClient.put(
+      `spaces/${env.SB_SPACE_ID}/stories/${story.id}`,
+      {
+        story: {
+          name: `${story.name}`,
+          slug: `${story.slug}`,
+          content: currentStory.content,
+          parent_id: String(story.parent_id),
+        },
+      },
+    );
   }
 
   console.log(
@@ -177,17 +185,7 @@ async function localizeStory({
     `__i18n__${targetLanguageCode}`,
   );
 
-  return await SBManagementClient.put(
-    `spaces/${env.SB_SPACE_ID}/stories/${story.id}`,
-    {
-      story: {
-        name: `${story.name}`,
-        slug: `${story.slug}`,
-        content: newStory.content,
-        parent_id: String(story.parent_id),
-      },
-    },
-  );
+  return newStory;
 }
 
 function getFieldsForTranslation(
