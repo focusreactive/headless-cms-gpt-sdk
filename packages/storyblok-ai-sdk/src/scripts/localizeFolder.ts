@@ -82,7 +82,10 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     throw new Error("Folder not found");
   }
 
-  console.log("localizeFolder: localize folder", folder.name);
+  console.log(
+    `localizeFolder: localize folder "%s" (${folder.slug})`,
+    folder.name,
+  );
 
   const storiesResponse = (await SBManagementClient.get(
     `spaces/${env.SB_SPACE_ID}/stories?starts_with=${folderSlug}&story_only=1&per_page=100`,
@@ -92,7 +95,13 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
   const stories = storiesResponse.data.stories.filter((story) =>
     story.full_slug.startsWith(folderSlug),
   );
-  const updatedStories: Awaited<ReturnType<typeof localizeStory>>[] = [];
+  const updatedStories: ISbStoryData[] = [];
+
+  console.log(
+    "localizeFolder: localize %s stories:\n%s",
+    stories.length,
+    stories.map((story) => ` - ${story.name} (${story.full_slug})`).join("\n"),
+  );
 
   for (const story of stories) {
     const storyWithContentResponse = (await SBManagementClient.get(
@@ -102,8 +111,9 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
 
     for (const language of languages) {
       console.log(
-        "localizeFolder: localize story %s in %s",
+        `localizeFolder: localize story "%s" (%s) in "%s"`,
         story.name,
+        story.full_slug,
         language.name,
       );
       currentStory = await localizeStory({
@@ -111,10 +121,9 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
         targetLanguageName: language.name,
         targetLanguageCode: language.code,
       });
-      updatedStories.push(currentStory);
     }
 
-    return await SBManagementClient.put(
+    const updatedStoryResponse = await SBManagementClient.put(
       `spaces/${env.SB_SPACE_ID}/stories/${story.id}`,
       {
         story: {
@@ -125,6 +134,8 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
         },
       },
     );
+    const updatedStory = updatedStoryResponse.story;
+    updatedStories.push(updatedStory);
   }
 
   console.log(
