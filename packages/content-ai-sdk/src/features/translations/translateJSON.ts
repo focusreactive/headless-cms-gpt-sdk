@@ -49,7 +49,7 @@ const apiCall = async ({
           role: "system",
           content: `Translate the values from the JSON array that the user will send you ${
             currentLanguage ? " from " + currentLanguage : ""
-          } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: string[]}. Don't split the translations.`,
+          } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: [string, string, string]}.`,
         },
         { role: "system", content: promptModifier },
         { role: "user", content: updatedContent },
