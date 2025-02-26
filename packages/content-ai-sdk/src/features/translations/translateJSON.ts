@@ -83,15 +83,16 @@ const apiCall = async ({
       const beforeTranslationContent: string[] = JSON.parse(updatedContent);
 
       // TODO: fix an issue where beforeTranslationContent.length and translations.length are not equal
-      if (beforeTranslationContent.length !== translations.length) {
+      // hotfix
+      const translationsFixed = [translations.join(" ")];
+
+      if (beforeTranslationContent.length !== translationsFixed.length) {
         captureError?.({
           targetLanguage,
           beforeTranslationContent,
           translations,
         });
       }
-      // hotfix
-      const translationsFixed = [translations.join(" ")];
 
       try {
         for (let i = 0; i < translationsFixed.length; i++) {
