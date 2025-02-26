@@ -18,6 +18,7 @@ import { fileURLToPath } from "url";
 import inquirer from "inquirer";
 
 const cyan = "\x1b[36m";
+const magenta = "\x1b[35m";
 const reset = "\x1b[0m";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -132,7 +133,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
 
     for (const language of languages) {
       console.log(
-        `localizeFolder: localize story "%s" (%s) in "%s"`,
+        `localizeFolder: localize story "%s" (${cyan}%s${reset}) in ${magenta}"%s"${reset}`,
         story.name,
         story.full_slug,
         language.name,
@@ -209,8 +210,34 @@ async function localizeStory({
   };
 
   const translatedChunks = await Promise.all(
-    arrForTranslation.map((chunk) => {
-      return translateJSONChunk(chunk);
+    arrForTranslation.map(async (chunk) => {
+      const maxRetries = 3;
+      let attempt = 1;
+
+      while (attempt <= maxRetries) {
+        try {
+          return await translateJSONChunk(chunk);
+        } catch (error) {
+          if (attempt === maxRetries) {
+            console.error(
+              `localizeFolder: Failed to translate chunk after ${maxRetries} attempts:`,
+              `Story: ${story.full_slug}`,
+              `Chunk:\n${chunk}`,
+              error,
+            );
+            throw error;
+          }
+          console.warn(
+            `localizeFolder: Translation attempt ${attempt} failed, retrying...`,
+            `Story: ${story.full_slug}`,
+            `Chunk:\n${chunk}`,
+            error,
+          );
+          attempt++;
+
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // delay before retry
+        }
+      }
     }),
   );
 
