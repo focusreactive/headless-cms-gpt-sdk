@@ -93,14 +93,9 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     folder.slug,
   );
 
-  const storiesResponse = (await SBManagementClient.get(
-    `spaces/${env.SB_SPACE_ID}/stories?starts_with=${folderSlug}&story_only=1&per_page=100`,
-  )) as unknown as {
-    data: { stories: ISbStoryData[] };
-  };
-  const stories = storiesResponse.data.stories.filter((story) =>
-    story.full_slug.startsWith(`${folderSlug}/`),
-  );
+  const stories = await getAllStories({
+    folderSlug: folderSlug,
+  });
   const updatedStories: ISbStoryData[] = [];
 
   console.log(
@@ -221,16 +216,14 @@ async function localizeStory({
           if (attempt === maxRetries) {
             console.error(
               `localizeFolder: Failed to translate chunk after ${maxRetries} attempts:`,
-              `Story: ${story.full_slug}`,
-              `Chunk:\n${chunk}`,
+              `\nStory: ${story.full_slug}\n`,
               error,
             );
             throw error;
           }
           console.warn(
             `localizeFolder: Translation attempt ${attempt} failed, retrying...`,
-            `Story: ${story.full_slug}`,
-            `Chunk:\n${chunk}`,
+            `\nStory: ${story.full_slug}\n`,
             error,
           );
           attempt++;
@@ -302,6 +295,38 @@ function getFieldsForTranslation(
       };
     },
   }) as FieldForTranslation[];
+}
+
+async function getAllStories({ folderSlug }: { folderSlug: string }) {
+  const stories: ISbStoryData[] = [];
+  const perPage = 100;
+  let page = 1;
+
+  const initialResponse = (await SBManagementClient.get(
+    `spaces/${env.SB_SPACE_ID}/stories?starts_with=${folderSlug}&story_only=1&per_page=${perPage}&page=${page}`,
+  )) as unknown as {
+    data: {
+      stories: ISbStoryData[];
+    };
+    total: number;
+  };
+
+  const totalPages = Math.ceil(initialResponse.total / perPage);
+
+  stories.push(...initialResponse.data.stories);
+
+  for (page = 2; page <= totalPages; page++) {
+    const response = (await SBManagementClient.get(
+      `spaces/${env.SB_SPACE_ID}/stories?starts_with=${folderSlug}&story_only=1&per_page=${perPage}&page=${page}`,
+    )) as unknown as {
+      data: { stories: ISbStoryData[] };
+    };
+    stories.push(...response.data.stories);
+  }
+
+  return stories.filter((story) =>
+    story.full_slug.startsWith(`${folderSlug}/`),
+  );
 }
 
 async function main() {
