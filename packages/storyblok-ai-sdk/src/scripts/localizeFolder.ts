@@ -259,7 +259,7 @@ function getFieldsForTranslation(
     object: story,
     condition: ({ key, value, object }) => {
       function resolveType(type: string) {
-        if (type === "richtext") {
+        if (type === "richtext" && typeof value == "object") {
           return "object";
         }
 

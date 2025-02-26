@@ -287,7 +287,8 @@ export const translateJSON = async ({
     } else {
       return JSON.stringify(unflatten(translatedObject));
     }
-  } catch {
+  } catch (error) {
+    console.log(error);
     throw new Error("Failed to translate JSON");
   }
 };
