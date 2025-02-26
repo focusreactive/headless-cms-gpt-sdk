@@ -99,7 +99,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     data: { stories: ISbStoryData[] };
   };
   const stories = storiesResponse.data.stories.filter((story) =>
-    story.full_slug.startsWith(folderSlug),
+    story.full_slug.startsWith(`${folderSlug}/`),
   );
   const updatedStories: ISbStoryData[] = [];
 
