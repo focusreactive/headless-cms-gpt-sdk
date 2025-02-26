@@ -15,6 +15,10 @@ import { initSDK as configure } from "@focus-reactive/content-ai-sdk";
 import path from "node:path";
 import z from "zod";
 import { fileURLToPath } from "url";
+import inquirer from "inquirer";
+
+const cyan = "\x1b[36m";
+const reset = "\x1b[0m";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -83,8 +87,9 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
   }
 
   console.log(
-    `localizeFolder: localize folder "%s" (${folder.slug})`,
+    `localizeFolder: localize folder "%s" (${cyan}%s${reset})`,
     folder.name,
+    folder.slug,
   );
 
   const storiesResponse = (await SBManagementClient.get(
@@ -100,8 +105,24 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
   console.log(
     "localizeFolder: localize %s stories:\n%s",
     stories.length,
-    stories.map((story) => ` - ${story.name} (${story.full_slug})`).join("\n"),
+    stories
+      .map((story) => ` - ${story.name} (${cyan}${story.full_slug}${reset})`)
+      .join("\n"),
   );
+
+  const { proceed } = await inquirer.prompt([
+    {
+      type: "confirm",
+      name: "proceed",
+      message: "Do you want to proceed?",
+      default: false,
+    },
+  ]);
+
+  if (!proceed) {
+    console.log("Aborted");
+    process.exit(1);
+  }
 
   for (const story of stories) {
     const storyWithContentResponse = (await SBManagementClient.get(
@@ -259,7 +280,7 @@ function getFieldsForTranslation(
 async function main() {
   try {
     await localizeFolder({
-      folderSlug: "test-plans",
+      folderSlug: "test-the-wanderer",
     });
   } catch (error) {
     console.error(error);

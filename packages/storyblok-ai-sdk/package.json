@@ -15,6 +15,7 @@
     "@focus-reactive/content-ai-sdk": "0.0.4",
     "@storyblok/app-extension-auth": "^1.0.0-alpha.1",
     "flat": "^6.0.1",
+    "inquirer": "^12.4.2",
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
     "react": "^18.2.0",
