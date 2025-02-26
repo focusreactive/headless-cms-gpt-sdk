@@ -16,6 +16,8 @@ import path from "node:path";
 import z from "zod";
 import { fileURLToPath } from "url";
 import inquirer from "inquirer";
+import Bottleneck from "bottleneck";
+import * as fs from "node:fs/promises";
 
 const cyan = "\x1b[36m";
 const magenta = "\x1b[35m";
@@ -52,6 +54,14 @@ const NOT_TRANSLATABLE_WORDS = [
 const SBManagementClient = new StoryblokClient({
   oauthToken: env.SB_ACCESS_TOKEN,
   region: env.SB_REGION,
+});
+
+const limiter = new Bottleneck({
+  minTime: 15, // Minimum time between requests (in milliseconds)
+  maxConcurrent: 500, // Process 500 requests at a time
+  reservoir: 3500, // Start with 3500 requests available
+  reservoirRefreshAmount: 3500, // Refill back to 3500
+  reservoirRefreshInterval: 60 * 1000 + 1000, // Refill every 60 seconds (1 minute) + 1s
 });
 
 async function localizeFolder({ folderSlug }: { folderSlug: string }) {
@@ -96,6 +106,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
   const stories = await getAllStories({
     folderSlug: folderSlug,
   });
+
   const updatedStories: ISbStoryData[] = [];
 
   console.log(
@@ -120,7 +131,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     process.exit(1);
   }
 
-  for (const story of stories) {
+  async function processStory(story: ISbStoryData) {
     const storyWithContentResponse = (await SBManagementClient.get(
       `spaces/${env.SB_SPACE_ID}/stories/${story.id}`,
     )) as unknown as { data: { story: ISbStoryData } };
@@ -153,6 +164,16 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     );
     const updatedStory = updatedStoryResponse.story;
     updatedStories.push(updatedStory);
+    console.log(
+      "localizeFolder: localized %s/%s stories",
+      updatedStories.length,
+      stories.length,
+    );
+  }
+
+  const storiesChunks = chunkArray(stories, 10);
+  for (const storiesChunk of storiesChunks) {
+    await Promise.all(storiesChunk.map(processStory));
   }
 
   console.log(
@@ -204,35 +225,51 @@ async function localizeStory({
     });
   };
 
-  const translatedChunks = await Promise.all(
-    arrForTranslation.map(async (chunk) => {
-      const maxRetries = 3;
-      let attempt = 1;
+  const translate = async (chunk: Record<string, string>) => {
+    const maxRetries = 3;
+    let attempt = 1;
 
-      while (attempt <= maxRetries) {
-        try {
-          return await translateJSONChunk(chunk);
-        } catch (error) {
-          if (attempt === maxRetries) {
-            console.error(
-              `localizeFolder: Failed to translate chunk after ${maxRetries} attempts:`,
-              `\nStory: ${story.full_slug}\n`,
-              error,
-            );
-            throw error;
-          }
-          console.warn(
-            `localizeFolder: Translation attempt ${attempt} failed, retrying...`,
+    while (attempt <= maxRetries) {
+      try {
+        return await translateJSONChunk(chunk);
+      } catch (error) {
+        if (attempt === maxRetries) {
+          console.error(
+            `localizeFolder: Failed to translate chunk after ${maxRetries} attempts:`,
             `\nStory: ${story.full_slug}\n`,
             error,
           );
-          attempt++;
-
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // delay before retry
+          await fs.appendFile(
+            path.join(__dirname, `error-localizeFolder.ndjson`),
+            `${JSON.stringify({
+              full_slug: story.full_slug,
+              targetLanguageName,
+              chunk,
+            })}\n`,
+          );
+          return chunk;
         }
+        console.warn(
+          `localizeFolder: Translation attempt ${attempt} failed, retrying...`,
+          `\nStory: ${story.full_slug}\n`,
+          error,
+        );
+        attempt++;
+
+        await new Promise((resolve) => setTimeout(resolve, 3000)); // delay before retry
       }
-    }),
+    }
+  };
+
+  const translatedChunks: Record<string, string>[] = [];
+
+  const translationPromises = arrForTranslation.map((chunk) =>
+    limiter.schedule(() => translate(chunk)),
   );
+
+  await Promise.all(translationPromises).then((results) => {
+    translatedChunks.push(...results);
+  });
 
   const newStory = mergeTranslatedFields(
     fieldsForTranslation,
@@ -329,10 +366,19 @@ async function getAllStories({ folderSlug }: { folderSlug: string }) {
   );
 }
 
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 async function main() {
   try {
     await localizeFolder({
-      folderSlug: "test-the-wanderer",
+      // folderSlug: "test-the-wanderer",
+      folderSlug: "test-ai-translated",
     });
   } catch (error) {
     console.error(error);
