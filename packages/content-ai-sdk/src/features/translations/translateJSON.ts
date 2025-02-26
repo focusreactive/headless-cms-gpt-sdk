@@ -25,6 +25,14 @@ const apiCall = async ({
 
   let updatedContent = JSON.stringify(valuesToTranslate);
 
+  notTranslatableWords.sort((a, b) => {
+    if (a.length > b.length) {
+      return -1;
+    }
+
+    return 1;
+  });
+
   for (let i = 0; i < notTranslatableWords.length; i++) {
     updatedContent = updatedContent.replaceAll(
       notTranslatableWords[i],
@@ -73,24 +81,29 @@ const apiCall = async ({
       const beforeTranslationContent: string[] = JSON.parse(updatedContent);
 
       // TODO: fix an issue where beforeTranslationContent.length and translations.length are not equal
+      // hotfix
+      const translationsFixed = [translations.join(" ")];
+
       try {
-        for (let i = 0; i < translations.length; i++) {
+        for (let i = 0; i < translationsFixed.length; i++) {
           const [start, end] = beforeTranslationContent[i].split(
             beforeTranslationContent[i].trim()
           );
 
           if (
             start &&
-            translations[i].length === translations[i].trimStart().length
+            translationsFixed[i].length ===
+              translationsFixed[i].trimStart().length
           ) {
-            translations[i] = start + translations[i];
+            translationsFixed[i] = start + translationsFixed[i];
           }
 
           if (
             end &&
-            translations[i].length === translations[i].trimEnd().length
+            translationsFixed[i].length ===
+              translationsFixed[i].trimEnd().length
           ) {
-            translations[i] += end;
+            translationsFixed[i] += end;
           }
         }
       } catch (error) {
@@ -98,7 +111,6 @@ const apiCall = async ({
       }
 
       // TODO: delete after debug
-
       try {
         fetch("/api/slack-channel", {
           method: "POST",
@@ -123,11 +135,13 @@ const apiCall = async ({
                         null,
                         "\t"
                       )}          
-              \n**translations**: ${JSON.stringify(
-                translations,
+              \n**translations**: ${JSON.stringify(translations, null, "\t")}
+              \n**translationsFixed**: ${JSON.stringify(
+                translationsFixed,
                 null,
                 "\t"
-              )}  \n**Time**: ${new Date(Date.now()).toISOString()} ` +
+              )}
+              \n**Time**: ${new Date(Date.now()).toISOString()} ` +
                       "```",
                   },
                 },
@@ -149,7 +163,7 @@ const apiCall = async ({
           ) &&
           !notTranslatableWords.some(
             (notTranslatableWord) =>
-              translations[k]?.includes(notTranslatableWord)
+              translationsFixed[k]?.includes(notTranslatableWord)
           )
         ) {
           try {
@@ -176,7 +190,15 @@ const apiCall = async ({
                             null,
                             "\t"
                           )}            
-                \n**translations**: ${JSON.stringify(translations, null, "\t")}
+                \n**translations**: ${JSON.stringify(
+                  translations,
+                  null,
+                  "\t"
+                )}              \n**translationsFixed**: ${JSON.stringify(
+                  translationsFixed,
+                  null,
+                  "\t"
+                )}
                 \n**Time**: ${new Date(Date.now()).toISOString()}` +
                           "```",
                       },
@@ -193,7 +215,7 @@ const apiCall = async ({
         }
       }
 
-      return translations;
+      return translationsFixed;
     });
 };
 
