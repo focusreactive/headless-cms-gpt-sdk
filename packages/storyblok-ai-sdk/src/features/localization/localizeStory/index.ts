@@ -55,7 +55,7 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
         object: story,
         condition: ({ key, value, object }) => {
           function resolveType(type: string) {
-            if (type === "richtext") {
+            if (type === "richtext" && typeof value == "object") {
               return "object";
             }
 
@@ -343,7 +343,7 @@ export function flattenFieldsForTranslation(
     object: fieldsForTranslation,
     condition: ({ key, value, newPath }) =>
       (key.includes("forTranslation") && typeof value === "string") ||
-      newPath.match(/forTranslation.\d+.1/),
+      newPath.match(/forTranslation\.\d+\.1/),
   }) as [string, string][];
 
   const arrForTranslation = mapForTranslation.map((value) => ({
