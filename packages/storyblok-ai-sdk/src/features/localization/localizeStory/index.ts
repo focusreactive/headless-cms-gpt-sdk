@@ -224,7 +224,7 @@ type TraverseObject = {
   outputArr?: [unknown, unknown][];
 };
 
-function traverseObject({
+export function traverseObject({
   object,
   condition,
   transformKey = ({ newPath }) => newPath,
@@ -297,7 +297,7 @@ type ComponentsWithTranslatableFields = Record<
   SelectedComponentsField[]
 >;
 
-function getTranslatableFields(
+export function getTranslatableFields(
   components: ComponentSchema[],
   allFields?: boolean
 ) {
@@ -334,9 +334,9 @@ type FieldForTranslationData =
   | { default: string; forTranslation: string }
   | { default: ISbRichtext; forTranslation: [string, string][] };
 
-type FieldForTranslation = [string, FieldForTranslationData];
+export type FieldForTranslation = [string, FieldForTranslationData];
 
-function flattenFieldsForTranslation(
+export function flattenFieldsForTranslation(
   fieldsForTranslation: FieldForTranslation[]
 ) {
   const mapForTranslation = traverseObject({
@@ -353,7 +353,7 @@ function flattenFieldsForTranslation(
   return { mapForTranslation, arrForTranslation };
 }
 
-function mergeTranslatedFields(
+export function mergeTranslatedFields(
   fieldsForTranslation: FieldForTranslation[],
   translated: Record<string, string>[],
   object: ISbStoryData,
