@@ -18,6 +18,7 @@ import { fileURLToPath } from "url";
 import inquirer from "inquirer";
 import Bottleneck from "bottleneck";
 import * as fs from "node:fs/promises";
+import { RateLimitError } from "openai/error";
 
 const cyan = "\x1b[36m";
 const magenta = "\x1b[35m";
@@ -58,9 +59,9 @@ const SBManagementClient = new StoryblokClient({
 
 const limiter = new Bottleneck({
   minTime: 15, // Minimum time between requests (in milliseconds)
-  maxConcurrent: 500, // Process 500 requests at a time
-  reservoir: 3500, // Start with 3500 requests available
-  reservoirRefreshAmount: 3500, // Refill back to 3500
+  maxConcurrent: 250, // Process 500 requests at a time
+  reservoir: 250, // Start with 3500 requests available
+  reservoirRefreshAmount: 250, // Refill back to 3500
   reservoirRefreshInterval: 60 * 1000 + 1000, // Refill every 60 seconds (1 minute) + 1s
 });
 
@@ -226,13 +227,13 @@ async function localizeStory({
   };
 
   const translate = async (chunk: Record<string, string>) => {
-    const maxRetries = 3;
+    const maxRetries = 5;
     let attempt = 1;
 
     while (attempt <= maxRetries) {
       try {
         return await translateJSONChunk(chunk);
-      } catch (error) {
+      } catch (error: any) {
         if (attempt === maxRetries) {
           console.error(
             `localizeFolder: Failed to translate chunk after ${maxRetries} attempts:`,
@@ -255,6 +256,17 @@ async function localizeStory({
           error,
         );
         attempt++;
+
+        if ("headers" in error) {
+          const rateLimitError = error as RateLimitError;
+          const retryAfterMs = rateLimitError.headers?.["retry-after-ms"];
+          const delay = retryAfterMs ? Number(retryAfterMs) : 0;
+          if (delay) {
+            console.log("Retrying after %sms", delay + 100);
+            await new Promise((resolve) => setTimeout(resolve, delay + 100)); // delay before retry
+            continue;
+          }
+        }
 
         await new Promise((resolve) => setTimeout(resolve, 3000)); // delay before retry
       }
@@ -377,8 +389,7 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 async function main() {
   try {
     await localizeFolder({
-      // folderSlug: "test-the-wanderer",
-      folderSlug: "test-ai-translated",
+      folderSlug: "test-ai-translated-gpt-4o",
     });
   } catch (error) {
     console.error(error);

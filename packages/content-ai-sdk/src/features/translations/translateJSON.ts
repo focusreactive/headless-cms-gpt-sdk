@@ -51,6 +51,10 @@ const apiCall = async ({
             currentLanguage ? " from " + currentLanguage : ""
           } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: [string, string, string]}.`,
         },
+        {
+          role: "system",
+          content: `Use informal tone for translations.`,
+        },
         { role: "system", content: promptModifier },
         { role: "user", content: updatedContent },
       ],
@@ -289,6 +293,6 @@ export const translateJSON = async ({
     }
   } catch (error) {
     console.log(error);
-    throw new Error("Failed to translate JSON");
+    throw error;
   }
 };
