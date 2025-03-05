@@ -7,7 +7,7 @@ interface ApiCalloptions {
   currentLanguage?: string;
   promptModifier?: string;
   valuesToTranslate: unknown;
-  notTranslatableWords: string[];
+  notTranslatableWords?: string[];
   captureError?: (context: Record<string, unknown>) => void;
 }
 
@@ -27,19 +27,21 @@ const apiCall = async ({
 
   let valueToTranslate = (valuesToTranslate as string[])[0];
 
-  notTranslatableWords.sort((a, b) => {
-    if (a.length > b.length) {
-      return -1;
+  if (notTranslatableWords) {
+    notTranslatableWords.sort((a, b) => {
+      if (a.length > b.length) {
+        return -1;
+      }
+
+      return 1;
+    });
+
+    for (let i = 0; i < notTranslatableWords.length; i++) {
+      valueToTranslate = valueToTranslate.replaceAll(
+        notTranslatableWords[i],
+        `{{${i}}}`,
+      );
     }
-
-    return 1;
-  });
-
-  for (let i = 0; i < notTranslatableWords.length; i++) {
-    valueToTranslate = valueToTranslate.replaceAll(
-      notTranslatableWords[i],
-      `{{${i}}}`,
-    );
   }
 
   return await openAiClient.chat.completions
@@ -66,11 +68,13 @@ const apiCall = async ({
     .then((res) => {
       let translatedValue = res.choices[0].message.content as string;
 
-      for (let i = 0; i < notTranslatableWords.length; i++) {
-        translatedValue = translatedValue.replaceAll(
-          `{{${i}}}`,
-          notTranslatableWords[i],
-        );
+      if (notTranslatableWords) {
+        for (let i = 0; i < notTranslatableWords.length; i++) {
+          translatedValue = translatedValue.replaceAll(
+            `{{${i}}}`,
+            notTranslatableWords[i],
+          );
+        }
       }
 
       const translatableValues: string[] = [valueToTranslate];
@@ -224,7 +228,7 @@ interface TranslateOptions {
   content: object;
   promptModifier?: string;
   isFlat?: boolean;
-  notTranslatableWords: string[];
+  notTranslatableWords?: string[];
   captureError?: (context: Record<string, unknown>) => void;
 }
 
