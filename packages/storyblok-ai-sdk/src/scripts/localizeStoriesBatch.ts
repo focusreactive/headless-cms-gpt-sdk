@@ -1,6 +1,6 @@
 // yarn dev:sb
 // cd packages/storyblok-ai-sdk
-// npx tsx src/scripts/localizeFolder.ts
+// npx tsx src/scripts/localizeStoriesBatch.ts
 
 import StoryblokClient, { ISbStoryData } from "storyblok-js-client";
 import { translateJSON } from "@focus-reactive/content-ai-sdk";
@@ -65,7 +65,7 @@ const limiter = new Bottleneck({
   reservoirRefreshInterval: 60 * 1000 + 1000, // 1m + 1s just in case
 });
 
-async function localizeFolder({ folderSlug }: { folderSlug: string }) {
+async function localizeStoriesBatch({ startsWith }: { startsWith: string }) {
   const spaceResponse = await SBManagementClient.get(
     `spaces/${env.SB_SPACE_ID}`,
   );
@@ -73,20 +73,20 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
   const languages = space.languages as { code: string; name: string }[];
 
   console.log(
-    `localizeFolder: localize folder "${cyan}%s${reset}" in space "${cyan}%s${reset}"`,
-    folderSlug,
+    `localizeStoriesBatch: localize stories with slug starts with "${cyan}%s${reset}" in space "${cyan}%s${reset}"`,
+    startsWith,
     space.name,
   );
-  console.log("localizeFolder: languages", languages);
+  console.log("localizeStoriesBatch: languages", languages);
 
   const stories = await getAllStories({
-    folderSlug: folderSlug,
+    startsWith,
   });
 
   const updatedStories: ISbStoryData[] = [];
 
   console.log(
-    "localizeFolder: localize %s stories:\n%s",
+    "localizeStoriesBatch: localize %s stories:\n%s",
     stories.length,
     stories
       .map((story) => ` - ${story.name} (${cyan}${story.full_slug}${reset})`)
@@ -115,7 +115,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
 
     for (const language of languages) {
       console.log(
-        `localizeFolder: localize story "%s" (${cyan}%s${reset}) in ${magenta}"%s"${reset}`,
+        `localizeStoriesBatch: localize story "%s" (${cyan}%s${reset}) in ${magenta}"%s"${reset}`,
         story.name,
         story.full_slug,
         language.name,
@@ -141,7 +141,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     const updatedStory = updatedStoryResponse.story;
     updatedStories.push(updatedStory);
     console.log(
-      "localizeFolder: localized %s/%s stories",
+      "localizeStoriesBatch: localized %s/%s stories",
       updatedStories.length,
       stories.length,
     );
@@ -153,9 +153,9 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
   }
 
   console.log(
-    'localizeFolder: translated %s stories in "%s" folder',
+    'localizeStoriesBatch: translated %s stories in "%s" folder',
     updatedStories.length,
-    folderSlug,
+    startsWith,
   );
 }
 
@@ -214,12 +214,12 @@ async function localizeStory({
       } catch (error: any) {
         if (attempt === maxRetries) {
           console.error(
-            `localizeFolder: Failed to translate chunk after ${maxRetries} attempts:`,
+            `localizeStoriesBatch: Failed to translate chunk after ${maxRetries} attempts:`,
             `\nStory: ${story.full_slug}\n`,
             error,
           );
           await fs.appendFile(
-            path.join(__dirname, `error-localizeFolder.ndjson`),
+            path.join(__dirname, `error-localizeStoriesBatch.ndjson`),
             `${JSON.stringify({
               full_slug: story.full_slug,
               targetLanguageName,
@@ -229,7 +229,7 @@ async function localizeStory({
           return chunk;
         }
         console.warn(
-          `localizeFolder: Translation attempt ${attempt} failed, retrying...`,
+          `localizeStoriesBatch: Translation attempt ${attempt} failed, retrying...`,
           `\nStory: ${story.full_slug}\n`,
           error,
         );
@@ -324,13 +324,13 @@ function getFieldsForTranslation(
   }) as FieldForTranslation[];
 }
 
-async function getAllStories({ folderSlug }: { folderSlug: string }) {
+async function getAllStories({ startsWith }: { startsWith: string }) {
   const stories: ISbStoryData[] = [];
   const perPage = 100;
   let page = 1;
 
   const initialResponse = (await SBManagementClient.get(
-    `spaces/${env.SB_SPACE_ID}/stories?starts_with=${folderSlug}&story_only=1&per_page=${perPage}&page=${page}`,
+    `spaces/${env.SB_SPACE_ID}/stories?starts_with=${startsWith}&story_only=1&per_page=${perPage}&page=${page}`,
   )) as unknown as {
     data: {
       stories: ISbStoryData[];
@@ -344,7 +344,7 @@ async function getAllStories({ folderSlug }: { folderSlug: string }) {
 
   for (page = 2; page <= totalPages; page++) {
     const response = (await SBManagementClient.get(
-      `spaces/${env.SB_SPACE_ID}/stories?starts_with=${folderSlug}&story_only=1&per_page=${perPage}&page=${page}`,
+      `spaces/${env.SB_SPACE_ID}/stories?starts_with=${startsWith}&story_only=1&per_page=${perPage}&page=${page}`,
     )) as unknown as {
       data: { stories: ISbStoryData[] };
     };
@@ -353,8 +353,8 @@ async function getAllStories({ folderSlug }: { folderSlug: string }) {
 
   return stories.filter(
     (story) =>
-      story.full_slug === folderSlug ||
-      story.full_slug.startsWith(`${folderSlug}/`),
+      story.full_slug === startsWith ||
+      story.full_slug.startsWith(`${startsWith}/`),
   );
 }
 
@@ -368,8 +368,8 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 
 async function main() {
   try {
-    await localizeFolder({
-      folderSlug: "test-ai-translated-gpt-4o",
+    await localizeStoriesBatch({
+      startsWith: "test-ai-translated-gpt-4o",
     });
   } catch (error) {
     console.error(error);
