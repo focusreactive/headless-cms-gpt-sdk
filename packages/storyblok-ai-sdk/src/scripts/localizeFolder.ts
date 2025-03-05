@@ -58,11 +58,11 @@ const SBManagementClient = new StoryblokClient({
 });
 
 const limiter = new Bottleneck({
-  minTime: 15, // Minimum time between requests (in milliseconds)
-  maxConcurrent: 250, // Process 500 requests at a time
-  reservoir: 250, // Start with 3500 requests available
-  reservoirRefreshAmount: 250, // Refill back to 3500
-  reservoirRefreshInterval: 60 * 1000 + 1000, // Refill every 60 seconds (1 minute) + 1s
+  minTime: 15,
+  maxConcurrent: 50,
+  reservoir: 250,
+  reservoirRefreshAmount: 250,
+  reservoirRefreshInterval: 60 * 1000 + 1000, // 1m + 1s just in case
 });
 
 async function localizeFolder({ folderSlug }: { folderSlug: string }) {
@@ -72,37 +72,12 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
   const space = spaceResponse.data.space;
   const languages = space.languages as { code: string; name: string }[];
 
-  console.log("localizeFolder: languages", languages);
-
-  const foldersResponse = (await SBManagementClient.get(
-    `spaces/${env.SB_SPACE_ID}/stories?starts_with=${folderSlug}&folder_only=1&per_page=100`,
-  )) as unknown as {
-    data: { stories: { name: string; id: number; slug: string }[] };
-  };
-  const folders = foldersResponse.data.stories.map((folder) => ({
-    name: folder.name,
-    id: folder.id,
-    slug: folder.slug,
-  }));
-  const filteredFolders = folders.filter(
-    (folder) => folder.slug === folderSlug,
-  );
-
-  if (filteredFolders.length > 1) {
-    throw new Error("Multiple folders with the same slug found");
-  }
-
-  const folder = filteredFolders[0];
-
-  if (!folder) {
-    throw new Error("Folder not found");
-  }
-
   console.log(
-    `localizeFolder: localize folder "%s" (${cyan}%s${reset})`,
-    folder.name,
-    folder.slug,
+    `localizeFolder: localize folder "${cyan}%s${reset}" in space "${cyan}%s${reset}"`,
+    folderSlug,
+    space.name,
   );
+  console.log("localizeFolder: languages", languages);
 
   const stories = await getAllStories({
     folderSlug: folderSlug,
@@ -172,7 +147,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
     );
   }
 
-  const storiesChunks = chunkArray(stories, 10);
+  const storiesChunks = chunkArray(stories, 3);
   for (const storiesChunk of storiesChunks) {
     await Promise.all(storiesChunk.map(processStory));
   }
@@ -180,7 +155,7 @@ async function localizeFolder({ folderSlug }: { folderSlug: string }) {
   console.log(
     'localizeFolder: translated %s stories in "%s" folder',
     updatedStories.length,
-    folder.name,
+    folderSlug,
   );
 }
 
@@ -213,7 +188,10 @@ async function localizeStory({
 
   const translateJSONChunk = async (chunk: Record<string, string>) => {
     return translateJSON({
-      targetLanguage: targetLanguageName,
+      targetLanguage:
+        targetLanguageCode === "pt"
+          ? `${targetLanguageName} (pt-PT)`
+          : targetLanguageName,
       content: chunk,
       promptModifier: "",
       isFlat: true,
@@ -263,7 +241,7 @@ async function localizeStory({
           const delay = retryAfterMs ? Number(retryAfterMs) : 0;
           if (delay) {
             console.log("Retrying after %sms", delay + 100);
-            await new Promise((resolve) => setTimeout(resolve, delay + 100)); // delay before retry
+            await new Promise((resolve) => setTimeout(resolve, delay + 100)); // delay before retry + 100ms just in case
             continue;
           }
         }
@@ -373,8 +351,10 @@ async function getAllStories({ folderSlug }: { folderSlug: string }) {
     stories.push(...response.data.stories);
   }
 
-  return stories.filter((story) =>
-    story.full_slug.startsWith(`${folderSlug}/`),
+  return stories.filter(
+    (story) =>
+      story.full_slug === folderSlug ||
+      story.full_slug.startsWith(`${folderSlug}/`),
   );
 }
 
