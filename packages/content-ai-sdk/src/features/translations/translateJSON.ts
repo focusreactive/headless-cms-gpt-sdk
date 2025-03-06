@@ -25,7 +25,7 @@ const apiCall = async ({
     throw new Error("OpenAI client is not configurated");
   }
 
-  let valueToTranslate = (valuesToTranslate as string[])[0];
+  let updatedContent = JSON.stringify(valuesToTranslate);
 
   notTranslatableWords.sort((a, b) => {
     if (a.length > b.length) {
@@ -36,7 +36,7 @@ const apiCall = async ({
   });
 
   for (let i = 0; i < notTranslatableWords.length; i++) {
-    valueToTranslate = valueToTranslate.replaceAll(
+    updatedContent = updatedContent.replaceAll(
       notTranslatableWords[i],
       `{{${i}}}`,
     );
@@ -47,62 +47,77 @@ const apiCall = async ({
       messages: [
         {
           role: "system",
-          content: `You're content translator. Translate text ${
+          content: `Translate the values from the JSON array that the user will send you ${
             currentLanguage ? " from " + currentLanguage : ""
-          } into ${targetLanguage} and response with translated version, don't add any additional information. Use informal tone for translations.`,
+          } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: [string, string, string]}.`,
         },
-        ...(promptModifier
-          ? [{ role: "system" as const, content: promptModifier }]
-          : []),
-        { role: "user", content: valueToTranslate },
+        {
+          role: "system",
+          content: `Use informal tone for translations.`,
+        },
+        { role: "system", content: promptModifier },
+        { role: "user", content: updatedContent },
       ],
       model: "gpt-4o",
       temperature: 0,
       top_p: 1,
       frequency_penalty: 0,
       presence_penalty: 0,
-      response_format: { type: "text" },
+      response_format: { type: "json_object" },
     })
     .then((res) => {
-      let translatedValue = res.choices[0].message.content as string;
+      const restoredContent = JSON.parse(
+        res.choices[0].message.content as string,
+      ).translations as string[];
 
-      for (let i = 0; i < notTranslatableWords.length; i++) {
-        translatedValue = translatedValue.replaceAll(
-          `{{${i}}}`,
-          notTranslatableWords[i],
-        );
+      const translations: string[] = [];
+
+      for (let translation of restoredContent) {
+        for (let i = 0; i < notTranslatableWords.length; i++) {
+          translation = translation.replaceAll(
+            `{{${i}}}`,
+            notTranslatableWords[i],
+          );
+        }
+
+        translations.push(translation);
       }
 
-      const translatableValues: string[] = [valueToTranslate];
-      const translatedValues = [translatedValue];
+      // Fix spaces
+      const beforeTranslationContent: string[] = JSON.parse(updatedContent);
 
-      if (translatableValues.length !== translatedValues.length) {
+      // TODO: fix an issue where beforeTranslationContent.length and translations.length are not equal
+      // hotfix
+      const translationsFixed = [translations.join(" ")];
+
+      if (beforeTranslationContent.length !== translationsFixed.length) {
         captureError?.({
           targetLanguage,
-          beforeTranslationContent: translatableValues,
-          translationsFixed: translatedValues,
+          beforeTranslationContent,
+          translations,
         });
       }
 
       try {
-        for (let i = 0; i < translatedValues.length; i++) {
-          const [start, end] = translatableValues[i].split(
-            translatableValues[i].trim(),
+        for (let i = 0; i < translationsFixed.length; i++) {
+          const [start, end] = beforeTranslationContent[i].split(
+            beforeTranslationContent[i].trim(),
           );
 
           if (
             start &&
-            translatedValues[i].length ===
-              translatedValues[i].trimStart().length
+            translationsFixed[i].length ===
+              translationsFixed[i].trimStart().length
           ) {
-            translatedValues[i] = start + translatedValues[i];
+            translationsFixed[i] = start + translationsFixed[i];
           }
 
           if (
             end &&
-            translatedValues[i].length === translatedValues[i].trimEnd().length
+            translationsFixed[i].length ===
+              translationsFixed[i].trimEnd().length
           ) {
-            translatedValues[i] += end;
+            translationsFixed[i] += end;
           }
         }
       } catch (error) {
@@ -214,7 +229,7 @@ const apiCall = async ({
       //   }
       // }
 
-      return translatedValues;
+      return translationsFixed;
     });
 };
 
