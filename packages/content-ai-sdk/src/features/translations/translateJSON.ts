@@ -8,6 +8,7 @@ interface ApiCalloptions {
   promptModifier?: string;
   valuesToTranslate: unknown;
   notTranslatableWords: string[];
+  captureError?: (context: Record<string, unknown>) => void;
 }
 
 const apiCall = async ({
@@ -16,6 +17,7 @@ const apiCall = async ({
   valuesToTranslate,
   promptModifier = "",
   notTranslatableWords,
+  captureError,
 }: ApiCalloptions) => {
   const openAiClient = getOpenAiClient();
 
@@ -36,7 +38,7 @@ const apiCall = async ({
   for (let i = 0; i < notTranslatableWords.length; i++) {
     updatedContent = updatedContent.replaceAll(
       notTranslatableWords[i],
-      `{{${i}}}`
+      `{{${i}}}`,
     );
   }
 
@@ -48,6 +50,10 @@ const apiCall = async ({
           content: `Translate the values from the JSON array that the user will send you ${
             currentLanguage ? " from " + currentLanguage : ""
           } into ${targetLanguage}. Return a new array containing only the translations, with their order remaining unchanged. Result should follow this structure: {translations: [string, string, string]}.`,
+        },
+        {
+          role: "system",
+          content: `Use informal tone for translations.`,
         },
         { role: "system", content: promptModifier },
         { role: "user", content: updatedContent },
@@ -61,7 +67,7 @@ const apiCall = async ({
     })
     .then((res) => {
       const restoredContent = JSON.parse(
-        res.choices[0].message.content as string
+        res.choices[0].message.content as string,
       ).translations as string[];
 
       const translations: string[] = [];
@@ -70,7 +76,7 @@ const apiCall = async ({
         for (let i = 0; i < notTranslatableWords.length; i++) {
           translation = translation.replaceAll(
             `{{${i}}}`,
-            notTranslatableWords[i]
+            notTranslatableWords[i],
           );
         }
 
@@ -84,10 +90,18 @@ const apiCall = async ({
       // hotfix
       const translationsFixed = [translations.join(" ")];
 
+      if (beforeTranslationContent.length !== translationsFixed.length) {
+        captureError?.({
+          targetLanguage,
+          beforeTranslationContent,
+          translations,
+        });
+      }
+
       try {
         for (let i = 0; i < translationsFixed.length; i++) {
           const [start, end] = beforeTranslationContent[i].split(
-            beforeTranslationContent[i].trim()
+            beforeTranslationContent[i].trim(),
           );
 
           if (
@@ -111,109 +125,109 @@ const apiCall = async ({
       }
 
       // TODO: delete after debug
-      try {
-        fetch("/api/slack-channel", {
-          method: "POST",
-          body: JSON.stringify({
-            message: {
-              blocks: [
-                {
-                  type: "header",
-                  text: {
-                    type: "plain_text",
-                    text: `SB AI Tool Usage`,
-                  },
-                },
-                {
-                  type: "section",
-                  text: {
-                    type: "mrkdwn",
-                    text:
-                      "```" +
-                      `**BeforeTranslationContent**: ${JSON.stringify(
-                        beforeTranslationContent,
-                        null,
-                        "\t"
-                      )}          
-              \n**translations**: ${JSON.stringify(translations, null, "\t")}
-              \n**translationsFixed**: ${JSON.stringify(
-                translationsFixed,
-                null,
-                "\t"
-              )}
-              \n**Time**: ${new Date(Date.now()).toISOString()} ` +
-                      "```",
-                  },
-                },
-              ],
-            },
-          }),
-        }).catch((error) => {
-          console.log("Error during slack submit: ", error);
-        });
-      } catch (error) {
-        console.log("Error during slack submit: ", error);
-      }
-
-      for (let k = 0; k < beforeTranslationContent.length; k++) {
-        if (
-          notTranslatableWords.some(
-            (notTranslatableWord) =>
-              beforeTranslationContent[k]?.includes(notTranslatableWord)
-          ) &&
-          !notTranslatableWords.some(
-            (notTranslatableWord) =>
-              translationsFixed[k]?.includes(notTranslatableWord)
-          )
-        ) {
-          try {
-            fetch("/api/slack-channel", {
-              method: "POST",
-              body: JSON.stringify({
-                message: {
-                  blocks: [
-                    {
-                      type: "header",
-                      text: {
-                        type: "plain_text",
-                        text: `SB AI Tool Ignore words error`,
-                      },
-                    },
-                    {
-                      type: "section",
-                      text: {
-                        type: "mrkdwn",
-                        text:
-                          "```" +
-                          `**BeforeTranslationContent**: ${JSON.stringify(
-                            beforeTranslationContent,
-                            null,
-                            "\t"
-                          )}            
-                \n**translations**: ${JSON.stringify(
-                  translations,
-                  null,
-                  "\t"
-                )}              \n**translationsFixed**: ${JSON.stringify(
-                  translationsFixed,
-                  null,
-                  "\t"
-                )}
-                \n**Time**: ${new Date(Date.now()).toISOString()}` +
-                          "```",
-                      },
-                    },
-                  ],
-                },
-              }),
-            }).catch((error) => {
-              console.log("Error during slack submit: ", error);
-            });
-          } catch (error) {
-            console.log("Error during slack submit: ", error);
-          }
-        }
-      }
+      // try {
+      //   fetch("/api/slack-channel", {
+      //     method: "POST",
+      //     body: JSON.stringify({
+      //       message: {
+      //         blocks: [
+      //           {
+      //             type: "header",
+      //             text: {
+      //               type: "plain_text",
+      //               text: `SB AI Tool Usage`,
+      //             },
+      //           },
+      //           {
+      //             type: "section",
+      //             text: {
+      //               type: "mrkdwn",
+      //               text:
+      //                 "```" +
+      //                 `**BeforeTranslationContent**: ${JSON.stringify(
+      //                   beforeTranslationContent,
+      //                   null,
+      //                   "\t",
+      //                 )}
+      //         \n**translations**: ${JSON.stringify(translations, null, "\t")}
+      //         \n**translationsFixed**: ${JSON.stringify(
+      //           translationsFixed,
+      //           null,
+      //           "\t",
+      //         )}
+      //         \n**Time**: ${new Date(Date.now()).toISOString()} ` +
+      //                 "```",
+      //             },
+      //           },
+      //         ],
+      //       },
+      //     }),
+      //   }).catch((error) => {
+      //     console.log("Error during slack submit: ", error);
+      //   });
+      // } catch (error) {
+      //   console.log("Error during slack submit: ", error);
+      // }
+      //
+      // for (let k = 0; k < beforeTranslationContent.length; k++) {
+      //   if (
+      //     notTranslatableWords.some(
+      //       (notTranslatableWord) =>
+      //         beforeTranslationContent[k]?.includes(notTranslatableWord),
+      //     ) &&
+      //     !notTranslatableWords.some(
+      //       (notTranslatableWord) =>
+      //         translationsFixed[k]?.includes(notTranslatableWord),
+      //     )
+      //   ) {
+      //     try {
+      //       fetch("/api/slack-channel", {
+      //         method: "POST",
+      //         body: JSON.stringify({
+      //           message: {
+      //             blocks: [
+      //               {
+      //                 type: "header",
+      //                 text: {
+      //                   type: "plain_text",
+      //                   text: `SB AI Tool Ignore words error`,
+      //                 },
+      //               },
+      //               {
+      //                 type: "section",
+      //                 text: {
+      //                   type: "mrkdwn",
+      //                   text:
+      //                     "```" +
+      //                     `**BeforeTranslationContent**: ${JSON.stringify(
+      //                       beforeTranslationContent,
+      //                       null,
+      //                       "\t",
+      //                     )}
+      //           \n**translations**: ${JSON.stringify(
+      //             translations,
+      //             null,
+      //             "\t",
+      //           )}              \n**translationsFixed**: ${JSON.stringify(
+      //             translationsFixed,
+      //             null,
+      //             "\t",
+      //           )}
+      //           \n**Time**: ${new Date(Date.now()).toISOString()}` +
+      //                     "```",
+      //                 },
+      //               },
+      //             ],
+      //           },
+      //         }),
+      //       }).catch((error) => {
+      //         console.log("Error during slack submit: ", error);
+      //       });
+      //     } catch (error) {
+      //       console.log("Error during slack submit: ", error);
+      //     }
+      //   }
+      // }
 
       return translationsFixed;
     });
@@ -226,6 +240,7 @@ interface TranslateOptions {
   promptModifier?: string;
   isFlat?: boolean;
   notTranslatableWords: string[];
+  captureError?: (context: Record<string, unknown>) => void;
 }
 
 export const translateJSON = async ({
@@ -235,6 +250,7 @@ export const translateJSON = async ({
   isFlat = false,
   promptModifier = "",
   notTranslatableWords,
+  captureError,
 }: TranslateOptions) => {
   let formattedContent;
   if (typeof content === "object" && !isFlat) {
@@ -260,6 +276,7 @@ export const translateJSON = async ({
       valuesToTranslate,
       promptModifier,
       notTranslatableWords,
+      captureError,
     });
 
     const translatedObject = keys.reduce((result, key, index) => {
@@ -274,7 +291,8 @@ export const translateJSON = async ({
     } else {
       return JSON.stringify(unflatten(translatedObject));
     }
-  } catch {
-    throw new Error("Failed to translate JSON");
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
 };
