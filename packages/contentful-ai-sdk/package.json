@@ -1,0 +1,50 @@
+{
+  "name": "@focus-reactive/contentful-ai-sdk",
+  "description": "Content AI SDK adapter for Contentful",
+  "version": "0.0.1",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev:cf": "vite build --watch",
+    "pre-dev-contentful-sdk": "yalc add --link @focus-reactive/content-ai-sdk && yarn build && yalc publish --push",
+    "yalc-clean": "yalc remove --all",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "yalc-check": "yalc check"
+  },
+  "dependencies": {
+    "@focus-reactive/content-ai-sdk": "0.0.4",
+    "vite-plugin-dts": "^3.6.3",
+    "vite-tsconfig-paths": "^5.0.1"
+  },
+  "devDependencies": {
+    "@contentful/app-sdk": "^4.29.1",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "contentful-management": "10.46.4",
+    "eslint": "^8.45.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-plugin-dts": "^3.6.3",
+    "vitest": "2.1.6",
+    "yalc": "^1.0.0-pre.53"
+  },
+  "peerDependencies": {
+    "@contentful/app-sdk": "^4.29.1",
+    "contentful-management": "10.46.4"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/contentful-ai-sdk.umd.js",
+  "module": "./dist/contentful-ai-sdk.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/contentful-ai-sdk.es.js",
+      "require": "./dist/contentful-ai-sdk.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}
