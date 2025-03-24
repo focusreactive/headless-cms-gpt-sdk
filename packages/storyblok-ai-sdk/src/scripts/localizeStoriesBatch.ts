@@ -18,7 +18,7 @@ import { fileURLToPath } from "url";
 import inquirer from "inquirer";
 import Bottleneck from "bottleneck";
 import * as fs from "node:fs/promises";
-import { RateLimitError } from "openai/error";
+import * as process from "node:process";
 
 const cyan = "\x1b[36m";
 const magenta = "\x1b[35m";
@@ -145,6 +145,12 @@ async function localizeStoriesBatch({ startsWith }: { startsWith: string }) {
       updatedStories.length,
       stories.length,
     );
+    await fs.appendFile(
+      path.join(__dirname, `completed-localizeStoriesBatch.ndjson`),
+      `${JSON.stringify({
+        full_slug: story.full_slug,
+      })}\n`,
+    );
   }
 
   const storiesChunks = chunkArray(stories, 3);
@@ -235,16 +241,16 @@ async function localizeStory({
         );
         attempt++;
 
-        if ("headers" in error) {
-          const rateLimitError = error as RateLimitError;
-          const retryAfterMs = rateLimitError.headers?.["retry-after-ms"];
-          const delay = retryAfterMs ? Number(retryAfterMs) : 0;
-          if (delay) {
-            console.log("Retrying after %sms", delay + 100);
-            await new Promise((resolve) => setTimeout(resolve, delay + 100)); // delay before retry + 100ms just in case
-            continue;
-          }
-        }
+        // if ("headers" in error) {
+        //   const rateLimitError = error as RateLimitError;
+        //   const retryAfterMs = rateLimitError.headers?.["retry-after-ms"];
+        //   const delay = retryAfterMs ? Number(retryAfterMs) : 0;
+        //   if (delay) {
+        //     console.log("Retrying after %sms", delay + 100);
+        //     await new Promise((resolve) => setTimeout(resolve, delay + 100)); // delay before retry + 100ms just in case
+        //     continue;
+        //   }
+        // }
 
         await new Promise((resolve) => setTimeout(resolve, 3000)); // delay before retry
       }
@@ -256,6 +262,15 @@ async function localizeStory({
   const translationPromises = arrForTranslation.map((chunk) =>
     limiter.schedule(() => translate(chunk)),
   );
+
+  // const translationPromises = [
+  //   ...arrForTranslation
+  //       .slice(0, Math.ceil(arrForTranslation.length / 2))
+  //       .map((chunk) => limiter.schedule(() => translate(chunk))),
+  //   ...arrForTranslation
+  //       .slice(0, Math.ceil(arrForTranslation.length / 2))
+  //       .map((chunk) => limiter.schedule(() => translate(chunk))),
+  // ];
 
   await Promise.all(translationPromises).then((results) => {
     translatedChunks.push(...results);
@@ -324,13 +339,17 @@ function getFieldsForTranslation(
   }) as FieldForTranslation[];
 }
 
-async function getAllStories({ startsWith }: { startsWith: string }) {
+async function getAllStories({ startsWith }: { startsWith?: string }) {
   const stories: ISbStoryData[] = [];
   const perPage = 100;
   let page = 1;
 
   const initialResponse = (await SBManagementClient.get(
-    `spaces/${env.SB_SPACE_ID}/stories?starts_with=${startsWith}&story_only=1&per_page=${perPage}&page=${page}`,
+    `spaces/${
+      env.SB_SPACE_ID
+    }/stories?story_only=1&per_page=${perPage}&page=${page}${
+      startsWith ? `starts_with=${startsWith}` : ""
+    }`,
   )) as unknown as {
     data: {
       stories: ISbStoryData[];
@@ -344,17 +363,22 @@ async function getAllStories({ startsWith }: { startsWith: string }) {
 
   for (page = 2; page <= totalPages; page++) {
     const response = (await SBManagementClient.get(
-      `spaces/${env.SB_SPACE_ID}/stories?starts_with=${startsWith}&story_only=1&per_page=${perPage}&page=${page}`,
+      `spaces/${
+        env.SB_SPACE_ID
+      }/stories?story_only=1&per_page=${perPage}&page=${page}${
+        startsWith ? `starts_with=${startsWith}` : ""
+      }`,
     )) as unknown as {
       data: { stories: ISbStoryData[] };
     };
     stories.push(...response.data.stories);
   }
 
-  return stories.filter(
-    (story) =>
-      story.full_slug === startsWith ||
-      story.full_slug.startsWith(`${startsWith}/`),
+  return stories.filter((story) =>
+    startsWith
+      ? story.full_slug === startsWith ||
+        story.full_slug.startsWith(`${startsWith}/`)
+      : true,
   );
 }
 
