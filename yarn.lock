@@ -2311,9 +2311,14 @@
     gpt-3-encoder "^1.1.4"
     openai "^4.17.3"
 
-"@focus-reactive/content-ai-sdk@link:.yalc/@focus-reactive/content-ai-sdk":
-  version "0.0.0"
-  uid ""
+"@focus-reactive/content-ai-sdk@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@focus-reactive/content-ai-sdk/-/content-ai-sdk-0.0.4.tgz#65748d2fd4d041df74f14d3333137f06b286ca61"
+  integrity sha512-zB0kguQqAO7pDB7lfQ7q888Yzc3QtIMkmFUaImVt9GvolWSR7v3PDLEKhiFeZ605t6igJQc1XlA8EAeIpD2+zA==
+  dependencies:
+    flat "^6.0.1"
+    gpt-3-encoder "^1.1.4"
+    openai "^4.17.3"
 
 "@focus-reactive/sanity-ai-sdk@0.0.4":
   version "0.0.4"

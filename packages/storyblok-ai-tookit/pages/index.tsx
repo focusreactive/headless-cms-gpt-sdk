@@ -58,14 +58,20 @@ const Home: NextPage<PageProps> = (props) => {
   }, [])
 
   useEffect(() => {
+
+    // hardcoded token for firsty space
+    const correctToken = `${props.spaceId}` !== '320520' ?
+      process.env.NEXT_PUBLIC_OPENAI_TOKEN :
+      process.env.NEXT_PUBLIC_FIRSTY_OPENAI_TOKEN
+
     initSDK({
       managementToken: props.appSession.accessToken,
       pluginName: 'focusreactive-ai-toolkit',
-      openAiToken: process.env.NEXT_PUBLIC_OPENAI_TOKEN,
+      openAiToken: correctToken,
       spaceId: String(props.spaceId),
     })
     initContentSDK({
-      openAiToken: process.env.NEXT_PUBLIC_OPENAI_TOKEN,
+      openAiToken: correctToken,
     })
   }, [])
 
