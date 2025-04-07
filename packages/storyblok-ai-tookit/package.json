@@ -18,7 +18,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@focus-reactive/content-ai-sdk": "^0.0.14",
-    "@focus-reactive/sb-plugins-storage-sdk": "^0.0.14",
+    "@focus-reactive/sb-plugins-storage-sdk": "^0.0.15",
     "@focus-reactive/storyblok-ai-sdk": "^0.0.10",
     "@mui/material": "^5.14.18",
     "@storyblok/app-extension-auth": "1.0.2",

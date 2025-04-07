@@ -180,6 +180,7 @@ export type LocalizationAction =
   | { type: 'setTranslationMode'; payload: TranslationModes }
   | { type: 'loadingStarted' }
   | { type: 'endedSuccessfully'; payload: string }
+  | { type: 'endedWithError'; payload: string }
   | { type: 'addNotTranslatableWord' }
   | { type: 'setNewNotTranslatableWord'; payload: string }
   | { type: 'setNotTranslatableWords'; payload: NotTranslatableWords }
@@ -335,6 +336,9 @@ const reducer = (
       return {
         ...INITIAL_STATE,
         successMessage: action.payload,
+        notTranslatableWords: {
+          ...state.notTranslatableWords,
+        },
       }
   }
 }
