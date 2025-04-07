@@ -28,8 +28,8 @@ const db = getFirestore(app);
 
 async function isUseAllowed(spaceUsage: UsageSpaceRecord) {
   // hardcoded removing limits for firsty space
-  if (`${spaceUsage.spaceId}` === '320520') {
-    return true
+  if (`${spaceUsage.spaceId}` === "320520") {
+    return true;
   }
 
   const limit = spaceUsage.plan.limit;
@@ -54,7 +54,13 @@ async function isUseAllowed(spaceUsage: UsageSpaceRecord) {
       )
     );
 
-    const count = querySnapshot.docs.length;
+    // TODO: use custom index instead
+    const count = querySnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as UsageSpaceRecord),
+      }))
+      .filter((doc) => doc.spaceId === spaceUsage.spaceId).length;
 
     if (limit < count) {
       return false;
