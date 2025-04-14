@@ -179,7 +179,7 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
           props.cb(newStoryData);
         }
 
-        resolve("Success");
+        resolve(newStory);
       } catch (e) {
         console.error("Failed to localize the document", e);
 

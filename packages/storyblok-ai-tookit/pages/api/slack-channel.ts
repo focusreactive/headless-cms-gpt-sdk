@@ -6,16 +6,18 @@ export default async function handler(
 ) {
   try {
     if (req.method === 'POST') {
-      const { message } = JSON.parse(req.body)
+      const { message, story } = JSON.parse(req.body)
       const slackWebhookURL = process.env.SLACK_INCOMING_WEBHOOK_URL_AI_TOOL
 
-      await fetch(slackWebhookURL, {
+      const response = await fetch(slackWebhookURL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(message),
+        body: story ? story : JSON.stringify(message),
       })
 
-      res.status(200).end()
+      const result = await response.text()
+
+      res.status(200).json({ result })
     }
   } catch (error) {
     console.log(error)

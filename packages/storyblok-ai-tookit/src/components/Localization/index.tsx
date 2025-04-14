@@ -42,17 +42,17 @@ const Localization = () => {
   const localize = async () => {
     dispatch({ type: 'loadingStarted' })
 
-    const notTranslatableWords = Array.from(state.notTranslatableWords.set)
+    const notTranslatableWords = {
+      set: Array.from(state.notTranslatableWords.set),
+      limit: state.notTranslatableWords.limit,
+    }
 
     await fetch(`/api/space-settings`, {
       method: 'POST',
       body: JSON.stringify({
         spaceId,
         pluginId: PLUGIN_ID,
-        notTranslatableWords: {
-          limit: state.notTranslatableWords.limit,
-          set: notTranslatableWords,
-        },
+        notTranslatableWords,
       }),
     })
 
@@ -61,9 +61,11 @@ const Localization = () => {
 
     if (isUseAllowed) {
       let errorMessage = ''
+      let translatedStory
+
       try {
         await cratePageContext()
-        await localizeStory({
+        translatedStory = await localizeStory({
           targetLanguageCode: state.targetLanguageCode,
           targetLanguageName: state.targetLanguageName,
           folderLevelTranslation: state.folderLevelTranslation,
@@ -78,7 +80,7 @@ const Localization = () => {
                 'Success! Change the language to see the localized content.',
             }),
           translationLevel: state.translationLevel,
-          notTranslatableWords,
+          notTranslatableWords: notTranslatableWords.set,
         })
       } catch (error) {
         errorMessage = error.message
@@ -88,6 +90,60 @@ const Localization = () => {
           payload: errorMessage,
         })
       } finally {
+        // TODO: delete after debug
+        try {
+          fetch('/api/slack-channel', {
+            method: 'POST',
+            body: JSON.stringify({
+              message: {
+                blocks: [
+                  {
+                    type: 'header',
+                    text: {
+                      type: 'plain_text',
+                      text: `SB AI Tool Localize event`,
+                    },
+                  },
+                  {
+                    type: 'section',
+                    text: {
+                      type: 'mrkdwn',
+                      text:
+                        '```' +
+                        `**errorMessage**: ${JSON.stringify(
+                          errorMessage,
+                          null,
+                          '\t',
+                        )}          
+              \n**state**: ${JSON.stringify(state, null, '\t')}
+              \n**notTranslatableWords**: ${JSON.stringify(
+                notTranslatableWords,
+                null,
+                '\t',
+              )} 
+                  \n**spaceId**: ${JSON.stringify(spaceId, null, '\t')}   
+                  \n**userId**: ${JSON.stringify(userId, null, '\t')} 
+                  \n**Time**: ${new Date(Date.now()).toISOString()} ` +
+                        '```',
+                    },
+                  },
+                ],
+              },
+            }),
+          })
+
+          fetch('/api/slack-channel', {
+            method: 'POST',
+            body: JSON.stringify({
+              story: JSON.stringify({
+                text: `\`\`\`${JSON.stringify(translatedStory, null, 2)}\`\`\``,
+              }),
+            }),
+          })
+        } catch (error) {
+          console.log('Error during slack submit: ', error)
+        }
+
         saveEvent({
           spaceId,
           userId,
