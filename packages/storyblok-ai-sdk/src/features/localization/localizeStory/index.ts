@@ -12,184 +12,192 @@ import { FolderTranslationData, TranslationLevels } from "../../../config";
 
 export const localizeStory = async (props: LocalizeStoryProps) => {
   if (!SpaceInfo) {
-    throw new Error("SDK is not initialised");
+    return Promise.reject(new Error("SDK is not initialised"));
   }
 
-  const handleMessage = async (e: { data: { story: ISbStoryData } }) => {
-    if (!SpaceInfo || !SBManagementClient) {
-      throw new Error("SDK is not initialised");
-    }
-
-    const isFolderLevel = props.translationLevel === "folder";
-
-    let story = e.data.story;
-
-    try {
-      if (isFolderLevel) {
-        const folderId = props.folderLevelTranslation.targetFolderId;
-
-        const storyData = (await SBManagementClient.put(
-          `spaces/${SpaceInfo.spaceId}/stories/${story.id}/duplicate`,
-          {
-            auto_create_folders: true,
-            target_dimension: folderId,
-            story: { group_id: story.group_id },
-            same_path: true,
-          } as unknown as ISbContentMangmntAPI
-        )) as unknown as { data: { story: ISbStoryData } };
-
-        story = storyData.data.story;
+  return new Promise((resolve, reject) => {
+    const handleMessage = async (e: { data: { story: ISbStoryData } }) => {
+      if (!SpaceInfo || !SBManagementClient) {
+        return Promise.reject(new Error("SDK is not initialised"));
       }
 
-      // load components schema to define translatable fields
-      const componentsSchema = (
-        await SBManagementClient.get(`spaces/${SpaceInfo.spaceId}/components/`)
-      ).data.components;
+      const isFolderLevel = props.translationLevel === "folder";
 
-      const componentWithTranslatableFields = getTranslatableFields(
-        componentsSchema,
-        isFolderLevel && props.folderLevelTranslation.translationMode === "all"
-      );
+      let story = e.data.story;
 
-      const fieldsForTranslation = traverseObject({
-        object: story,
-        condition: ({ key, value, object }) => {
-          function resolveType(type: string) {
-            if (type === "richtext" && typeof value == "object") {
-              return "object";
+      try {
+        if (isFolderLevel) {
+          const folderId = props.folderLevelTranslation.targetFolderId;
+
+          const storyData = (await SBManagementClient.put(
+            `spaces/${SpaceInfo.spaceId}/stories/${story.id}/duplicate`,
+            {
+              auto_create_folders: true,
+              target_dimension: folderId,
+              story: { group_id: story.group_id },
+              same_path: true,
+            } as unknown as ISbContentMangmntAPI
+          )) as unknown as { data: { story: ISbStoryData } };
+
+          story = storyData.data.story;
+        }
+
+        // load components schema to define translatable fields
+        const componentsSchema = (
+          await SBManagementClient.get(
+            `spaces/${SpaceInfo.spaceId}/components/`
+          )
+        ).data.components;
+
+        const componentWithTranslatableFields = getTranslatableFields(
+          componentsSchema,
+          isFolderLevel &&
+            props.folderLevelTranslation.translationMode === "all"
+        );
+
+        const fieldsForTranslation = traverseObject({
+          object: story,
+          condition: ({ key, value, object }) => {
+            function resolveType(type: string) {
+              if (type === "richtext" && typeof value == "object") {
+                return "object";
+              }
+
+              return "string";
             }
 
-            return "string";
-          }
+            function hasComponentField(
+              object: unknown
+            ): object is Record<"component", string> {
+              return Boolean(
+                typeof object === "object" && object && "component" in object
+              );
+            }
 
-          function hasComponentField(
-            object: unknown
-          ): object is Record<"component", string> {
-            return Boolean(
-              typeof object === "object" && object && "component" in object
+            return Object.entries(componentWithTranslatableFields).some(
+              ([component, fields]) =>
+                hasComponentField(object) &&
+                object.component === component &&
+                fields.some(
+                  (field) =>
+                    key === field.field &&
+                    typeof value === resolveType(field.type)
+                )
             );
-          }
+          },
+          transformValue: ({ value }) => {
+            if (typeof value === "object") {
+              return {
+                default: value,
+                forTranslation: traverseObject({
+                  object: value,
+                  condition: ({ key, value }) =>
+                    key === "text" && typeof value === "string",
+                }),
+              };
+            }
 
-          return Object.entries(componentWithTranslatableFields).some(
-            ([component, fields]) =>
-              hasComponentField(object) &&
-              object.component === component &&
-              fields.some(
-                (field) =>
-                  key === field.field &&
-                  typeof value === resolveType(field.type)
-              )
-          );
-        },
-        transformValue: ({ value }) => {
-          if (typeof value === "object") {
             return {
               default: value,
-              forTranslation: traverseObject({
-                object: value,
-                condition: ({ key, value }) =>
-                  key === "text" && typeof value === "string",
-              }),
+              forTranslation: value,
             };
-          }
+          },
+        }) as FieldForTranslation[];
 
-          return {
-            default: value,
-            forTranslation: value,
-          };
-        },
-      }) as FieldForTranslation[];
+        const { arrForTranslation } =
+          flattenFieldsForTranslation(fieldsForTranslation);
 
-      const { arrForTranslation } =
-        flattenFieldsForTranslation(fieldsForTranslation);
+        const translateJSONChunk = async (chunk: Record<string, string>) => {
+          return translateJSON({
+            targetLanguage: props.targetLanguageName,
+            content: chunk,
+            promptModifier: props.promptModifier ? props.promptModifier : "",
+            isFlat: true,
+            notTranslatableWords: props.notTranslatableWords,
+          }).then((translatedChunk) => {
+            return JSON.parse(translatedChunk);
+          });
+        };
 
-      const translateJSONChunk = async (chunk: Record<string, string>) => {
-        return translateJSON({
-          targetLanguage: props.targetLanguageName,
-          content: chunk,
-          promptModifier: props.promptModifier ? props.promptModifier : "",
-          isFlat: true,
-          notTranslatableWords: props.notTranslatableWords,
-        }).then((translatedChunk) => {
-          return JSON.parse(translatedChunk);
-        });
-      };
+        const translatedChunks = await Promise.all(
+          arrForTranslation.map((chunk) => {
+            return translateJSONChunk(chunk);
+          })
+        );
 
-      const translatedChunks = await Promise.all(
-        arrForTranslation.map((chunk) => {
-          return translateJSONChunk(chunk);
-        })
-      );
+        const newStory = mergeTranslatedFields(
+          fieldsForTranslation,
+          translatedChunks,
+          story,
+          isFolderLevel ? "" : `__i18n__${props.targetLanguageCode}`
+        );
 
-      const newStory = mergeTranslatedFields(
-        fieldsForTranslation,
-        translatedChunks,
-        story,
-        isFolderLevel ? "" : `__i18n__${props.targetLanguageCode}`
-      );
+        let newStoryData: { story: ISbStoryData };
 
-      let newStoryData: { story: ISbStoryData };
+        if (props.mode === "createNew") {
+          newStoryData = await SBManagementClient.post(
+            `spaces/${SpaceInfo.spaceId}/stories/`,
+            {
+              story: {
+                name: `${story.name} (${props.targetLanguageName})`,
+                slug: `${story.slug}-${props.targetLanguageCode}`,
+                content: newStory.content,
+                parent_id: String(story.parent_id),
+              },
+            }
+          );
+          props.cb(newStoryData);
+        }
 
-      if (props.mode === "createNew") {
-        newStoryData = await SBManagementClient.post(
-          `spaces/${SpaceInfo.spaceId}/stories/`,
-          {
+        if (props.mode === "update") {
+          newStoryData = await SBManagementClient.put(
+            `spaces/${SpaceInfo.spaceId}/stories/${story.id}`,
+            {
+              story: {
+                name: `${story.name}`,
+                slug: `${story.slug}`,
+                content: newStory.content,
+                parent_id: String(story.parent_id),
+              },
+            }
+          );
+
+          props.cb(newStoryData);
+        }
+
+        if (props.mode === "returnData") {
+          newStoryData = {
             story: {
+              ...story,
               name: `${story.name} (${props.targetLanguageName})`,
               slug: `${story.slug}-${props.targetLanguageCode}`,
               content: newStory.content,
-              parent_id: String(story.parent_id),
+              parent_id: story.parent_id,
             },
-          }
-        );
-        props.cb(newStoryData);
+          };
+
+          props.cb(newStoryData);
+        }
+
+        resolve("Success");
+      } catch (e) {
+        console.error("Failed to localize the document", e);
+
+        reject(new Error("Failed to localize the document"));
       }
+    };
 
-      if (props.mode === "update") {
-        newStoryData = await SBManagementClient.put(
-          `spaces/${SpaceInfo.spaceId}/stories/${story.id}`,
-          {
-            story: {
-              name: `${story.name}`,
-              slug: `${story.slug}`,
-              content: newStory.content,
-              parent_id: String(story.parent_id),
-            },
-          }
-        );
+    window.addEventListener("message", handleMessage, { once: true });
 
-        props.cb(newStoryData);
-      }
-
-      if (props.mode === "returnData") {
-        newStoryData = {
-          story: {
-            ...story,
-            name: `${story.name} (${props.targetLanguageName})`,
-            slug: `${story.slug}-${props.targetLanguageCode}`,
-            content: newStory.content,
-            parent_id: story.parent_id,
-          },
-        };
-
-        props.cb(newStoryData);
-      }
-    } catch (e) {
-      console.error("Failed to localize the document", e);
-      throw new Error("Failed to localize the document");
-    }
-  };
-
-  window.addEventListener("message", handleMessage, { once: true });
-
-  window.parent.postMessage(
-    {
-      action: "tool-changed",
-      tool: SpaceInfo.pluginName,
-      event: "getContext",
-    },
-    "*"
-  );
+    window.parent.postMessage(
+      {
+        action: "tool-changed",
+        tool: SpaceInfo?.pluginName,
+        event: "getContext",
+      },
+      "*"
+    );
+  });
 };
 
 interface LocalizeStoryProps {
