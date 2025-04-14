@@ -82,6 +82,11 @@ const Localization = () => {
         })
       } catch (error) {
         errorMessage = error.message
+
+        dispatch({
+          type: 'endedSuccessfully',
+          payload: errorMessage,
+        })
       } finally {
         saveEvent({
           spaceId,
