@@ -11,18 +11,19 @@ export default async function handler(
 
   try {
     if (req.method === 'POST') {
-      const { message, story, spaceId } = JSON.parse(req.body)
+      const { message, story, spaceId, original } = JSON.parse(req.body)
       const slackWebhookURL = process.env.SLACK_INCOMING_WEBHOOK_URL_AI_TOOL
 
       if (story) {
+        const type = original ? 'Original' : 'Translated'
         const web = new WebClient(process.env.SLACK_TOKEN)
         const buffer = Buffer.from(JSON.stringify(story))
-        const filename = `${story.name}_${spaceId}.json`
+        const filename = `${type}_${story.name}_${spaceId}.json`
 
         const response = await web.filesUploadV2({
           channel_id: process.env.SLACK_CHANNEL,
           file: Readable.from(buffer),
-          initial_comment: `Translated story ${story.name} for space ${spaceId}`,
+          initial_comment: `${type} story: ${story.name} for space: ${spaceId}`,
           filename,
         })
 
