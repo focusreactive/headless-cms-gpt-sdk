@@ -62,10 +62,12 @@ const Localization = () => {
     if (isUseAllowed) {
       let errorMessage = ''
       let translatedStory
+      let originalStory
 
       try {
         await cratePageContext()
-        translatedStory = await localizeStory({
+
+        const { original, translated } = await localizeStory({
           targetLanguageCode: state.targetLanguageCode,
           targetLanguageName: state.targetLanguageName,
           folderLevelTranslation: state.folderLevelTranslation,
@@ -82,6 +84,9 @@ const Localization = () => {
           translationLevel: state.translationLevel,
           notTranslatableWords: notTranslatableWords.set,
         })
+
+        translatedStory = translated
+        originalStory = original
       } catch (error) {
         errorMessage = error.message
 
@@ -129,6 +134,15 @@ const Localization = () => {
                   },
                 ],
               },
+            }),
+          })
+
+          fetch('/api/slack-channel', {
+            method: 'POST',
+            body: JSON.stringify({
+              spaceId,
+              original: true,
+              story: originalStory,
             }),
           })
 

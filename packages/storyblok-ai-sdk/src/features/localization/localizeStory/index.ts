@@ -10,7 +10,11 @@ import { SBManagementClient } from "../../../config/initClient";
 
 import { FolderTranslationData, TranslationLevels } from "../../../config";
 
-export const localizeStory = async (props: LocalizeStoryProps) => {
+export const localizeStory = async (
+  props: LocalizeStoryProps
+): Promise<
+  { original: ISbStoryData; translated: ISbStoryData } | undefined
+> => {
   if (!SpaceInfo) {
     return Promise.reject(new Error("SDK is not initialised"));
   }
@@ -179,7 +183,7 @@ export const localizeStory = async (props: LocalizeStoryProps) => {
           props.cb(newStoryData);
         }
 
-        resolve(newStory);
+        resolve({ original: story, translated: newStory });
       } catch (e) {
         console.error("Failed to localize the document", e);
 
