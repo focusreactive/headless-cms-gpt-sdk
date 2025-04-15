@@ -135,9 +135,8 @@ const Localization = () => {
           fetch('/api/slack-channel', {
             method: 'POST',
             body: JSON.stringify({
-              story: JSON.stringify({
-                text: `\`\`\`${JSON.stringify(translatedStory, null, 2)}\`\`\``,
-              }),
+              spaceId,
+              story: translatedStory,
             }),
           })
         } catch (error) {

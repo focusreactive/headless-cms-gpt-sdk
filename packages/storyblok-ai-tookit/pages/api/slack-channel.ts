@@ -1,21 +1,43 @@
+import { Readable } from 'stream'
+import { WebClient } from '@slack/web-api'
+
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
+  let result
+
   try {
     if (req.method === 'POST') {
-      const { message, story } = JSON.parse(req.body)
+      const { message, story, spaceId } = JSON.parse(req.body)
       const slackWebhookURL = process.env.SLACK_INCOMING_WEBHOOK_URL_AI_TOOL
 
-      const response = await fetch(slackWebhookURL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: story ? story : JSON.stringify(message),
-      })
+      if (story) {
+        const web = new WebClient(process.env.SLACK_TOKEN)
+        const buffer = Buffer.from(JSON.stringify(story))
+        const filename = `${story.name}_${spaceId}.json`
 
-      const result = await response.text()
+        const response = await web.filesUploadV2({
+          channel_id: process.env.SLACK_CHANNEL,
+          file: Readable.from(buffer),
+          initial_comment: `Translated story ${story.name} for space ${spaceId}`,
+          filename,
+        })
+
+        result = response
+      }
+
+      if (message) {
+        const response = await fetch(slackWebhookURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: story ? story : JSON.stringify(message),
+        })
+
+        result = await response.text()
+      }
 
       res.status(200).json({ result })
     }
