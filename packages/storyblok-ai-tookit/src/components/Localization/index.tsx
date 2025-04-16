@@ -42,6 +42,14 @@ const Localization = () => {
   const localize = async () => {
     dispatch({ type: 'loadingStarted' })
 
+    if (isExpired(state.history[0].time)) {
+      return dispatch({
+        type: 'endedWithError',
+        payload:
+          'Your session has lasted more than 1 hour and your token has expired. Please reopen the extension. (Refresh the page)',
+      })
+    }
+
     const notTranslatableWords = {
       set: Array.from(state.notTranslatableWords.set),
       limit: state.notTranslatableWords.limit,
@@ -93,7 +101,7 @@ const Localization = () => {
         errorMessage = error.message
 
         dispatch({
-          type: 'endedSuccessfully',
+          type: 'endedWithError',
           payload: errorMessage,
         })
       } finally {
@@ -209,7 +217,7 @@ const Localization = () => {
       }
     } else {
       dispatch({
-        type: 'endedSuccessfully',
+        type: 'endedWithError',
         payload: 'You have reached your free limit, please contact us',
       })
     }
@@ -257,6 +265,7 @@ export type LocalizationState = {
   folderLevelTranslation: FolderTranslation
   isLoading: boolean
   successMessage: string
+  errorMessage: string
   storySummary: string
   translationLevel: TranslationLevels
   isReadyToPerformLocalization: boolean
@@ -281,6 +290,7 @@ const INITIAL_STATE: LocalizationState = {
   targetLanguageName: '',
   isLoading: false,
   successMessage: '',
+  errorMessage: '',
   storySummary: '',
   translationLevel: 'field',
   isReadyToPerformLocalization: false,
@@ -473,6 +483,19 @@ const reducer = (
       return {
         ...INITIAL_STATE,
         successMessage: action.payload,
+        errorMessage: '',
+        notTranslatableWords: {
+          ...state.notTranslatableWords,
+        },
+        history: updatedHistory,
+      }
+
+    case 'endedWithError':
+      return {
+        ...state,
+        isLoading: true,
+        successMessage: '',
+        errorMessage: action.payload,
         notTranslatableWords: {
           ...state.notTranslatableWords,
         },
@@ -522,4 +545,11 @@ async function saveEvent({ spaceId, userId, errorMessage, eventName }) {
       errorMessage,
     }),
   })
+}
+
+function isExpired(startDate: string, maxAgeMinutes = 60) {
+  const createdAt = new Date(startDate)
+  const expiryTime = new Date(Date.now() - maxAgeMinutes * 60 * 1000)
+
+  return createdAt < expiryTime
 }

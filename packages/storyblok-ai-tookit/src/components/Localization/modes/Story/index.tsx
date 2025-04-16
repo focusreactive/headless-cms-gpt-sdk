@@ -297,8 +297,20 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
           fontWeight={700}
           margin="20px 0 0"
           textAlign="center"
+          color="success"
         >
           {state.successMessage}
+        </Typography>
+      )}
+      {state.errorMessage && (
+        <Typography
+          variant="body1"
+          fontWeight={700}
+          margin="20px 0 0"
+          textAlign="center"
+          color="error"
+        >
+          {state.errorMessage}
         </Typography>
       )}
     </>
