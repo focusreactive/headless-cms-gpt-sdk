@@ -47,14 +47,16 @@ const Localization = () => {
       limit: state.notTranslatableWords.limit,
     }
 
-    await fetch(`/api/space-settings`, {
-      method: 'POST',
-      body: JSON.stringify({
-        spaceId,
-        pluginId: PLUGIN_ID,
-        notTranslatableWords,
-      }),
-    })
+    if (notTranslatableWords.set.length > 0) {
+      await fetch(`/api/space-settings`, {
+        method: 'POST',
+        body: JSON.stringify({
+          spaceId,
+          pluginId: PLUGIN_ID,
+          notTranslatableWords,
+        }),
+      })
+    }
 
     const response = await fetch(`/api/usage?spaceId=${spaceId}`)
     const { isUseAllowed } = await response.json()
