@@ -122,12 +122,50 @@ const Localization = () => {
                           null,
                           '\t',
                         )}          
-              \n**state**: ${JSON.stringify(state, null, '\t')}
+              \n**state**: ${JSON.stringify(
+                { ...state, history: undefined },
+                null,
+                '\t',
+              )}
               \n**notTranslatableWords**: ${JSON.stringify(
                 notTranslatableWords,
                 null,
                 '\t',
               )} 
+                  \n**spaceId**: ${JSON.stringify(spaceId, null, '\t')}   
+                  \n**userId**: ${JSON.stringify(userId, null, '\t')} 
+                  \n**Time**: ${new Date(Date.now()).toISOString()} ` +
+                        '```',
+                    },
+                  },
+                ],
+              },
+            }),
+          })
+
+          fetch('/api/slack-channel', {
+            method: 'POST',
+            body: JSON.stringify({
+              message: {
+                blocks: [
+                  {
+                    type: 'header',
+                    text: {
+                      type: 'plain_text',
+                      text: `SB AI Tool Localize event history`,
+                    },
+                  },
+                  {
+                    type: 'section',
+                    text: {
+                      type: 'mrkdwn',
+                      text:
+                        '```' +
+                        `\n**history**: ${JSON.stringify(
+                          { history: state.history },
+                          null,
+                          '\t',
+                        )}
                   \n**spaceId**: ${JSON.stringify(spaceId, null, '\t')}   
                   \n**userId**: ${JSON.stringify(userId, null, '\t')} 
                   \n**Time**: ${new Date(Date.now()).toISOString()} ` +
@@ -209,6 +247,11 @@ type NotTranslatableWords = {
   limit: number | null
 }
 
+type StateHistoryRecord = {
+  action: LocalizationAction | 'init'
+  time: string
+}
+
 export type LocalizationState = {
   fieldLevelTranslation: FieldTranslation
   folderLevelTranslation: FolderTranslation
@@ -220,6 +263,7 @@ export type LocalizationState = {
   targetLanguageCode: string
   targetLanguageName: string
   notTranslatableWords: NotTranslatableWords
+  history: StateHistoryRecord[]
 }
 
 const INITIAL_STATE: LocalizationState = {
@@ -241,6 +285,7 @@ const INITIAL_STATE: LocalizationState = {
   translationLevel: 'field',
   isReadyToPerformLocalization: false,
   notTranslatableWords: { set: new Set(), new: null, limit: 10 },
+  history: [{ time: new Date(Date.now()).toISOString(), action: 'init' }],
 }
 
 export type LocalizationAction =
@@ -265,6 +310,11 @@ const reducer = (
   state: LocalizationState,
   action: LocalizationAction,
 ): LocalizationState => {
+  const updatedHistory = [
+    ...state.history,
+    { time: new Date(Date.now()).toISOString(), action },
+  ]
+
   switch (action.type) {
     case 'setTargetLanguage':
       if (state.translationLevel === 'field') {
@@ -285,21 +335,24 @@ const reducer = (
           },
           targetLanguageCode,
           targetLanguageName,
+          history: updatedHistory,
         }
       }
 
-      return state
+      return { ...state, history: updatedHistory }
 
     case 'setSuccessMessage':
       return {
         ...state,
         successMessage: action.payload,
+        history: updatedHistory,
       }
 
     case 'setStorySummary':
       return {
         ...state,
         storySummary: action.payload,
+        history: updatedHistory,
       }
 
     case 'setTranslationLevel': {
@@ -316,6 +369,7 @@ const reducer = (
         targetLanguageName: isFieldLevel
           ? state.fieldLevelTranslation.targetLanguageName
           : userTypedLanguage,
+        history: updatedHistory,
       }
     }
 
@@ -329,10 +383,11 @@ const reducer = (
             ...state.folderLevelTranslation,
             targetFolderId,
           },
+          history: updatedHistory,
         }
       }
 
-      return state
+      return { ...state, history: updatedHistory }
 
     case 'setUserTypedLanguage':
       if (state.translationLevel === 'folder') {
@@ -346,10 +401,11 @@ const reducer = (
           },
           targetLanguageCode: userTypedLanguage,
           targetLanguageName: userTypedLanguage,
+          history: updatedHistory,
         }
       }
 
-      return state
+      return { ...state, history: updatedHistory }
 
     case 'setTranslationMode':
       if (state.translationLevel === 'folder') {
@@ -359,16 +415,18 @@ const reducer = (
             ...state.folderLevelTranslation,
             translationMode: action.payload,
           },
+          history: updatedHistory,
         }
       }
 
-      return state
+      return { ...state, history: updatedHistory }
 
     case 'loadingStarted':
       return {
         ...state,
         isLoading: true,
         successMessage: '',
+        history: updatedHistory,
       }
 
     case 'addNotTranslatableWord':
@@ -384,10 +442,11 @@ const reducer = (
             ...state.notTranslatableWords,
             set: new Set(updatedListOfWords),
           },
+          history: updatedHistory,
         }
       }
 
-      return state
+      return { ...state, history: updatedHistory }
 
     case 'setNewNotTranslatableWord':
       return {
@@ -396,6 +455,7 @@ const reducer = (
           ...state.notTranslatableWords,
           new: action.payload,
         },
+        history: updatedHistory,
       }
 
     case 'setNotTranslatableWords':
@@ -406,6 +466,7 @@ const reducer = (
           ...action.payload,
           set: new Set(action.payload.set),
         },
+        history: updatedHistory,
       }
 
     case 'endedSuccessfully':
@@ -415,6 +476,7 @@ const reducer = (
         notTranslatableWords: {
           ...state.notTranslatableWords,
         },
+        history: updatedHistory,
       }
   }
 }
