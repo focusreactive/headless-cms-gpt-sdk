@@ -115,7 +115,7 @@ export const localizeStory = async (
           return translateJSON({
             targetLanguage: props.targetLanguageName,
             content: chunk,
-            promptModifier: props.promptModifier ? props.promptModifier : "",
+            promptModifier: props.promptModifier || "",
             isFlat: true,
             notTranslatableWords: props.notTranslatableWords,
           }).then((translatedChunk) => {

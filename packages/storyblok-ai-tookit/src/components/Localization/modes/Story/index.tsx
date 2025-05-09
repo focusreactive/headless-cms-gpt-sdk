@@ -22,6 +22,7 @@ import {
   TranslationLevels,
   TranslationModes,
 } from '@focus-reactive/storyblok-ai-sdk'
+import CustomPromptInput from '../../CustomPromptInput'
 
 interface ILocalizeStoryModeProps {
   localize: () => void
@@ -126,6 +127,10 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
           ))}
         />
       )}
+      <CustomPromptInput
+        dispatch={dispatch}
+        value={state.customPrompt}
+      />
       {showIgnoredWords ? (
         <Stack
           direction="column"
