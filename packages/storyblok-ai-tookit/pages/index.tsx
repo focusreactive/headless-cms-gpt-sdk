@@ -59,10 +59,14 @@ const Home: NextPage<PageProps> = (props) => {
 
   useEffect(() => {
 
-    // hardcoded token for firsty space
-    const correctToken = `${props.spaceId}` !== '320520' ?
-      process.env.NEXT_PUBLIC_OPENAI_TOKEN :
-      process.env.NEXT_PUBLIC_FIRSTY_OPENAI_TOKEN
+    // hardcoded tokens for specific spaces
+    const spaceIdStr = `${props.spaceId}`
+    const correctToken =
+      spaceIdStr === '320520'
+        ? process.env.NEXT_PUBLIC_FIRSTY_OPENAI_TOKEN
+        : spaceIdStr === '287853025223359'
+          ? process.env.NEXT_PUBLIC_XWEATHER_OPENAI_TOKEN
+          : process.env.NEXT_PUBLIC_OPENAI_TOKEN
 
     initSDK({
       managementToken: props.appSession.accessToken,
