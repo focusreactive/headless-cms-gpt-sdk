@@ -27,8 +27,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function isUseAllowed(spaceUsage: UsageSpaceRecord) {
-  // hardcoded removing limits for firsty space
-  if (`${spaceUsage.spaceId}` === "320520") {
+  // hardcoded removing limits for spaces with dedicated tokens
+  const unlimitedSpaceIds = ["320520", "287853025223359"];
+  if (unlimitedSpaceIds.includes(`${spaceUsage.spaceId}`)) {
     return true;
   }
 
