@@ -6,6 +6,9 @@ import {
 } from "storyblok-js-client";
 
 import { SpaceInfo } from "../../../config/spaceData";
+import { applyTranslations } from "../applyTranslations";
+import { collectPairs } from "../collectPairs";
+import { translateInBatches } from "../translateInBatches";
 import { SBManagementClient } from "../../../config/initClient";
 
 import { FolderTranslationData, TranslationLevels } from "../../../config";
@@ -13,7 +16,13 @@ import { FolderTranslationData, TranslationLevels } from "../../../config";
 export const localizeStory = async (
   props: LocalizeStoryProps
 ): Promise<
-  { original: ISbStoryData; translated: ISbStoryData } | undefined
+  | {
+      original: ISbStoryData;
+      translated: ISbStoryData;
+      /** Source texts the model never answered for; written back untranslated. */
+      untranslated: string[];
+    }
+  | undefined
 > => {
   if (!SpaceInfo) {
     return Promise.reject(new Error("SDK is not initialised"));
@@ -108,33 +117,28 @@ export const localizeStory = async (
           },
         }) as FieldForTranslation[];
 
-        const { arrForTranslation } =
-          flattenFieldsForTranslation(fieldsForTranslation);
-
-        const translateJSONChunk = async (chunk: Record<string, string>) => {
-          return translateJSON({
-            targetLanguage: props.targetLanguageName,
-            content: chunk,
-            promptModifier: props.promptModifier ? props.promptModifier : "",
-            isFlat: true,
-            notTranslatableWords: props.notTranslatableWords,
-          }).then((translatedChunk) => {
-            return JSON.parse(translatedChunk);
-          });
-        };
-
-        const translatedChunks = await Promise.all(
-          arrForTranslation.map((chunk) => {
-            return translateJSONChunk(chunk);
-          })
+        const { translations, missing } = await translateInBatches(
+          collectPairs(fieldsForTranslation),
+          async (batch) =>
+            JSON.parse(
+              await translateJSON({
+                targetLanguage: props.targetLanguageName,
+                content: Object.fromEntries(batch),
+                promptModifier: props.promptModifier ? props.promptModifier : "",
+                isFlat: true,
+                notTranslatableWords: props.notTranslatableWords,
+              })
+            )
         );
 
-        const newStory = mergeTranslatedFields(
-          fieldsForTranslation,
-          translatedChunks,
+        const newStory = applyTranslations({
+          fields: fieldsForTranslation,
+          translations,
           story,
-          isFolderLevel ? "" : `__i18n__${props.targetLanguageCode}`
-        );
+          i18nSuffix: isFolderLevel
+            ? ""
+            : `__i18n__${props.targetLanguageCode}`,
+        });
 
         let newStoryData: { story: ISbStoryData };
 
@@ -183,7 +187,11 @@ export const localizeStory = async (
           props.cb(newStoryData);
         }
 
-        resolve({ original: story, translated: newStory });
+        resolve({
+          original: story,
+          translated: newStory,
+          untranslated: missing.map(([, sourceText]) => sourceText),
+        });
       } catch (e) {
         console.error("Failed to localize the document", e);
 
@@ -269,29 +277,6 @@ function traverseObject({
   return outputArr;
 }
 
-function replaceFieldValue(
-  object: Record<string, unknown>,
-  pathToField: string,
-  newValue: unknown
-) {
-  if (object && typeof object === "object") {
-    const arrOfFields = pathToField.split(".");
-    const lastField = arrOfFields.pop();
-
-    for (const field of arrOfFields) {
-      object = object[field] as Record<string, unknown>;
-    }
-
-    if (lastField) {
-      if (newValue) {
-        object[lastField] = newValue;
-      }
-
-      return object[lastField];
-    }
-  }
-}
-
 type ComponentField = {
   type: string;
   translatable?: boolean;
@@ -348,78 +333,3 @@ type FieldForTranslationData =
 
 type FieldForTranslation = [string, FieldForTranslationData];
 
-function flattenFieldsForTranslation(
-  fieldsForTranslation: FieldForTranslation[]
-) {
-  const mapForTranslation = traverseObject({
-    object: fieldsForTranslation,
-    condition: ({ key, value, newPath }) =>
-      (key.includes("forTranslation") && typeof value === "string") ||
-      newPath.match(/forTranslation\.\d+\.1/),
-  }) as [string, string][];
-
-  const arrForTranslation = mapForTranslation.map((value) => ({
-    [value[0]]: value[1],
-  }));
-
-  return { mapForTranslation, arrForTranslation };
-}
-
-function mergeTranslatedFields(
-  fieldsForTranslation: FieldForTranslation[],
-  translated: Record<string, string>[],
-  object: ISbStoryData,
-  i18nSuffix?: string
-) {
-  const restoredFieldsAfterTranslation = structuredClone(fieldsForTranslation);
-
-  for (let i = 0; i < translated.length; i++) {
-    let path = "";
-    let translatedValue = "";
-
-    Object.entries(translated[i]).forEach(([key, value]) => {
-      path = key;
-      translatedValue = value;
-    });
-
-    replaceFieldValue(
-      restoredFieldsAfterTranslation as unknown as Record<string, unknown>,
-      path,
-      translatedValue
-    );
-  }
-
-  const newData = structuredClone(object);
-
-  for (const record of restoredFieldsAfterTranslation) {
-    let fieldPath = record[0];
-
-    if (i18nSuffix) {
-      fieldPath += i18nSuffix;
-    }
-
-    const translated = record[1].forTranslation;
-
-    if (Array.isArray(translated) && typeof record[1].default === "object") {
-      const translatedRichtext = { ...record[1].default };
-
-      for (const field of translated) {
-        replaceFieldValue(translatedRichtext, field[0], field[1]);
-      }
-
-      replaceFieldValue(
-        newData as unknown as Record<string, unknown>,
-        fieldPath,
-        translatedRichtext
-      );
-    } else {
-      replaceFieldValue(
-        newData as unknown as Record<string, unknown>,
-        fieldPath,
-        translated
-      );
-    }
-  }
-
-  return newData;
-}
