@@ -23,6 +23,11 @@ type PageProps = {
   folders: Folder[]
 }
 
+// Storyblok matches App Bridge messages against the installed extension's slug,
+// so a dev extension with a different slug needs its own value here.
+const PLUGIN_SLUG =
+  process.env.NEXT_PUBLIC_PLUGIN_SLUG || 'focusreactive-ai-toolkit'
+
 const Home: NextPage<PageProps> = (props) => {
   const [currentHeight, setCurrentHeight] = useState<number>(0)
   const [currentStory, setCurrentStory] = useState<ISbStoryData>(null)
@@ -38,7 +43,7 @@ const Home: NextPage<PageProps> = (props) => {
       window.parent.postMessage(
         {
           action: 'tool-changed',
-          tool: 'focusreactive-ai-toolkit',
+          tool: PLUGIN_SLUG,
           event: 'heightChange',
           height: height,
           width: '100%',
@@ -70,7 +75,7 @@ const Home: NextPage<PageProps> = (props) => {
 
     initSDK({
       managementToken: props.appSession.accessToken,
-      pluginName: 'focusreactive-ai-toolkit',
+      pluginName: PLUGIN_SLUG,
       openAiToken: correctToken,
       spaceId: String(props.spaceId),
     })
@@ -89,7 +94,7 @@ const Home: NextPage<PageProps> = (props) => {
     window.parent.postMessage(
       {
         action: 'tool-changed',
-        tool: 'focusreactive-ai-toolkit',
+        tool: PLUGIN_SLUG,
         event: 'getContext',
       },
       '*',
