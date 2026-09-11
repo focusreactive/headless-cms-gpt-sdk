@@ -69,13 +69,13 @@ describe("translateInBatches", () => {
     expect(translate).toHaveBeenCalledTimes(2);
   });
 
-  it("treats an empty string as an answer, not as missing", async () => {
+  it("treats an empty string as no answer, so it is retried and then reported", async () => {
     const translate = answering({ a: "" });
 
     const result = await translateInBatches([pair("a")], translate);
 
-    expect(result.translations).toEqual({ a: "" });
-    expect(result.missing).toEqual([]);
+    expect(translate).toHaveBeenCalledTimes(2);
+    expect(result.missing.map(([key]) => key)).toEqual(["a"]);
   });
 
   it("asks nothing at all for an empty list", async () => {
