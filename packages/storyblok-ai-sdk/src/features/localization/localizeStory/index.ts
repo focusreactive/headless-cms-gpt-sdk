@@ -6,12 +6,22 @@ import {
 } from "storyblok-js-client";
 
 import { SpaceInfo } from "../../../config/spaceData";
-import { applyTranslations } from "../applyTranslations";
+import { applyTranslations, type CollectedField } from "../applyTranslations";
+import { collectBlocks } from "../collectBlocks";
+import { withoutMarkers } from "../inlineMarkers";
 import { collectPairs } from "../collectPairs";
 import { translateInBatches } from "../translateInBatches";
 import { SBManagementClient } from "../../../config/initClient";
 
 import { FolderTranslationData, TranslationLevels } from "../../../config";
+
+const MARKER_INSTRUCTION =
+  "Some values contain numbered inline markers like <1>text</1> or <2/>, standing " +
+  "for formatting and for things that are not text. Keep every marker exactly " +
+  "once, paired, with the same number, and place each around the words it belongs " +
+  "to in the translation — its position may differ from the source. Do not add, " +
+  "drop or renumber markers. A value that arrives without markers must come back " +
+  "without markers: never introduce one that was not already in that value.";
 
 export const localizeStory = async (
   props: LocalizeStoryProps
@@ -19,7 +29,10 @@ export const localizeStory = async (
   | {
       original: ISbStoryData;
       translated: ISbStoryData;
-      /** Source texts the model never answered for; written back untranslated. */
+      /**
+       * Source texts written back untranslated: the model never answered, or its
+       * answer could not be read back.
+       */
       untranslated: string[];
     }
   | undefined
@@ -102,11 +115,7 @@ export const localizeStory = async (
             if (typeof value === "object") {
               return {
                 default: value,
-                forTranslation: traverseObject({
-                  object: value,
-                  condition: ({ key, value }) =>
-                    key === "text" && typeof value === "string",
-                }),
+                forTranslation: collectBlocks(value as ISbRichtext),
               };
             }
 
@@ -115,23 +124,28 @@ export const localizeStory = async (
               forTranslation: value,
             };
           },
-        }) as FieldForTranslation[];
+        }) as CollectedField[];
+
+        const pairs = collectPairs(fieldsForTranslation);
+        const sourceTextByKey = new Map(pairs);
 
         const { translations, missing } = await translateInBatches(
-          collectPairs(fieldsForTranslation),
+          pairs,
           async (batch) =>
             JSON.parse(
               await translateJSON({
                 targetLanguage: props.targetLanguageName,
                 content: Object.fromEntries(batch),
-                promptModifier: props.promptModifier ? props.promptModifier : "",
+                promptModifier: [props.promptModifier, MARKER_INSTRUCTION]
+                  .filter(Boolean)
+                  .join("\n"),
                 isFlat: true,
                 notTranslatableWords: props.notTranslatableWords,
               })
             )
         );
 
-        const newStory = applyTranslations({
+        const { story: newStory, unparsedBlockKeys } = applyTranslations({
           fields: fieldsForTranslation,
           translations,
           story,
@@ -190,7 +204,12 @@ export const localizeStory = async (
         resolve({
           original: story,
           translated: newStory,
-          untranslated: missing.map(([, sourceText]) => sourceText),
+          untranslated: [
+            ...missing.map(([, sourceText]) => withoutMarkers(sourceText)),
+            ...unparsedBlockKeys.map((key) =>
+              withoutMarkers(sourceTextByKey.get(key) ?? key)
+            ),
+          ],
         });
       } catch (e) {
         console.error("Failed to localize the document", e);
@@ -326,10 +345,4 @@ function getTranslatableFields(
 
   return componentsWithTranslatableFields;
 }
-
-type FieldForTranslationData =
-  | { default: string; forTranslation: string }
-  | { default: ISbRichtext; forTranslation: [string, string][] };
-
-type FieldForTranslation = [string, FieldForTranslationData];
 

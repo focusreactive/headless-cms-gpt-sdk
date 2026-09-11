@@ -1,22 +1,18 @@
 import type { ISbRichtext, ISbStoryData } from "storyblok-js-client";
 
 import { fragmentKey } from "./fragmentKey";
+import { parseInline } from "./inlineMarkers";
+import type { MarkedBlocks } from "./collectBlocks";
 
 /**
- * One translatable field of the story, as collected from it.
- *
- * A rich text field is many fragments, because formatting splits a sentence into
- * several text nodes. In `translations` such a fragment is keyed
- * `<storyPath>#<documentPath>` — see `fragmentKey`.
+ * One translatable field of the story, as collected from it. In `translations` a
+ * rich text block is keyed `<storyPath>#<documentPath>` — see `fragmentKey`.
  */
 export type CollectedField = readonly [
   storyPath: string,
   value:
     | { default: string; forTranslation: string }
-    | {
-        default: ISbRichtext;
-        forTranslation: [documentPath: string, sourceText: string][];
-      },
+    | { default: ISbRichtext; forTranslation: MarkedBlocks },
 ];
 
 /**
@@ -39,8 +35,9 @@ export type CollectedField = readonly [
  *     default language, and a required field that resolves to nothing can have the
  *     whole write rejected — so every collected field is written, translated or not;
  *   - an identifier that matches nothing in `fields` is ignored, not an error;
- *   - a rich text field keeps its structure: only the text of its fragments changes,
- *     every other node stays as it was;
+ *   - a rich text field keeps every node the answer accounts for: marked nodes are
+ *     rebuilt with the translated words wherever the answer puts them, and a block
+ *     whose answer cannot be read back is left as it was and named in `unparsedBlockKeys`;
  *   - the story passed in is not modified — a new one is returned.
  */
 export type ApplyTranslations = (input: {
@@ -48,7 +45,10 @@ export type ApplyTranslations = (input: {
   translations: Record<string, string>;
   story: ISbStoryData;
   i18nSuffix?: string;
-}) => ISbStoryData;
+}) => {
+  story: ISbStoryData;
+  unparsedBlockKeys: string[];
+};
 
 const setByPath = (target: unknown, path: string, value: unknown) => {
   const segments = path.split(".");
@@ -73,6 +73,9 @@ const setByPath = (target: unknown, path: string, value: unknown) => {
   cursor[last] = value;
 };
 
+/** An empty translation is no answer: blanking a field loses content nobody asked to lose. */
+const answered = (translation?: string) => (translation ? translation : undefined);
+
 export const applyTranslations: ApplyTranslations = ({
   fields,
   translations,
@@ -80,6 +83,7 @@ export const applyTranslations: ApplyTranslations = ({
   i18nSuffix = "",
 }) => {
   const translatedStory = structuredClone(story);
+  const unparsedBlockKeys: string[] = [];
 
   for (const [storyPath, value] of fields) {
     const targetPath = `${storyPath}${i18nSuffix}`;
@@ -88,7 +92,7 @@ export const applyTranslations: ApplyTranslations = ({
       setByPath(
         translatedStory,
         targetPath,
-        translations[storyPath] ?? value.forTranslation,
+        answered(translations[storyPath]) ?? value.forTranslation,
       );
 
       continue;
@@ -96,16 +100,27 @@ export const applyTranslations: ApplyTranslations = ({
 
     const document = structuredClone(value.default);
 
-    for (const [nodePath, sourceText] of value.forTranslation) {
-      setByPath(
-        document,
-        nodePath,
-        translations[fragmentKey(storyPath, nodePath)] ?? sourceText,
-      );
+    for (const [documentPath, block] of value.forTranslation) {
+      const key = fragmentKey(storyPath, documentPath);
+      const translated = translations[key];
+
+      if (translated === undefined) {
+        continue;
+      }
+
+      const content = parseInline(translated, block);
+
+      if (content === null) {
+        unparsedBlockKeys.push(key);
+
+        continue;
+      }
+
+      setByPath(document, documentPath, content);
     }
 
     setByPath(translatedStory, targetPath, document);
   }
 
-  return translatedStory;
+  return { story: translatedStory, unparsedBlockKeys };
 };
