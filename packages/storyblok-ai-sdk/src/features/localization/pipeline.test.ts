@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { applyTranslations, type CollectedField } from "./applyTranslations";
 import { collectBlocks } from "./collectBlocks";
 import { collectPairs } from "./collectPairs";
+import type { TranslationPair } from "./batching";
 import { translateInBatches } from "./translateInBatches";
 
 /**
@@ -74,7 +75,7 @@ const collectFields = (story: ISbStoryData): CollectedField[] => {
 
 /** Prefixes every text and keeps markers where they were. */
 const translator = (prefix = "DE ") =>
-  vi.fn(async (batch: [string, string][]) =>
+  vi.fn(async (batch: TranslationPair[]) =>
     Object.fromEntries(
       batch.map(([key, text]) => [
         key,
@@ -85,7 +86,7 @@ const translator = (prefix = "DE ") =>
 
 const run = async (
   story: ISbStoryData,
-  translate: (batch: [string, string][]) => Promise<Record<string, string>>,
+  translate: (batch: TranslationPair[]) => Promise<Record<string, string>>,
 ) => {
   const fields = collectFields(story);
   const { translations, missing } = await translateInBatches(collectPairs(fields), translate);
@@ -144,7 +145,7 @@ describe("a story through the whole pipeline", () => {
   });
 
   it("names what the model never answered for, and leaves it in the source language", async () => {
-    const silentAboutTheHeadline = vi.fn(async (batch: [string, string][]) =>
+    const silentAboutTheHeadline = vi.fn(async (batch: TranslationPair[]) =>
       Object.fromEntries(
         batch
           .filter(([key]) => key !== "content.body.0.headline")
@@ -161,7 +162,7 @@ describe("a story through the whole pipeline", () => {
   });
 
   it("keeps a block whose markers came back broken, and names it", async () => {
-    const dropsTheMarker = vi.fn(async (batch: [string, string][]) =>
+    const dropsTheMarker = vi.fn(async (batch: TranslationPair[]) =>
       Object.fromEntries(
         batch.map(([key, text]) => [key, text.replace(/<\/?\d+>/g, "")]),
       ),
