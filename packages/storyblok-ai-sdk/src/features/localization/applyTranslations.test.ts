@@ -1,6 +1,7 @@
 import type { ISbRichtext, ISbStoryData } from "storyblok-js-client";
 import { describe, expect, it } from "vitest";
 import { applyTranslations, type CollectedField } from "./applyTranslations";
+import { serializeInline } from "./inlineMarkers";
 
 function getByPath(target: unknown, path: string): unknown {
   return path
@@ -77,7 +78,7 @@ describe("applyTranslations", () => {
         paths.map((path, i) => [path, `Translated ${i}`]),
       );
 
-      const result = applyTranslations({ fields, translations, story });
+      const { story: result } = applyTranslations({ fields, translations, story });
 
       for (const [i, path] of paths.entries()) {
         expect(getByPath(result, path)).toBe(`Translated ${i}`);
@@ -92,7 +93,7 @@ describe("applyTranslations", () => {
         ["content.body.0.headline", { default: "Buy now", forTranslation: "Buy now" }],
       ];
 
-      const result = applyTranslations({
+      const { story: result } = applyTranslations({
         fields,
         translations: {},
         story,
@@ -103,6 +104,23 @@ describe("applyTranslations", () => {
       expect(getByPath(result, "content.body.0.headline")).toBe("Buy now");
     });
 
+
+    it("keeps the source text when the translation comes back empty", () => {
+      const story = buildStory();
+      const fields: CollectedField[] = [
+        ["content.body.0.headline", { default: "Buy now", forTranslation: "Buy now" }],
+      ];
+
+      const { story: result } = applyTranslations({
+        fields,
+        translations: { "content.body.0.headline": "" },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(getByPath(result, "content.body.0.headline__i18n__de")).toBe("Buy now");
+    });
+
     it("writes a rich text field even when none of its fragments were translated", () => {
       const story = buildStory();
       const source = (story.content as { body: Array<{ body: unknown }> }).body[1]
@@ -110,11 +128,22 @@ describe("applyTranslations", () => {
       const fields: CollectedField[] = [
         [
           "content.body.1.body",
-          { default: source, forTranslation: [["content.0.content.0.text", "Buy now"]] },
+          {
+            default: source,
+            forTranslation: [
+              [
+                "content.0.content",
+                serializeInline([
+                  { type: "text", text: "Buy now", marks: [{ type: "bold" }] },
+                  { type: "text", text: " while supplies last" },
+                ] as unknown as ISbRichtext[]),
+              ],
+            ],
+          },
         ],
       ];
 
-      const result = applyTranslations({
+      const { story: result } = applyTranslations({
         fields,
         translations: {},
         story,
@@ -136,7 +165,7 @@ describe("applyTranslations", () => {
         "ghost-id-does-not-exist": "should never be written anywhere",
       };
 
-      const result = applyTranslations({ fields, translations, story });
+      const { story: result } = applyTranslations({ fields, translations, story });
 
       expect(getByPath(result, "content.body.0.headline")).toBe("Jetzt kaufen");
       const heroBlock = (result.content as { body: Array<Record<string, unknown>> }).body[0];
@@ -152,7 +181,7 @@ describe("applyTranslations", () => {
       ];
       const translations = { "content.body.0.headline": "Jetzt kaufen" };
 
-      const result = applyTranslations({
+      const { story: result } = applyTranslations({
         fields,
         translations,
         story,
@@ -172,27 +201,39 @@ describe("applyTranslations", () => {
       ];
       const translations = { "content.body.0.headline": "Jetzt kaufen" };
 
-      const result = applyTranslations({ fields, translations, story });
+      const { story: result } = applyTranslations({ fields, translations, story });
 
       expect(getByPath(result, "content.body.0.headline")).toBe("Jetzt kaufen");
     });
   });
 
-  describe("rich text structure (guarantee: only a fragment's text changes, every other node stays as it was)", () => {
-    it("replaces the translated fragment's text while keeping marks and sibling nodes intact", () => {
-      const story = buildStory();
-      const fields: CollectedField[] = [
-        [
-          "content.body.1.body",
-          {
-            default: (story.content as { body: Array<{ body: ISbRichtext }> }).body[1].body,
-            forTranslation: [["content.0.content.0.text", "Buy now"]],
-          },
+  describe("rich text structure (guarantee: formatting follows the words it belongs to)", () => {
+    const blockField = (story: ISbStoryData): CollectedField => [
+      "content.body.1.body",
+      {
+        default: (story.content as { body: Array<{ body: ISbRichtext }> }).body[1]
+          .body,
+        forTranslation: [
+          [
+            "content.0.content",
+            serializeInline([
+              { type: "text", text: "Buy now", marks: [{ type: "bold" }] },
+              { type: "text", text: " while supplies last" },
+            ] as unknown as ISbRichtext[]),
+          ],
         ],
-      ];
-      const translations = { "content.body.1.body#content.0.content.0.text": "Jetzt kaufen" };
+      },
+    ];
 
-      const result = applyTranslations({ fields, translations, story });
+    it("puts the emphasis where the translation moved it, not where the source had it", () => {
+      const story = buildStory();
+      const fields = [blockField(story)];
+      const translations = {
+        "content.body.1.body#content.0.content":
+          "Solange der Vorrat reicht, <1>jetzt kaufen</1>",
+      };
+
+      const { story: result } = applyTranslations({ fields, translations, story });
 
       expect(getByPath(result, "content.body.1.body")).toEqual({
         type: "doc",
@@ -200,18 +241,37 @@ describe("applyTranslations", () => {
           {
             type: "paragraph",
             content: [
-              { type: "text", text: "Jetzt kaufen", marks: [{ type: "bold" }] },
-              { type: "text", text: " while supplies last" },
+              { type: "text", text: "Solange der Vorrat reicht, " },
+              { type: "text", text: "jetzt kaufen", marks: [{ type: "bold" }] },
             ],
           },
           { type: "horizontal_rule" },
         ],
       });
     });
+
+    it("keeps the source block and names it when the answer's markers do not add up", () => {
+      const story = buildStory();
+      const fields = [blockField(story)];
+      const translations = {
+        "content.body.1.body#content.0.content": "Jetzt kaufen, solange der Vorrat reicht",
+      };
+
+      const { story: result, unparsedBlockKeys } = applyTranslations({
+        fields,
+        translations,
+        story,
+      });
+
+      expect(unparsedBlockKeys).toEqual(["content.body.1.body#content.0.content"]);
+      expect(getByPath(result, "content.body.1.body")).toEqual(
+        getByPath(buildStory(), "content.body.1.body"),
+      );
+    });
   });
 
   describe("story immutability (guarantee: the story passed in is not modified — a new one is returned)", () => {
-    it("does not mutate the original story object", () => {
+    it("writes the translation into the returned story and leaves the original untouched", () => {
       const story = buildStory();
       const snapshot = structuredClone(story);
       deepFreeze(story);
@@ -221,8 +281,9 @@ describe("applyTranslations", () => {
       ];
       const translations = { "content.body.0.headline": "Jetzt kaufen" };
 
-      applyTranslations({ fields, translations, story });
+      const { story: result } = applyTranslations({ fields, translations, story });
 
+      expect(getByPath(result, "content.body.0.headline")).toBe("Jetzt kaufen");
       expect(story).toEqual(snapshot);
     });
   });
