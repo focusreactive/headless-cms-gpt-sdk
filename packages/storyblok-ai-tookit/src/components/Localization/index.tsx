@@ -104,17 +104,20 @@ const Localization = () => {
           promptModifier: state.storySummary
             ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
             : '',
-          cb: () =>
-            dispatch({
-              type: 'endedSuccessfully',
-              payload: untranslatedNotice(untranslated),
-            }),
+          // Nothing here may read the awaited result: localizeStory calls cb before
+          // it resolves, so those bindings do not exist yet.
+          cb: () => undefined,
           translationLevel: state.translationLevel,
           notTranslatableWords: notTranslatableWords.set,
         })
 
         translatedStory = translated
         originalStory = original
+
+        dispatch({
+          type: 'endedSuccessfully',
+          payload: untranslatedNotice(untranslated),
+        })
       } catch (error) {
         errorMessage = error.message
 
