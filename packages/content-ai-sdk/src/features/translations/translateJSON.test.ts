@@ -298,24 +298,32 @@ describe("translateJSON", () => {
       expect(JSON.parse(result).a).toBe("Hello {{0}}, welcome to Xweather");
     });
 
-    it("does not corrupt a not-translatable word that is a substring of another preserved word", async () => {
-      create.mockResolvedValueOnce(
-        chatResponse(
-          JSON.stringify({ "0": "Ich liebe Cloud-Speicher", "1": "Ich benutze iCloud" }),
-        ),
-      );
+    it("keeps a term whole when a shorter term is a substring of it", async () => {
+      // The model renders every alphabetic word as UEBERSETZT and leaves placeholders
+      // alone. Hide "Cloud" first and "iCloud" breaks into "i" + placeholder — the
+      // stray "i" is then translated away and the term comes back mangled.
+      create.mockImplementation(async (params: { messages: { content: string }[] }) => {
+        const sent = JSON.parse(params.messages.at(-1)!.content);
+        return chatResponse(
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(sent as Record<string, string>).map(([key, value]) => [
+                key,
+                value.replace(/[A-Za-z]+/g, "UEBERSETZT"),
+              ]),
+            ),
+          ),
+        );
+      });
 
       const result = await translateJSON({
         targetLanguage: "German",
-        content: { a: "I love Cloud storage", b: "I use iCloud" },
+        content: { a: "I use iCloud daily" },
         isFlat: true,
-        notTranslatableWords: ["Cloud"],
+        notTranslatableWords: ["Cloud", "iCloud"],
       });
 
-      expect(JSON.parse(result)).toEqual({
-        a: "Ich liebe Cloud-Speicher",
-        b: "Ich benutze iCloud",
-      });
+      expect(JSON.parse(result).a).toContain("iCloud");
     });
   });
 });
