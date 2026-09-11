@@ -21,8 +21,9 @@ export interface BatchTranslationResult {
  * The retry runs once. A model that mangles the same request twice rarely fixes it
  * on a third attempt, and the editor is waiting.
  *
- * An empty value answered by the model is an answer: an empty translation of an
- * empty source is legitimate, and the filter tests for an absent key.
+ * An empty value is not an answer. A field that comes back blank would otherwise be
+ * quietly left in its source language and reported as success, which is the one
+ * outcome an editor cannot see.
  *
  * Whatever is still missing when the retry is spent comes back in `missing`, in the
  * input's order.
@@ -50,7 +51,7 @@ export const translateInBatches: TranslateInBatches = async (
       }
     }
 
-    pending = pending.filter(([key]) => translations[key] === undefined);
+    pending = pending.filter(([key]) => !translations[key]);
   }
 
   return { translations, missing: pending };
