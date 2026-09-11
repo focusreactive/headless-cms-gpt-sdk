@@ -1,301 +1,314 @@
-# Задача А: пакетная отправка текста на перевод
+# Task A: batching text for translation
 
-Дата: 8 сентября 2026. Предшествует: `2026-09-08-translation-quality-and-brand-voice.md`.
+Date: 8 September 2026. Precedes: `2026-09-08-translation-quality-and-brand-voice.md`.
 
-## Цель
+## Goal
 
-Отправлять тексты истории на перевод пакетами вместо одного запроса на каждое поле,
-чтобы модель видела содержимое целиком и согласовывала терминологию.
+Send a story's texts for translation in batches instead of one request per field, so
+the model sees the whole content and keeps terminology consistent.
 
-## Что входит
+## In scope
 
-1. Формат обмена с моделью: объект «ключ → текст» вместо массива значений.
-2. Удаление заплатки `join(" ")`.
-3. Сборка полей в пакеты с пределом размера.
-4. Повтор пакета при сбое.
+1. The exchange format with the model: a `key → text` object instead of an array of values.
+2. Removing the `join(" ")` hotfix.
+3. Grouping fields into batches with a size limit.
+4. Retrying a batch on failure.
 
-## Что не входит
+## Out of scope
 
-- Смена единицы перевода на абзац с метками (задача Б) — грамматика внутри абзаца
-  этой задачей не лечится.
-- Голос бренда.
-- Смена модели (делается отдельно, одной строкой).
-- Перенос перевода на сервер.
+- Switching the unit of translation to a paragraph with placeholders (Task B) — grammar
+  within a paragraph isn't fixed by this task.
+- Brand voice.
+- Switching the model (done separately, a one-liner).
+- Moving translation to the server.
 
-## Находки, определяющие решения
+## Findings that shape the decisions
 
-**Заплатка ломает не только будущее, но и настоящее.** В `translateJSON.ts:88`:
+**The hotfix breaks not just the future but the present too.** In `translateJSON.ts:88`:
 
 ```js
 const translationsFixed = [translations.join(" ")];
 ```
 
-Все переводы склеиваются в одну строку, а затем раскладываются по ключам по индексу.
-При одном поле в запросе это незаметно. При нескольких — первый ключ получает склейку
-всех переводов, остальные получают пустоту.
+All translations are glued into one string, then distributed back to keys by index.
+With one field per request this goes unnoticed. With several, the first key gets the
+concatenation of all translations, and the rest get nothing.
 
-**Sanity-плагин при этом не затронут — проверено.** `sanity-ai-sdk` закреплён на
-опубликованной версии `@focus-reactive/content-ai-sdk` **0.0.4** и получает её из npm.
-Заплатка появилась только в 0.0.14 (коммит `73180bb`, 26 февраля 2025); в собранном коде
-версии 0.0.4, которая реально лежит у Sanity в зависимостях, её нет.
+**The Sanity plugin is unaffected by this — verified.** `sanity-ai-sdk` is pinned to
+the published `@focus-reactive/content-ai-sdk` version **0.0.4** and gets it from npm.
+The hotfix only appeared in 0.0.14 (commit `73180bb`, 26 February 2025); the built code
+of version 0.0.4, which is what Sanity actually has in its dependencies, doesn't have it.
 
-Отсюда два следствия для этой задачи:
+Two consequences for this task follow from that:
 
-- сломать переводы в Sanity нашими правками нельзя — он их не увидит, пока кто-то вручную
-  не поднимет версию зависимости;
-- исключение — режим локальной разработки: корневой `yarn dev` подкладывает свежую сборку
-  через yalc, и тогда Sanity получает изменённый код. На боевую работу это не влияет.
+- our changes can't break translations in Sanity — it won't see them until someone
+  manually bumps the dependency version;
+- the exception is local development mode: the root `yarn dev` feeds in a fresh build
+  via yalc, and then Sanity does get the changed code. This has no effect on production.
 
-Поэтому Sanity остаётся вне объёма задачи. Внешняя сигнатура `translateJSON` всё равно
-сохраняется, чтобы будущее обновление версии не превратилось в поломку.
+So Sanity stays out of scope for this task. The external signature of `translateJSON`
+is kept unchanged regardless, so a future version bump doesn't turn into a breakage.
 
-**Потребители `translateJSON`:**
-- `storyblok-ai-sdk/.../localizeStory/index.ts:115` — плоские пары, по одной на вызов;
-- `sanity-ai-sdk/.../translateFullDocument/index.ts:31` — вложенный документ целиком;
-- `sanity-ai-sdk/.../translateSelectedDocumentFields/index.ts:61` — выбранные поля.
+**Consumers of `translateJSON`:**
+- `storyblok-ai-sdk/.../localizeStory/index.ts:115` — flat pairs, one per call;
+- `sanity-ai-sdk/.../translateFullDocument/index.ts:31` — the whole nested document;
+- `sanity-ai-sdk/.../translateSelectedDocumentFields/index.ts:61` — selected fields.
 
-Внешняя сигнатура `translateJSON` (принимает объект, возвращает строку JSON) сохраняется —
-меняется только внутреннее устройство запроса и разбор ответа.
+The external signature of `translateJSON` (takes an object, returns a JSON string)
+stays the same — only the internal request shape and response parsing change.
 
-## Изменения по шагам
+## Changes by step
 
-### Шаг 1. Формат обмена — `content-ai-sdk`
+### Step 1. Exchange format — `content-ai-sdk`
 
-Файл: `packages/content-ai-sdk/src/features/translations/translateJSON.ts`
+File: `packages/content-ai-sdk/src/features/translations/translateJSON.ts`
 
-- В запрос уходит объект `{ключ: текст}`, а не массив значений.
-- Системное сообщение: перевести значения, ключи оставить без изменений, вернуть объект
-  с теми же ключами.
-- Ответ разбирается по ключам; заплатка `join(" ")` удаляется.
-- **Восстановление краевых пробелов сохраняется** — переносится на новый формат и
-  применяется к каждому значению по его ключу. Блок `// Fix spaces` соседствует с
-  заплаткой (оба пришли одним коммитом `73180bb`), но делает полезное: возвращает
-  начальный и конечный пробел исходного значения, который модель регулярно съедает.
-  В нынешней поузловой схеме это единственное, что не даёт словам слипнуться на
-  стыке узлов. Удалить его вместе с заплаткой — значит ухудшить перевод.
-- Значение ответа, не являющееся строкой, считается отсутствием ответа: поле остаётся
-  непереведённым. Приведение к строке рискует записать в контент `[object Object]`.
-- Подстановка непереводимых слов (`{{i}}`) сохраняется, применяется к каждому значению.
-- Ключи в запросе — порядковые номера, а не пути полей: пути несут смысл и сбивают модель,
-  плюс удлиняют запрос.
-- Отсутствующие в ответе ключи не роняют перевод: соответствующие поля остаются
-  непереведёнными, вызывающая сторона получает их перечень.
+- The request now carries a `{key: text}` object instead of an array of values.
+- System message: translate the values, leave the keys unchanged, return an object
+  with the same keys.
+- The response is parsed by key; the `join(" ")` hotfix is removed.
+- **Edge whitespace restoration is kept** — carried over to the new format and applied
+  to each value by its key. The `// Fix spaces` block sits next to the hotfix (both
+  landed in the same commit, `73180bb`), but it does something useful: it restores the
+  leading and trailing whitespace of the source value, which the model regularly eats.
+  In the current per-node scheme this is the only thing keeping words from running
+  together at node boundaries. Removing it along with the hotfix would make the
+  translation worse.
+- A response value that isn't a string counts as no response: the field stays
+  untranslated. Coercing it to a string risks writing `[object Object]` into the content.
+- Not-translatable word substitution (`{{i}}`) is kept, applied to each value.
+- The keys in the request are sequence numbers, not field paths: paths carry meaning
+  and throw the model off, plus they make the request longer.
+- Keys missing from the response don't fail the translation: the corresponding fields
+  stay untranslated, and the caller gets their list.
 
-### Шаг 2. Пакеты — `storyblok-ai-sdk`
+### Step 2. Batches — `storyblok-ai-sdk`
 
-Файл: `packages/storyblok-ai-sdk/src/features/localization/localizeStory/index.ts`
+File: `packages/storyblok-ai-sdk/src/features/localization/localizeStory/index.ts`
 
-- `flattenFieldsForTranslation` возвращает единый список пар вместо массива объектов
-  по одному полю.
-- Новая функция разбивки: пары группируются в пакеты, пока суммарная длина значений
-  не превысит предел (по умолчанию 12 000 знаков) или число значений не превысит 80.
-  Значение длиннее предела едет в собственном пакете.
-- Пакеты отправляются последовательно, а не через `Promise.all` — это убирает залповую
-  нагрузку на провайдера, которой сейчас ничто не ограничивает.
-- Сборка обратно (`mergeTranslatedFields`) не меняется: она уже работает по путям полей.
+- `flattenFieldsForTranslation` now returns a single list of pairs instead of an array
+  of one-field-each objects.
+- A new splitting function: pairs are grouped into batches until the combined length
+  of their values would exceed the limit (12,000 characters by default) or the number
+  of values would exceed 80. A value longer than the limit travels in its own batch.
+- Batches are sent sequentially rather than via `Promise.all` — this removes the burst
+  load on the provider that currently has nothing limiting it.
+- Reassembly (`mergeTranslatedFields`) doesn't change: it already works by field paths.
 
-### Шаг 3. Повтор при сбое
+### Step 3. Retry on failure
 
-- Пакет повторяется до двух раз с нарастающей задержкой при сетевой ошибке, отказе
-  провайдера или неразбираемом ответе.
-- После исчерпания попыток перевод истории прекращается с понятной ошибкой; частичная
-  запись в историю не производится (как и сейчас — запись идёт после успеха всего).
+- A batch is retried up to two times with increasing delay on a network error, a
+  provider failure, or an unparseable response.
+- Once retries are exhausted, translating the story stops with a clear error; no
+  partial write to the story happens (same as now — the write happens only after
+  everything succeeds).
 
-## Критерии приёмки
+## Acceptance criteria
 
-| № | Критерий | Как проверяется |
+| № | Criterion | How it's checked |
 |---|---|---|
-| 1 | Перевод истории с N переводимыми полями порождает не более `ceil(суммарная длина / предел)` обращений к модели вместо N | счётчик вызовов в тесте на выдуманном провайдере |
-| 2 | Пакет из трёх и более полей раскладывается по своим полям; ни одно поле не получает чужой текст и не остаётся пустым | тест: подставной ответ с тремя ключами |
-| 3 | Заплатки `join(" ")` в коде нет | поиск по репозиторию |
-| 4 | Ответ с недостающими ключами: переведённые поля записываются, недостающие остаются исходными, их перечень возвращается вызывающей стороне | тест: ответ без одного ключа |
-| 5 | Ответ с лишними ключами игнорирует лишнее и не падает | тест: ответ с посторонним ключом |
-| 6 | Неразбираемый ответ приводит к повтору, а после исчерпания попыток — к ошибке без записи в историю | тест: провайдер возвращает мусор |
-| 7 | Непереводимые слова возвращаются в текст в неизменном виде при пакетной отправке | тест: два поля, каждое со своим непереводимым словом |
-| 8 | Значение длиннее предела отправляется отдельным пакетом и не обрезается | тест на разбивку |
-| 9 | Термин, встречающийся в двух разных полях истории, переводится одинаково | ручной прогон на тестовой истории до и после |
-| 10 | Вложенный объект (случай Sanity, `isFlat: false`) переводится без потери значений — на случай будущего обновления версии | тест на `translateJSON` с вложенным объектом |
-| 11 | Краевые пробелы исходного значения сохраняются, лишние не добавляются | три теста: съеденный хвостовой пробел, съеденный ведущий, значение без пробелов |
-| 12 | Нестроковый ответ модели для ключа оставляет поле непереведённым, не задевая соседей | тест: ответ, где одно значение — объект |
+| 1 | Translating a story with N translatable fields produces no more than `ceil(total length / limit)` calls to the model instead of N | call counter in a test against a fake provider |
+| 2 | A batch of three or more fields is distributed back to its own fields; no field gets someone else's text or is left empty | test: a stubbed response with three keys |
+| 3 | There's no `join(" ")` hotfix left in the code | repository search |
+| 4 | A response with missing keys: translated fields are written, missing ones keep the original, their list is returned to the caller | test: a response missing one key |
+| 5 | A response with extra keys ignores the extras and doesn't fail | test: a response with an unrelated key |
+| 6 | An unparseable response triggers a retry, and once retries are exhausted, an error without writing to the story | test: the provider returns garbage |
+| 7 | Not-translatable words come back in the text unchanged under batching | test: two fields, each with its own not-translatable word |
+| 8 | A value longer than the limit is sent as a separate batch and isn't truncated | batching test |
+| 9 | A term appearing in two different fields of the story is translated the same way | manual run on a test story, before and after |
+| 10 | A nested object (the Sanity case, `isFlat: false`) is translated without losing values — in case of a future version bump | test on `translateJSON` with a nested object |
+| 11 | Edge whitespace of the source value is preserved, no extra whitespace is added | three tests: eaten trailing space, eaten leading space, a value with no whitespace |
+| 12 | A non-string model response for a key leaves the field untranslated without affecting its neighbors | test: a response where one value is an object |
 
-## Тесты
+## Tests
 
-`vitest` в `content-ai-sdk` подключён (`test: vitest run`), файлов пока нет — эта задача
-заводит первые. Покрываются чистые функции: сборка запроса, разбор ответа, подстановка
-непереводимых слов, разбивка на пакеты. Обращение к модели подменяется.
+`vitest` is wired up in `content-ai-sdk` (`test: vitest run`), there are no test files
+yet — this task adds the first ones. Pure functions are covered: building the request,
+parsing the response, not-translatable word substitution, batch splitting. The call to
+the model is stubbed.
 
-## Порядок работ
+## Order of work
 
-1. Тесты на нынешнее поведение разбора там, где оно должно сохраниться.
-2. Шаг 1 (формат обмена) с тестами — проверяется на Sanity-случае, где ошибка видна ярче.
-3. Шаг 2 (пакеты) с тестами.
-4. Шаг 3 (повторы).
-5. Ручной прогон на тестовой истории: сравнить число обращений и согласованность терминов.
+1. Tests for the current parsing behavior where it must be preserved.
+2. Step 1 (exchange format) with tests — verified on the Sanity case, where the error
+   shows up more clearly.
+3. Step 2 (batches) with tests.
+4. Step 3 (retries).
+5. Manual run on a test story: compare the number of calls and terminology consistency.
 
-Шаги 1 и 2 обратимы по отдельности; после шага 1 плагин работает как прежде, просто
-с другим форматом обмена.
+Steps 1 and 2 are reversible independently; after step 1 the plugin works as before,
+just with a different exchange format.
 
-## Риски
+## Risks
 
-- **Связка через yalc.** Правка в `content-ai-sdk` требует пересборки и переподкладывания
-  в приложение; цикл проверки медленный.
-- **Два потребителя у общей функции.** Storyblok зовёт `translateJSON` с плоскими парами,
-  Sanity — с вложенным объектом. Сейчас Sanity сидит на версии 0.0.4 и наших правок не
-  увидит, но режим `isFlat: false` всё равно надо покрыть тестом, иначе при будущем
-  обновлении версии поломка вскроется у клиента, а не у нас.
-- **Предел размера подобран умозрительно.** 12 000 знаков — начальное значение, уточняется
-  после первых прогонов на реальных историях.
-- **Согласованность терминов проверяется глазами.** Автоматического критерия на неё нет;
-  пункт 9 остаётся ручным.
+- **The yalc link.** A change in `content-ai-sdk` requires a rebuild and re-feeding
+  into the app; the verification cycle is slow.
+- **Two consumers share one function.** Storyblok calls `translateJSON` with flat
+  pairs, Sanity with a nested object. Right now Sanity sits on version 0.0.4 and won't
+  see our changes, but the `isFlat: false` mode still needs test coverage, or a future
+  version bump would surface the breakage at the client, not at us.
+- **The size limit is a guess.** 12,000 characters is a starting value, to be refined
+  after the first runs on real stories.
+- **Terminology consistency is checked by eye.** There's no automated criterion for
+  it; item 9 stays manual.
 
-## Состояние тестов на 8 сентября 2026
+## Test status as of 8 September 2026
 
-Тесты написаны по методу `/sp-red-test` до реализации: контракт вынесен в именованный тип
-в `translateJSON.ts`, проверки писал слепой автор в отдельном рабочем дереве без файла
-реализации.
+Tests were written by the `/sp-red-test` method, ahead of the implementation: the
+contract was pulled out into a named type in `translateJSON.ts`, and the checks were
+written by a blind author in a separate worktree, without the implementation file.
 
-- `packages/content-ai-sdk/src/features/translations/translateJSON.test.ts` — 16 проверок;
-- красный прогон на стабе: 16 из 16 падают, зелёных нет;
-- прогон на нынешней реализации: 15 падают, проходит одна (ошибка при нечитаемом ответе).
+- `packages/content-ai-sdk/src/features/translations/translateJSON.test.ts` — 16 checks;
+- red run on the stub: 16 out of 16 fail, none green;
+- run on the current implementation: 15 fail, one passes (the error on an unreadable
+  response).
 
-Пятнадцать падений — это и есть перечень расхождений между контрактом и кодом,
-которые закрывает шаг 1.
+The fifteen failures are exactly the list of gaps between the contract and the code
+that step 1 closes.
 
-Три решения приняты по ходу и записаны в контракт, потому что раньше их нигде не было:
-пустая карта не обращается к модели; нечитаемый ответ даёт ошибку с сообщением
-`Failed to translate JSON`; нестроковый ответ считается отсутствием ответа.
+Three decisions were made along the way and written into the contract, because they
+hadn't existed anywhere before: an empty map doesn't call the model; an unreadable
+response produces an error with the message `Failed to translate JSON`; a non-string
+response counts as no response.
 
-## Шаг 1 выполнен — 8 сентября 2026
+## Step 1 done — 8 September 2026
 
-Изменён один файл: `packages/content-ai-sdk/src/features/translations/translateJSON.ts`.
+One file changed: `packages/content-ai-sdk/src/features/translations/translateJSON.ts`.
 
-Что стало:
-- в модель уходит объект «порядковый номер → текст»; системное сообщение просит вернуть
-  объект с теми же ключами и не трогать метки вида `{{номер}}`;
-- ответ разбирается по ключам: неизвестный номер отбрасывается, нестроковое значение
-  считается отсутствием ответа, пропуск одного ключа не задевает соседние;
-- заплатка `join(" ")` удалена;
-- восстановление краевых пробелов сохранено и вынесено в `keepEdgeWhitespace`;
-- подстановка непереводимых слов вынесена в `hideWords`/`revealWords` и применяется к
-  каждому значению отдельно, а не к сериализованной строке целиком (раньше слово,
-  совпавшее с именем ключа, испортило бы структуру);
-- пустой `content` возвращает `{}` без обращения к модели.
+What changed:
+- the model now receives a `sequence number → text` object; the system message asks it
+  to return an object with the same keys and to leave placeholders like `{{number}}`
+  untouched;
+- the response is parsed by key: an unknown number is discarded, a non-string value
+  counts as no response, and a missing key doesn't affect its neighbors;
+- the `join(" ")` hotfix is removed;
+- edge whitespace restoration is kept and extracted into `keepEdgeWhitespace`;
+- not-translatable word substitution is extracted into `hideWords`/`revealWords` and
+  applied to each value separately, rather than to the whole serialized string
+  (previously a word matching a key name would have corrupted the structure);
+- an empty `content` returns `{}` without calling the model.
 
-### Решение, принятое на гейте
+### Decision made at the gate
 
-Контракт не оговаривал, какие ключи уходят в модель, и слепой автор тестов предположил
-ключи вызывающего. Выбраны **порядковые номера** (заказчик работ подтвердил): пути полей
-в Storyblok длинные и несут смысл, который модель пытается учитывать. Контракт дополнен
-явной записью об этом, подставные ответы в семи проверках приведены к протоколу —
-изменились только ключи в ответе провайдера, ожидания проверок прежние.
+The contract didn't specify which keys go to the model, and the blind test author
+assumed the caller's keys. **Sequence numbers** were chosen (confirmed by the owner):
+field paths in Storyblok are long and carry meaning that the model tries to take into
+account. The contract was updated with an explicit note about this, and the stubbed
+responses in seven checks were brought in line with the protocol — only the keys in
+the provider's response changed, the checks' expectations stayed the same.
 
-### Проверки
+### Checks
 
-| Критерий | Как проверено | Итог |
+| Criterion | How it was checked | Result |
 |---|---|---|
-| 2, 4, 5, 7, 10, 11, 12 | `vitest run` | 16 из 16 зелёные |
-| 3 (заплатки нет) | поиск `join(" ")` по файлу | 0 совпадений |
-| Типы | `tsc --noEmit` | чисто |
-| Линтер | `eslint` по изменённым файлам | чисто |
-| Сборка пакета и потребителя | `yarn build` в `content-ai-sdk` и `storyblok-ai-sdk` | обе прошли |
-| Живой прогон на настоящей модели | три поля одним запросом | каждое поле на своём месте, непереводимое слово и краевой пробел сохранены |
+| 2, 4, 5, 7, 10, 11, 12 | `vitest run` | 16 out of 16 green |
+| 3 (no hotfix) | search for `join(" ")` in the file | 0 matches |
+| Types | `tsc --noEmit` | clean |
+| Linter | `eslint` on changed files | clean |
+| Package and consumer build | `yarn build` in `content-ai-sdk` and `storyblok-ai-sdk` | both passed |
+| Live run on the real model | three fields in one request | each field in its place, not-translatable word and edge whitespace preserved |
 
-Критерии 1, 6, 8, 9 относятся к шагам 2–3 (пакеты и повторы) и здесь не проверялись.
+Criteria 1, 6, 8, 9 belong to steps 2–3 (batches and retries) and weren't checked here.
 
-## Шаг 2 выполнен — 8 сентября 2026
+## Step 2 done — 8 September 2026
 
-Пакетная отправка. Логика перевода вынесена из `localizeStory/index.ts` в три модуля рядом,
-каждый со своим контрактом и тестами (25 проверок, все написаны до реализации):
+Batch sending. Translation logic was pulled out of `localizeStory/index.ts` into three
+modules next to it, each with its own contract and tests (25 checks, all written
+before the implementation):
 
-| Модуль | Роль | Проверок |
+| Module | Role | Checks |
 |---|---|---|
-| `localization/collectPairs.ts` | собранные поля → плоский список «ключ → текст» | 4 |
-| `localization/batching.ts` | список пар → пакеты (12 000 знаков или 80 значений) | 14 |
-| `localization/applyTranslations.ts` | переводы → обратно в историю | 7 |
+| `localization/collectPairs.ts` | collected fields → flat `key → text` list | 4 |
+| `localization/batching.ts` | list of pairs → batches (12,000 characters or 80 values) | 14 |
+| `localization/applyTranslations.ts` | translations → back into the story | 7 |
 
-`localizeStory/index.ts` сократился с 425 строк до 329: `flattenFieldsForTranslation`,
-`mergeTranslatedFields` и `replaceFieldValue` удалены, вместо `Promise.all` по запросу на
-поле — последовательная отправка пакетов.
+`localizeStory/index.ts` shrank from 425 lines to 329: `flattenFieldsForTranslation`,
+`mergeTranslatedFields`, and `replaceFieldValue` were removed; instead of `Promise.all`
+with one request per field, batches are now sent sequentially.
 
-### Ключи переводов
+### Translation keys
 
-Ключ описывает место текста **в истории**, а не в списке отправки: обычное поле — своим
-путём (`content.body.0.headline`), фрагмент форматированного текста — путём поля, знаком
-`#` и путём узла внутри документа поля (`content.body.1.body#content.0.content.0.text`).
+The key describes the text's location **in the story**, not in the sending list: a
+regular field uses its own path (`content.body.0.headline`), a rich-text fragment uses
+the field's path, a `#` sign, and the path of the node inside the field's document
+(`content.body.1.body#content.0.content.0.text`).
 
-Отвергнут вариант «ключ = путь внутри временной структуры собранных полей»
-(`1.1.forTranslation.0.1`): он не требовал бы правок в сборе, но привязан к устройству
-списка отправки, который в этом же шаге переписывается. Заказчик работ выбрал ключи по
-истории.
+The option "key = path inside the temporary structure of collected fields"
+(`1.1.forTranslation.0.1`) was rejected: it wouldn't have required changes to the
+collection step, but it's tied to the shape of the sending list, which this same step
+rewrites. The owner chose story-based keys.
 
-### Проверки
+### Checks
 
-| Критерий | Как проверено | Итог |
+| Criterion | How it was checked | Result |
 |---|---|---|
-| 1 (число обращений) | сквозной прогон: 5 текстов → 1 обращение | met |
-| 6 (сбой пакета) | последовательный цикл, ошибка прерывает перевод до записи | met |
-| 8 (значение длиннее предела) | тест разбивки | met |
-| Возврат всех переводов пакета | 7 проверок `applyTranslations` | met |
-| Типы, линтер, сборка SDK, типизация приложения | `tsc`, `eslint`, `yarn build` | всё чисто |
-| `content-ai-sdk` не задет | 16 проверок | зелёные |
+| 1 (number of calls) | end-to-end run: 5 texts → 1 call | met |
+| 6 (batch failure) | sequential loop, an error stops translation before the write | met |
+| 8 (value longer than the limit) | batching test | met |
+| Returning all translations of a batch | 7 `applyTranslations` checks | met |
+| Types, linter, SDK build, app type-checking | `tsc`, `eslint`, `yarn build` | all clean |
+| `content-ai-sdk` untouched | 16 checks | green |
 
-Мутации: применение только первого перевода — краснеет проверка «пятьдесят переводов это
-пятьдесят полей»; снятие предела по знакам — краснеют 4 проверки разбивки.
+Mutations: applying only the first translation turns the "fifty translations is fifty
+fields" check red; removing the character limit turns 4 batching checks red.
 
-Сквозной прогон на настоящей модели: 5 текстов одним обращением, поля разложены по своим
-местам, суффикс локали проставлен, название продукта сохранено, исходная история не тронута.
+End-to-end run on the real model: 5 texts in one call, fields distributed to their
+places, the locale suffix set, the product name preserved, the source story untouched.
 
-### Что этот шаг не чинит
+### What this step doesn't fix
 
-Форматированный текст по-прежнему переводится по узлам, поэтому грамматика внутри абзаца
-не улучшилась: «Kaufen | Xweather Horizon | heute und erhalten Sie…» вместо «Kaufen Sie
-Xweather Horizon noch heute…». Это задача Б — перевод абзаца целиком с метками.
+Rich text is still translated node by node, so grammar within a paragraph hasn't
+improved: "Kaufen | Xweather Horizon | heute und erhalten Sie…" instead of "Kaufen Sie
+Xweather Horizon noch heute…". That's Task B — translating the whole paragraph with
+placeholders.
 
-## Шаг 3 выполнен — 10 сентября 2026
+## Step 3 done — 10 September 2026
 
-Устойчивость к сбоям. Ключевое наблюдение: «модель не ответила на ключ» и «пакет упал
-целиком» — одно состояние (ключа нет в результате), поэтому обрабатываются одним
-механизмом.
+Failure resilience. Key observation: "the model didn't answer a key" and "the whole
+batch failed" are the same state (the key is missing from the result), so they're
+handled by one mechanism.
 
-Новый модуль `localization/translateInBatches.ts` (7 проверок): отправляет пары
-пакетами, собирает ответы, повторяет **один раз** по тому, что осталось без ответа —
-включая ключи упавшего пакета. Упавший пакет не прерывает проход. Пустая строка от
-модели считается ответом: иначе поле без содержимого перезапрашивалось бы вечно.
+A new module, `localization/translateInBatches.ts` (7 checks): sends pairs in
+batches, collects the responses, and retries **once** for whatever came back
+unanswered — including the keys of a failed batch. A failed batch doesn't stop the
+pass. An empty string from the model counts as an answer: otherwise a field with no
+content would get retried forever.
 
-### Решения заказчика работ
+### Decisions from the owner
 
-| Вопрос | Решение |
+| Question | Decision |
 |---|---|
-| Сколько повторов | один |
-| Что делать с непереведённым | записать оригинал в целевое поле и показать предупреждение со списком |
-| Пустая строка | считается ответом |
+| How many retries | one |
+| What to do with untranslated content | write the original into the target field and show a warning with the list |
+| Empty string | counts as an answer |
 
-Подстановка оригинала — не удобство, а требование целостности: обязательное поле,
-оставшееся без значения в локали, может привести к отклонению всей записи. В Storyblok
-есть запасной вариант локали (`fallback_lang`), и валидацию обязательных полей при записи
-через API управления документация не описывает — проверять опытом не стали, выбрали
-безопасное поведение.
+Substituting the original isn't a convenience, it's an integrity requirement: a
+required field left without a value in a locale can get the whole entry rejected.
+Storyblok has a locale fallback (`fallback_lang`), and the documentation doesn't
+describe required-field validation on writes through the management API — we chose
+not to find out the hard way and picked the safe behavior.
 
-Контракт `applyTranslations` изменён: поле без перевода теперь **записывается** с
-исходным текстом, а не пропускается.
+The `applyTranslations` contract changed: a field without a translation is now
+**written** with the original text, instead of being skipped.
 
-### Наружу
+### Outward
 
-`localizeStory` возвращает третье поле — `untranslated: string[]` (исходные тексты, на
-которые модель не ответила). Расширение обратно совместимо, но публичную версию пакета
-поднять придётся. Приложение показывает вместо «Success!» сообщение вида
-«Translated, except 2 field(s), which kept the original text: …».
+`localizeStory` now returns a third field — `untranslated: string[]` (the source texts
+the model didn't answer for). The extension is backward compatible, but the package's
+public version will need to be bumped. Instead of "Success!", the app shows a message
+like "Translated, except 2 field(s), which kept the original text: …".
 
-### Проверки
+### Checks
 
-33 проверки зелёные, типы и линтер чисты, сборка SDK проходит, приложение типизируется.
+33 checks are green, types and the linter are clean, the SDK build passes, and the
+app type-checks.
 
-Сквозной прогон с моделью, упрямо не отвечающей на одно поле: два обращения (основной
-проход и догон только по недостающему), непереведённое поле записано с оригиналом,
-список вернулся наружу.
+End-to-end run with a model that stubbornly refuses to answer one field: two calls
+(the main pass and the retry for what came back unanswered), the untranslated field
+written with the original, the list returned outward.
 
-### Известное ограничение
+### Known limitation
 
-Повторный запуск перевода после частичного успеха переводит историю заново целиком,
-включая уже переведённое. Чинится хранением состояния перевода — отдельная работа,
-сознательно не в объёме.
+Re-running translation after partial success translates the whole story again from
+scratch, including what's already translated. Fixed by storing translation state —
+separate work, deliberately out of scope.

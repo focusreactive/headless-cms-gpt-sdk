@@ -1,171 +1,189 @@
-# Задача Б: метки разметки в форматированном тексте
+# Task B: markup markers in rich text
 
-Дата: 10 сентября 2026. Предшественники: `2026-09-08-batch-translation.task.md`,
+Date: September 10, 2026. Predecessors: `2026-09-08-batch-translation.task.md`,
 `2026-09-08-translation-quality-and-brand-voice.md`.
 
-## Постановка
+## The problem
 
-Форматированный текст переводится по текстовым узлам: предложение, разорванное
-выделением или ссылкой, уходит в модель обрывками. Модель обязана вернуть перевод
-каждого обрывка отдельно и не может ни переставить слова, ни перенести выделение —
-в языках с другим порядком слов это даёт грамматический мусор. Пакетная отправка
-(шаг 2) сложила обрывки в один конверт, но саму резку не отменила.
+Rich text is translated node by node: a sentence broken up by a highlight or a
+link goes to the model in fragments. The model has to return a translation for
+each fragment separately and can't reorder words or move the highlight — in
+languages with different word order, that produces grammatical garbage. Batch
+sending (step 2) packed the fragments into one envelope, but didn't undo the
+cutting itself.
 
-Замер на реальных текстах Xweather (`bench2/`, немецкий и французский) показал разрыв:
+A benchmark on real Xweather text (`bench2/`, German and French) showed the gap:
 
-| Способ | Немецкий |
+| Method | German |
 |---|---|
-| по узлам | `Kaufen [Wetter-API] Zugriff heute und erhalten Sie…` |
-| метки | `Kaufen Sie noch heute [Weather API]-Zugang und erhalten Sie…` |
+| by nodes | `Kaufen [Wetter-API] Zugriff heute und erhalten Sie…` |
+| markers | `Kaufen Sie noch heute [Weather API]-Zugang und erhalten Sie…` |
 
-Решение: сериализовать содержимое блока в одну строку с нумерованными метками
-(`Buy <1>Weather API</1> access today`), переводить строку целиком и разбирать ответ
-обратно в узлы, беря оформление из таблицы, собранной при сериализации. Метка вправе
-переехать в другое место предложения — в этом и смысл.
+Solution: serialise a block's content into a single string with numbered markers
+(`Buy <1>Weather API</1> access today`), translate the whole string, and parse
+the response back into nodes, pulling formatting from a table built during
+serialisation. A marker is allowed to move to a different spot in the sentence —
+that's the whole point.
 
-## Карта кода
+## Codebase map
 
-| Файл | Что с ним |
+| File | What happens to it |
 |---|---|
-| `storyblok-ai-sdk/.../localizeStory/index.ts:101-117` | `transformValue`: вложенный обход по `key === "text"` заменяется сериализацией блоков |
-| `storyblok-ai-sdk/.../localizeStory/index.ts:330-334` | `FieldForTranslationData` — **вторая копия** типа, менять синхронно |
-| `storyblok-ai-sdk/.../applyTranslations.ts:12-20` | `CollectedField` — настоящий источник типа |
-| `storyblok-ai-sdk/.../applyTranslations.ts:99-105` | точечная запись в узел заменяется разбором строки и заменой содержимого блока |
-| `storyblok-ai-sdk/.../collectPairs.ts:13-21` | переживёт почти без правок, если новая форма останется массивом пар; JSDoc про «text nodes» устареет |
-| новый модуль сериализации и разбора | ~40 строк; черновик проверен в `bench2/lib.mjs` |
+| `storyblok-ai-sdk/.../localizeStory/index.ts:101-117` | `transformValue`: the nested traversal by `key === "text"` gets replaced with block serialisation |
+| `storyblok-ai-sdk/.../localizeStory/index.ts:330-334` | `FieldForTranslationData` — the **second copy** of the type, must change in sync |
+| `storyblok-ai-sdk/.../applyTranslations.ts:12-20` | `CollectedField` — the real source of the type |
+| `storyblok-ai-sdk/.../applyTranslations.ts:99-105` | the pinpoint write into a node gets replaced with string parsing and replacing the block's content |
+| `storyblok-ai-sdk/.../collectPairs.ts:13-21` | survives almost untouched if the new shape stays an array of pairs; the JSDoc about "text nodes" goes stale |
+| new serialisation/parsing module | ~40 lines; draft verified in `bench2/lib.mjs` |
 
-**Не трогается:** `getTranslatableFields` (обход схемы компонентов, `:297-328`), внешний
-`traverseObject` (обход истории, `:71-118`, `:247-278`), `batching.ts`,
-`translateInBatches.ts`, `fragmentKey.ts`, `translateJSON.ts`, слой приложения
-(`Localization/index.tsx` читает только `original`/`translated`/`untranslated`).
+**Untouched:** `getTranslatableFields` (component-schema traversal, `:297-328`),
+the outer `traverseObject` (story traversal, `:71-118`, `:247-278`), `batching.ts`,
+`translateInBatches.ts`, `fragmentKey.ts`, `translateJSON.ts`, the app layer
+(`Localization/index.tsx` only reads `original`/`translated`/`untranslated`).
 
-**Форма данных.** `ISbRichtext` (`storyblok-js-client/dist/types/interfaces.d.ts:236`)
-обязывает только `type: string`; `content`, `marks`, `attrs`, `text` — все необязательны,
-`marks` — такой же массив `ISbRichtext[]`. Вложенности тегов оформления не бывает:
-несколько оформлений лежат массивом на одном узле, значит вложенных меток не возникает.
+**Data shape.** `ISbRichtext` (`storyblok-js-client/dist/types/interfaces.d.ts:236`)
+only requires `type: string`; `content`, `marks`, `attrs`, `text` are all
+optional, and `marks` is itself an array of `ISbRichtext[]`. Formatting tags
+never nest: several formats sit as an array on one node, so nested markers
+can't occur.
 
-**Прежние попытки:** сериализации разметки в строку в истории нет. Но приём «метка в
-строке» в репозитории уже есть — `{{N}}` для непереводимых слов
-(`translateJSON.ts:16-36`), вместе с решённой там же коллизией: контент может содержать
-`{{0}}` сам. Та же ловушка ждёт и метки разметки.
+**Prior attempts:** there's no history of serialising markup into a string. But
+the "marker in a string" trick already exists in the repo — `{{N}}` placeholders
+for non-translatable words (`translateJSON.ts:16-36`), along with a collision
+already solved there: content can itself contain `{{0}}`. The same trap awaits
+markup markers.
 
-## Найденные дефекты (не создаваемые этой задачей)
+## Defects found (not created by this task)
 
-1. **Кодовые блоки переводятся.** Проверено: `npm install @storyblok/js` внутри
-   `code_block` попадает в перевод, потому что обход собирает любой `key === "text"`.
-2. **Содержимое встроенных компонентов (`blok`) не переводится вовсе** — у них поля
-   компонента, а не узлы `text`. Обратная ошибка, отдельного размера.
-3. **Тип описан дважды** — `FieldForTranslationData` и `CollectedField`, разъедутся при
-   первой же несинхронной правке.
+1. **Code blocks get translated.** Verified: `npm install @storyblok/js` inside
+   a `code_block` ends up in translation, because the traversal collects any
+   `key === "text"`.
+2. **The content of nested components (`blok`) doesn't get translated at all** —
+   they have component fields, not `text` nodes. The opposite bug, a separate
+   size of its own.
+3. **The type is defined twice** — `FieldForTranslationData` and
+   `CollectedField` — they'll drift apart the first time one gets edited
+   without the other.
 
-## Объём
+## Scope
 
-### Входит
-1. Сериализация блока в строку с метками и обратный разбор.
-2. Смена единицы перевода в `transformValue`, `collectPairs`, `applyTranslations`.
-3. Инструкция модели о метках (через `promptModifier`, рядом с пересказом).
-4. Запасной путь при негодном ответе: перевод пишется одним узлом без оформления,
-   поле попадает в список непереведённого.
-5. Защита от коллизии меток с содержимым.
+### In scope
+1. Serialising a block into a string with markers, and parsing it back.
+2. Changing the unit of translation in `transformValue`, `collectPairs`,
+   `applyTranslations`.
+3. Instructing the model about markers (via `promptModifier`, next to the one
+   about paraphrasing).
+4. A fallback for a bad response: the translation gets written as a single
+   node with no formatting, and the field goes into the untranslated list.
+5. Protection against markers colliding with content.
 
-### Не входит
-- Перевод содержимого встроенных компонентов (дефект 2).
-- Сведение двух определений типа в одно (дефект 3) — если не окажется, что задача этого
-  требует.
-- Смена модели, голос бренда.
+### Out of scope
+- Translating the content of nested components (defect 2).
+- Merging the two type definitions into one (defect 3) — unless the task turns
+  out to require it.
+- Changing the model, brand voice.
 
-### Нефункциональные стороны
-- **Быстродействие**: текстов становится меньше (абзац вместо узлов) — запросы короче.
-- **Безопасность**: не относится.
-- **Доступность**: не относится.
-- **Локализация**: суть задачи.
-- **Наблюдаемость**: случаи срабатывания запасного пути должны быть видны, иначе потеря
-  оформления пройдёт незамеченной.
+### Non-functional scan
+- **Performance**: fewer texts (a block instead of nodes) — shorter requests.
+- **Security**: not applicable.
+- **Accessibility**: not applicable.
+- **Localization**: the whole point of the task.
+- **Observability**: fallback triggers must be visible, otherwise lost
+  formatting goes unnoticed.
 
-## Критерии приёмки (черновик)
+## Acceptance criteria (draft)
 
-1. Абзац с выделением внутри предложения уходит в модель одной строкой с метками.
-   Проверка: тест на сериализацию.
-2. Ответ разбирается обратно в узлы; оформление берётся из таблицы по номеру метки,
-   а не по позиции. Проверка: тест, где метка в ответе стоит в другом месте.
-3. Число узлов после разбора может отличаться от исходного, и это не ошибка.
-   Проверка: тест на ответ, где две метки слились в одну фразу.
-4. Абзац без оформления даёт одну пару и возвращается без изменений структуры.
-   Проверка: тест.
-5. Узлы без текста внутри абзаца (`hard_break`, изображение) переживают перевод.
-   Проверка: тест.
-6. **Отрицательный путь:** потерянная метка → блок сохраняет исходный текст с его
-   оформлением, попадает в список непереведённого, дерево не испорчено. Проверка: тест.
-7. **Отрицательный путь:** задвоенная метка → тот же запасной путь. Проверка: тест.
-8. **Отрицательный путь:** посторонняя метка, которой не было в исходнике → тот же
-   запасной путь. Проверка: тест.
-9. **Отрицательный путь:** содержимое, само содержащее `<1>`, не принимается за метку.
-   Проверка: тест.
-10. Пустой абзац и поле, не являющееся деревом, не роняют перевод. Проверка: тест.
-11. Прогон на настоящей модели на немецком: выделение стоит на переехавшем слове,
-    приставка на месте. Проверка: ручной прогон стенда.
+1. A paragraph with a highlight inside a sentence goes to the model as one
+   string with markers. Check: a serialisation test.
+2. The response is parsed back into nodes; formatting is pulled from the table
+   by marker number, not by position. Check: a test where the marker sits in a
+   different spot in the response.
+3. The number of nodes after parsing can differ from the original, and that's
+   not a bug. Check: a test on a response where two markers merge into one
+   phrase.
+4. A paragraph with no formatting produces one pair and comes back with no
+   structural changes. Check: a test.
+5. Textless nodes inside a paragraph (`hard_break`, an image) survive
+   translation. Check: a test.
+6. **Negative path:** a dropped marker → the block keeps its original text
+   with its formatting, goes into the untranslated list, the tree isn't
+   damaged. Check: a test.
+7. **Negative path:** a duplicated marker → the same fallback. Check: a test.
+8. **Negative path:** a stray marker that wasn't in the source → the same
+   fallback. Check: a test.
+9. **Negative path:** content that itself contains `<1>` isn't mistaken for a
+   marker. Check: a test.
+10. An empty paragraph and a field that isn't a tree don't crash the
+    translation. Check: a test.
+11. A run on the real model in German: the highlight lands on the word that
+    moved, the prefix stays in place. Check: a manual run on the test rig.
 
-## Открытые вопросы
+## Open questions
 
-1. **Коллизия меток** *[неблокирующий]* — применить приём из `{{N}}`: подобрать формат
-   или нумерацию, которых нет в содержимом.
-2. **Коллизия меток** *[неблокирующий]* — применить приём из `{{N}}`: подобрать формат
-   или нумерацию, которых нет в содержимом.
-2. **Встроенные компоненты** *[неблокирующий]* — подтвердить, что оставляем как есть.
-3. **Два определения типа** *[неблокирующий]* — свести сейчас или отдельно.
-4. **Порог длины** *[неблокирующий]* — очень длинный абзац становится одной парой;
-   разбивка на пакеты это переживёт (пара едет в своём пакете), проверить на пределе.
+1. **Marker collision** *[non-blocking]* — apply the trick from `{{N}}`: pick a
+   format or numbering that isn't present in the content.
+2. **Marker collision** *[non-blocking]* — apply the trick from `{{N}}`: pick a
+   format or numbering that isn't present in the content.
+2. **Nested components** *[non-blocking]* — confirm we're leaving this as is.
+3. **Two type definitions** *[non-blocking]* — merge now or separately.
+4. **Length threshold** *[non-blocking]* — a very long paragraph becomes one
+   pair; batching survives this fine (the pair travels in its own batch), test
+   at the limit.
 
-## Риски
+## Risks
 
-- Разбор строки — единственное место с настоящим риском: ответ модели непредсказуем,
-  а испортить можно дерево контента.
-- Тесты `collectPairs.test.ts` (3 проверки) и `applyTranslations.test.ts` (2 проверки)
-  описывают старую единицу и будут переписаны — это ожидаемо, но требует внимания:
-  переписывать под новую форму, а не подгонять под реализацию.
-- Дефект с кодовыми блоками может оказаться чьей-то фичей; спросить.
+- String parsing is the one place with real risk: the model's response is
+  unpredictable, and what can get broken is the content tree.
+- The tests `collectPairs.test.ts` (3 checks) and `applyTranslations.test.ts`
+  (2 checks) describe the old unit and will be rewritten — that's expected, but
+  needs care: rewrite for the new shape, don't just fit them to the
+  implementation.
+- The code-block defect might turn out to be someone's feature; ask.
 
-## Готовность
+## Readiness
 
-- Нерешённых блокирующих вопросов: **0**
-- Пунктов объёма без критерия приёмки: **0**
+- Unresolved blocking questions: **0**
+- Scope items without an acceptance criterion: **0**
 
-Следующий шаг: `/sp-red-test` на модуль сериализации и разбора, затем `/sp-task`.
+Next step: `/sp-red-test` on the serialisation/parsing module, then `/sp-task`.
 
-## Уточнения (10 сентября 2026)
+## Clarifications (September 10, 2026)
 
-| Вопрос | Решение |
+| Question | Decision |
 |---|---|
-| Единица сериализации | **любой блок, содержащий текстовые узлы** — абзац, заголовок, цитата, пункт списка. Заголовки и пункты — такие же предложения, и болезнь в них та же |
-| Кодовые блоки | **исключить из перевода**. Сейчас `npm install @storyblok/js` уходит в модель; это меняет поведение, но в лучшую сторону, и у Xweather есть раздел для разработчиков, где случай не гипотетический |
+| Serialisation unit | **any block containing text nodes** — a paragraph, a heading, a quote, a list item. Headings and list items are sentences too, and they have the same problem |
+| Code blocks | **exclude from translation**. Right now `npm install @storyblok/js` goes to the model; this changes behavior, but for the better, and Xweather has a developer section where this case isn't hypothetical |
 
-Оба решения расширяют объём:
+Both decisions expand the scope:
 
-- в объём добавляется определение «блок, содержащий текст» и его отделение от блоков,
-  содержимое которых переводить не следует;
-- добавляется критерий приёмки: содержимое `code_block` не попадает в перевод и
-  возвращается неизменным (проверка: тест на дереве с кодовым блоком).
+- the scope gains a definition of "a block containing text" and how it's
+  separated from blocks whose content shouldn't be translated;
+- an acceptance criterion is added: the content of `code_block` doesn't get
+  translated and comes back unchanged (check: a test on a tree with a code
+  block).
 
-## Проверка свежим взглядом (11 сентября 2026)
+## Review findings (September 11, 2026)
 
-Три обзора в три угла — корректность, регрессии, контракты и сила тестов. Семь находок,
-из них шесть подтверждены исполнением и исправлены, одна отложена решением.
+Three reviews from three angles — correctness, regressions, contracts and test
+strength. Seven findings; six confirmed by follow-through and fixed, one
+deferred by decision.
 
-| Находка | Как проявлялась | Исход |
+| Finding | How it showed up | Outcome |
 |---|---|---|
-| Коллизия на стыке узлов | текст `"Price is <"` + `"1>"` образует `<1>` только в склейке; номер выдавался метке, и блок ломался **на собственном выводе**, без всякого перевода | занятость номера считается по склеенному тексту; проверка круговым прогоном |
-| Пустой ответ стирал блок | `parseInline("")` возвращал `[]`, и содержимое абзаца затиралось | пустой ответ на непустой блок — отказ; контракт исправлен, он обещал обратное и был ничем не покрыт |
-| Пустой перевод затирал поле | `??` пропускает пустую строку, поле обнулялось; старый код этого не делал | пустой перевод не затирает непустой исходник |
-| Метки в предупреждении редактору | в `untranslated` уходила строка `Buy <1>Weather API</1> access today.` | добавлено снятие меток; формат остаётся внутри модуля |
-| Слабая проверка нумерации | проверка «номер 1 не выдан» проходила и на пустой таблице | две проверки на точные номера |
-| Критерии 6–8 разошлись с решением | документ описывал откат «перевод одним узлом без оформления», отменённый в шаге 3 | критерии приведены к принятому решению |
-| Встроенные компоненты (`blok`) | старый обход собирал поле с именем `text` внутри `attrs.body`, новый не собирает | **отложено**, см. ниже |
+| Collision at a node boundary | text `"Price is <"` + `"1>"` forms `<1>` only once joined; the number got assigned to a marker, and the block broke **on its own output**, with no translation involved | number availability is checked against the joined text; verified with a round-trip test |
+| An empty response wiped the block | `parseInline("")` returned `[]`, and the paragraph's content got wiped | an empty response to a non-empty block is now a refusal; the contract was fixed — it had promised the opposite and wasn't covered by anything |
+| An empty translation wiped the field | `??` lets an empty string through, and the field got zeroed out; the old code never did that | an empty translation no longer wipes a non-empty source |
+| Markers leaking into the editor warning | the string `Buy <1>Weather API</1> access today.` was going into `untranslated` | marker stripping was added; the format stays internal to the module |
+| Weak numbering check | the check "number 1 wasn't assigned" also passed on an empty table | two checks on exact numbers were added |
+| Criteria 6-8 drifted from the decision | the document described the fallback "translation as a single node with no formatting," which had been cancelled in step 3 | the criteria were brought in line with the decision that was actually made |
+| Nested components (`blok`) | the old traversal collected a field named `text` inside `attrs.body`, the new one doesn't | **deferred**, see below |
 
-### Отложенная находка
+### Deferred finding
 
-Обход больше не заходит внутрь встроенных компонентов. Раньше туда попадали только поля,
-названные буквально `text`, — узкий и случайный срез: поле `label` или `title` того же
-компонента не переводилось никогда. То есть терялась не возможность, а её осколок.
+The traversal no longer goes inside nested components. Before, only fields
+literally named `text` ended up there — a narrow, accidental slice: a `label`
+or `title` field on the same component was never translated anyway. So what's
+lost isn't a capability, but a fragment of one.
 
-Полный перевод встроенных компонентов был вынесен за объём этой задачи при исследовании
-(дефект 2) и остаётся вынесенным. Стоит завести отдельно.
+Full translation of nested components was carved out of this task's scope
+during research (defect 2) and stays carved out. Worth filing separately.

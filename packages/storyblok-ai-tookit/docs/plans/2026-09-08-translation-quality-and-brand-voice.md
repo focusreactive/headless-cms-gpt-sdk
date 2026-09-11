@@ -1,148 +1,148 @@
-# Качество перевода и голос бренда — исследование перед задачей
+# Translation quality and brand voice — research before the task
 
-Дата: 2026-09-08. Повод: клиент Xweather недоволен качеством перевода.
-Предложенное решение: добавить настраиваемый голос бренда (brand voice), глобально на пространство.
+Date: 8 September 2026. Trigger: client Xweather is unhappy with translation quality.
+Proposed fix: add a configurable brand voice, global to the space.
 
-## 1. Что пришло на вход
+## 1. What came in
 
-- Источник: устная постановка от заказчика работ, без примеров плохого перевода.
-- Явная просьба: хранить голос бренда глобально; решить, где хранить и делать ли его отдельным для каждой локали.
-- Неявное ожидание: голос бренда сам по себе поднимет качество.
-- Противоречий во входных данных нет; главный пробел — не названа конкретная претензия к качеству.
+- Source: a verbal brief from the client, with no examples of bad translation.
+- Explicit request: store the brand voice globally; decide where to store it and whether to make it separate per locale.
+- Implicit expectation: the brand voice by itself will raise quality.
+- No contradictions in the input; the main gap is that the specific complaint about quality was never named.
 
-## 2. Карта кода
+## 2. Code map
 
-### Storyblok-плагин (этот репозиторий)
+### Storyblok plugin (this repository)
 
-| Файл | Роль |
+| File | Role |
 |---|---|
-| `packages/storyblok-ai-sdk/src/features/localization/localizeStory/index.ts` | сбор переводимых полей, разбиение, склейка обратно |
-| `packages/storyblok-ai-sdk/src/features/localization/localizeStory/index.ts:351` | `flattenFieldsForTranslation` — по одному полю на элемент |
-| `packages/content-ai-sdk/src/features/translations/translateJSON.ts` | сам вызов модели, подстановка непереводимых слов |
-| `packages/content-ai-sdk/src/features/translations/translateJSON.ts:88` | заплатка `translations.join(" ")` |
-| `packages/content-ai-sdk/src/config/openAi.ts` | клиент OpenAI, `dangerouslyAllowBrowser: true` |
-| `packages/storyblok-ai-tookit/src/components/Localization/index.tsx` | экран, сбор непереводимых слов, вызов перевода |
-| `packages/sb-plugins-storage-sdk/src/index.ts` | Firestore: `SpaceSettings`, `UsageEvents`, лимиты |
+| `packages/storyblok-ai-sdk/src/features/localization/localizeStory/index.ts` | collects translatable fields, splits them, glues them back together |
+| `packages/storyblok-ai-sdk/src/features/localization/localizeStory/index.ts:351` | `flattenFieldsForTranslation` — one field per item |
+| `packages/content-ai-sdk/src/features/translations/translateJSON.ts` | the actual model call, substitution of not-translatable words |
+| `packages/content-ai-sdk/src/features/translations/translateJSON.ts:88` | the hotfix `translations.join(" ")` |
+| `packages/content-ai-sdk/src/config/openAi.ts` | OpenAI client, `dangerouslyAllowBrowser: true` |
+| `packages/storyblok-ai-tookit/src/components/Localization/index.tsx` | screen, collects not-translatable words, calls translation |
+| `packages/sb-plugins-storage-sdk/src/index.ts` | Firestore: `SpaceSettings`, `UsageEvents`, limits |
 
-Прежние попытки:
-- ветка `feature/add-custom-prompt` — поле «Custom prompt» с подсказкой про тон; **не доведена**: значение не попадает в запрос;
-- ветка `feature/sb-translate-folder-script` — очередь `Bottleneck` и пакетная обработка, но только в скрипте, не в приложении.
+Earlier attempts:
+- branch `feature/add-custom-prompt` — a "Custom prompt" field with a hint about tone; **never finished**: the value never reaches the request;
+- branch `feature/sb-translate-folder-script` — a `Bottleneck` queue and batching, but only in the script, not in the app.
 
-### Payload-плагин (для сравнения)
+### Payload plugin (for comparison)
 
 `~/Documents/Projects/payload-plugins/packages/payload-plugin-translator`
 
-| Файл | Роль |
+| File | Role |
 |---|---|
-| `src/core/translation-pipeline/TranslationPipeline.ts:52` | конвейер из пяти стадий |
-| `src/core/translation-pipeline/stages/text-expander/TextChunkExpander.ts:24` | сквозная нумерация всех текстов документа |
-| `src/core/translation-pipeline/stages/translation/Translation.stage.ts:15` | один вызов модели на весь документ |
-| `src/translation-providers/shared/parseAndValidateReply.ts:17` | разбор и проверка ответа модели |
-| `src/translation-providers/shared/buildResponseSchema.ts:15` | строгая схема ответа |
-| `src/translation-providers/shared/buildSystemPrompt.ts:26` | системный запрос с возможностью подмены |
-| `docs/plans/2026-06-15-translator-audit-findings.md` | аудит: нет разбиения под лимит токенов; глоссарий и тон — в планах |
-| `docs/plans/2026-08-25-openai-provider-refresh-research.md` | отсутствие контекста и глоссария названо главной причиной отказа клиента |
+| `src/core/translation-pipeline/TranslationPipeline.ts:52` | a five-stage pipeline |
+| `src/core/translation-pipeline/stages/text-expander/TextChunkExpander.ts:24` | end-to-end numbering of every text in the document |
+| `src/core/translation-pipeline/stages/translation/Translation.stage.ts:15` | one model call for the entire document |
+| `src/translation-providers/shared/parseAndValidateReply.ts:17` | parses and validates the model's reply |
+| `src/translation-providers/shared/buildResponseSchema.ts:15` | a strict response schema |
+| `src/translation-providers/shared/buildSystemPrompt.ts:26` | system prompt with room for overrides |
+| `docs/plans/2026-06-15-translator-audit-findings.md` | audit: no splitting for the token limit; glossary and tone are on the roadmap |
+| `docs/plans/2026-08-25-openai-provider-refresh-research.md` | lack of context and a glossary named as the main reason for the client's rejection |
 
-## 3. Сравнение подходов
+## 3. Comparing the approaches
 
-| Ось | Storyblok-плагин | Payload-плагин |
+| Axis | Storyblok plugin | Payload plugin |
 |---|---|---|
-| Единица запроса | **одно поле — один запрос**, все параллельно | **весь документ — один запрос** |
-| Контекст соседних полей | нет; только краткое содержание страницы отдельным сообщением | все тексты документа в одном объекте, но без имён полей |
-| Форматированный текст | режется по текстовым узлам, **каждый узел отдельным запросом** | режется по текстовым узлам, **все узлы в одном запросе** |
-| Сборка обратно | по путям полей (`replaceFieldValue`) | по числовому индексу через живые ссылки на узлы |
-| Формат ответа | `json_object`, разбор без схемы | строгая схема `json_schema` с перечнем обязательных ключей |
-| Проверка ответа | нет; вместо неё заплатка `join(" ")` | разбор, проверка типов, сверка множества ключей, отдельные классы ошибок |
-| Модель | `gpt-4o`, температура 0, зашита в код | `gpt-4o` по умолчанию, задаётся настройкой; параметры генерации не навязываются |
-| Где выполняется | **в браузере редактора**, ключ OpenAI в переменной с приставкой `NEXT_PUBLIC_` | на сервере |
-| Ограничение частоты | нет | нет общего; локали переводятся строго последовательно (осознанно, из-за перезаписи версий) |
-| Поведение при сбое | `Promise.all` — падение одного куска рушит весь перевод, повторов нет | повтор задачи трижды с нарастающей задержкой; частичной записи нет |
-| Непереводимые слова | **есть**: подстановка меток `{{i}}` до перевода и возврат после | нет; можно только исключить поле целиком |
-| Голос бренда | нет (брошенная ветка) | нет хранимого; есть функция системного запроса в конфигурации |
-| Учёт расхода | есть (Firestore) | нет |
+| Request unit | **one field — one request**, all in parallel | **the whole document — one request** |
+| Context of neighbouring fields | none; only a page summary as a separate message | all the document's texts in one object, but without field names |
+| Rich text | split by text node, **each node a separate request** | split by text node, **all nodes in one request** |
+| Reassembly | by field paths (`replaceFieldValue`) | by numeric index through live references to the nodes |
+| Response format | `json_object`, parsed without a schema | strict `json_schema` with a list of required keys |
+| Response validation | none; a `join(" ")` hotfix stands in for it | parsing, type checks, key-set comparison, dedicated error classes |
+| Model | `gpt-4o`, temperature 0, hardcoded | `gpt-4o` by default, set via configuration; no generation parameters forced |
+| Where it runs | **in the editor's browser**, the OpenAI key in a variable prefixed `NEXT_PUBLIC_` | on the server |
+| Rate limiting | none | nothing global; locales are translated strictly sequentially (deliberately, because of version overwrites) |
+| Failure behaviour | `Promise.all` — one chunk failing brings down the whole translation, no retries | the task retries three times with increasing delay; no partial writes |
+| Not-translatable words | **present**: `{{i}}` placeholders substituted before translation and restored after | none; a field can only be excluded entirely |
+| Brand voice | none (abandoned branch) | nothing stored; there is a system-prompt function in the configuration |
+| Usage accounting | present (Firestore) | none |
 
-### Вывод сравнения
+### What the comparison shows
 
-Одинаковая слабость у обоих — **форматированный текст режется по узлам**, предложение с выделенным словом уезжает кусками.
+Both share the same weakness — **rich text is split by node**, so a sentence with a highlighted word ends up traveling in pieces.
 
-Ключевое расхождение — **размер пакета**. Payload-плагин отправляет документ целиком, поэтому модель видит все тексты сразу и согласовывает термины сама по себе. Storyblok-плагин отправляет по одному полю, поэтому не согласовывает ничего — и это, а не отсутствие голоса бренда, самая вероятная причина жалобы Xweather.
+The key difference is **batch size**. The Payload plugin sends the whole document at once, so the model sees all the texts together and reconciles terminology on its own. The Storyblok plugin sends one field at a time, so it reconciles nothing — and this, not the missing brand voice, is the most likely cause of Xweather's complaint.
 
-Обратный перенос тоже есть: список непереводимых слов реализован в Storyblok-плагине и отсутствует в Payload-плагине, где он числится в планах.
+Reverse-transfer works the other way too: the not-translatable words list is implemented in the Storyblok plugin and missing from the Payload plugin, where it's still on the roadmap.
 
-## 4. Постановка задачи
+## 4. Task definition
 
-Клиент жалуется на качество перевода. Голос бренда — предложенное лекарство, но исследование показывает, что основная причина лежит в устройстве конвейера: модель переводит каждое поле в изоляции, без соседей и без разметки. Голос бренда стоит добавить, но как одну из трёх мер, а не единственную.
+The client is complaining about translation quality. Brand voice is the proposed remedy, but the research shows the main cause lies in how the pipeline is built: the model translates each field in isolation, with no neighbours and no markup. Brand voice is worth adding, but as one of three measures, not the only one.
 
-### В объёме работ
+### In scope
 
-1. Пакетная отправка: собрать тексты истории в один запрос вместо запроса на поле.
-2. Строгая схема ответа и проверка ключей; удаление заплатки `join(" ")`.
-3. Голос бренда: хранимая настройка, базовая часть плюс дополнения по локалям.
-4. Обновление модели.
+1. Batching: gather a story's texts into one request instead of one request per field.
+2. Strict response schema and key validation; remove the `join(" ")` hotfix.
+3. Brand voice: a stored setting, a base part plus per-locale additions.
+4. Model update.
 
-### Вне объёма
+### Out of scope
 
-- Перенос перевода на сервер (устранение утечки ключа) — отдельная задача, см. риски.
-- Склейка соседних узлов форматированного текста в одно предложение — отдельная задача, дороже остальных.
-- Перенос списка непереводимых слов в Payload-плагин.
+- Moving translation to the server (closing the key leak) — a separate task, see risks.
+- Merging neighbouring rich-text nodes into one sentence — a separate, more expensive task.
+- Porting the not-translatable words list to the Payload plugin.
 
-### Обзор нефункциональных сторон
+### Non-functional review
 
-- **Быстродействие**: один запрос вместо сотни снижает и задержку, и риск упереться в ограничения провайдера. Требуется разбиение по размеру, если история большая.
-- **Безопасность**: ключ OpenAI уходит в браузер (`NEXT_PUBLIC_OPENAI_TOKEN`, `dangerouslyAllowBrowser: true`). Для Xweather это означает, что их выделенный ключ виден любому редактору. Существенно, но вне объёма этой задачи.
-- **Доступность**: не относится.
-- **Локализация**: сама суть задачи.
-- **Наблюдаемость**: события пишутся в Firestore; при пакетной отправке стоит фиксировать размер запроса.
+- **Performance**: one request instead of a hundred cuts both latency and the risk of hitting provider limits. Splitting by size is needed if a story is large.
+- **Security**: the OpenAI key goes to the browser (`NEXT_PUBLIC_OPENAI_TOKEN`, `dangerouslyAllowBrowser: true`). For Xweather this means their dedicated key is visible to any editor. Significant, but out of scope for this task.
+- **Accessibility**: not applicable.
+- **Localization**: the whole point of the task.
+- **Observability**: events are written to Firestore; batching should record the request size.
 
-### Критерии приёмки (черновик)
+### Acceptance criteria (draft)
 
-1. История с N переводимыми полями порождает не более `ceil(объём / порог)` запросов к модели вместо N. Проверка: журнал вызовов при переводе тестовой истории.
-2. Ответ модели проверяется по перечню ключей; при несовпадении перевод завершается понятной ошибкой, а не тихой порчей данных. Проверка: тест с подставным ответом.
-3. Заплатка `join(" ")` удалена, и перевод пакета из нескольких полей раскладывается по своим полям. Проверка: тест на пакете из трёх полей.
-4. Голос бренда сохраняется между сеансами и применяется ко всем последующим переводам пространства. Проверка: сохранить, перезагрузить плагин, перевести.
-5. Дополнение к голосу бренда для конкретной локали добавляется к базовому, а не заменяет его. Проверка: тест сборки запроса.
-6. Отрицательный путь: при недоступности хранилища настроек перевод выполняется без голоса бренда и сообщает об этом, а не падает. Проверка: тест с недоступным хранилищем.
-7. Отрицательный путь: если модель вернула не все ключи, переведённые поля записываются, а о недостающих сообщается. Проверка: тест с неполным ответом.
+1. A story with N translatable fields produces at most `ceil(volume / threshold)` model requests instead of N. Check: the call log when translating a test story.
+2. The model's reply is validated against the key list; on a mismatch, translation ends with a clear error instead of silently corrupting data. Check: a test with a fake response.
+3. The `join(" ")` hotfix is removed, and a batch translation of several fields is distributed to its own fields. Check: a test on a batch of three fields.
+4. Brand voice persists across sessions and applies to every subsequent translation in the space. Check: save, reload the plugin, translate.
+5. A locale-specific addition to the brand voice is appended to the base, not a replacement for it. Check: a request-building test.
+6. Negative path: if the settings store is unavailable, translation proceeds without the brand voice and reports this, instead of failing. Check: a test with an unavailable store.
+7. Negative path: if the model returned not all the keys, the translated fields that came back are written, and the missing ones are reported. Check: a test with an incomplete response.
 
-## 5. Открытые вопросы
+## 5. Open questions
 
-1. **Претензия клиента** *[блокирующий]* — что именно не устраивает: несогласованность терминов, ломаная грамматика в форматированном тексте, неверный тон, отсебятина? Важно потому, что от ответа зависит порядок работ: тон лечится голосом бренда, остальное — пакетной отправкой.
-2. **Хранилище голоса бренда** *[блокирующий]* — Firestore рядом с непереводимыми словами или документ в самом Storyblok? Важно потому, что переезд потом дороже, чем выбор сейчас.
-3. **Разбивка по локалям** *[неблокирующий]* — предлагается базовая часть плюс дополнения; нужно подтверждение.
-4. **Порог размера пакета** *[неблокирующий]* — по числу полей или по количеству знаков; нужен предел, чтобы не упереться в окно модели.
-5. **Область применения** *[неблокирующий]* — голос бренда влияет только на перевод или ещё на краткое содержание и теги?
-6. **Смена модели** *[неблокирующий]* — какая модель приходит на смену `gpt-4o` и кто оплачивает разницу в цене.
-7. **Ограничение длины голоса бренда** *[неблокирующий]* — нужен предел, иначе он войдёт в каждый запрос и раздует расход.
-8. **Совместимость** *[неблокирующий]* — пространства без сохранённого голоса бренда должны продолжать работать как прежде.
+1. **Client's complaint** *[blocking]* — what exactly is wrong: inconsistent terminology, broken grammar in rich text, wrong tone, invented content? Matters because the answer decides the order of work: tone is fixed by brand voice, everything else by batching.
+2. **Brand voice storage** *[blocking]* — Firestore next to the not-translatable words, or a document inside Storyblok itself? Matters because moving it later costs more than choosing now.
+3. **Split by locale** *[non-blocking]* — a base part plus additions is proposed; needs confirmation.
+4. **Batch size threshold** *[non-blocking]* — by field count or by character count; a limit is needed so it doesn't run into the model's window.
+5. **Scope of application** *[non-blocking]* — does brand voice affect only translation, or also the page summary and tags?
+6. **Model change** *[non-blocking]* — which model replaces `gpt-4o`, and who covers the price difference.
+7. **Brand voice length limit** *[non-blocking]* — a limit is needed, otherwise it enters every request and inflates usage.
+8. **Compatibility** *[non-blocking]* — spaces without a saved brand voice must keep working as before.
 
-## 6. Риски и ограничения
+## 6. Risks and constraints
 
-- Заплатка `join(" ")` **молча испортит данные**, как только в пакете окажется больше одного поля: первое поле получит склейку всех переводов, остальные — пустоту. Убирать её нужно в том же изменении, что и пакетную отправку.
-- Ключ OpenAI доступен в браузере — отдельная задача, но клиенту стоит сказать.
-- В приложении нет ни повторов, ни ограничения частоты; при пакетной отправке один сбой рушит перевод целиком.
-- Обход схемы опирается на признак `translatable` в компонентах Storyblok; если в пространстве клиента он не проставлен, часть текста не переводится вовсе — стоит проверить у Xweather до всяких улучшений.
+- The `join(" ")` hotfix **will silently corrupt data** as soon as a batch holds more than one field: the first field gets all the translations glued together, the rest get nothing. It must be removed in the same change as batching.
+- The OpenAI key is exposed in the browser — a separate task, but the client should be told.
+- The app has neither retries nor rate limiting; with batching, one failure brings down the whole translation.
+- The schema bypass relies on the `translatable` flag on Storyblok components; if it isn't set in the client's space, part of the text won't be translated at all — worth checking with Xweather before any improvements.
 
-## 7. Готовность
+## 7. Readiness
 
-- Нерешённых блокирующих вопросов: **2**
-- Пунктов объёма без критерия приёмки: **0**
+- Unresolved blocking questions: **2**
+- Scope items without an acceptance criterion: **0**
 
-Следующий шаг: **нужны ответы** по вопросам 1 и 2, затем `/sp-architect` — работа затрагивает границы модулей (SDK содержимого, SDK Storyblok, приложение, хранилище) и меняет договорённость об обмене с моделью. Вероятные направления разбора: `contract` (формат обмена с моделью, схема ответа), `data-model` (где живёт голос бренда).
+Next step: **answers are needed** for questions 1 and 2, then `/sp-architect` — the work touches module boundaries (content SDK, Storyblok SDK, app, storage) and changes the contract for exchanging data with the model. Likely angles to break down: `contract` (the exchange format with the model, the response schema), `data-model` (where the brand voice lives).
 
-## 8. Уточнения (8 сентября 2026)
+## 8. Clarifications (8 September 2026)
 
-Заданы четыре вопроса, три из них отложены:
+Four questions were asked, three of them deferred:
 
-| Вопрос | Ответ |
+| Question | Answer |
 |---|---|
-| Где хранить голос бренда | отложено, к решению не приступали |
-| Объём задачи (чинить конвейер вместе с голосом бренда или нет) | не решено |
-| Один голос на все локали или дополнения по локалям | отложено, следующий шаг |
-| Что именно не устраивает клиента в качестве | ответа нет |
+| Where to store the brand voice | deferred, not yet decided |
+| Task scope (fix the pipeline together with brand voice, or not) | not decided |
+| One voice for all locales, or per-locale additions | deferred, next step |
+| What exactly is wrong with the quality, in the client's view | no answer |
 
-Состояние: исследование завершено, к проектированию не переходим. Блокирующих вопросов
-по-прежнему два (претензия клиента и хранилище), и оба остаются открытыми.
+Status: research complete, not moving to design yet. There are still two blocking
+questions (the client's complaint and the storage), and both remain open.
 
-Что нужно получить до продолжения: два-три примера плохого перевода от Xweather со ссылками
-на конкретные истории и локали. Без них выбор между тремя мерами (пакетная отправка, склейка
-форматированного текста, голос бренда) делается вслепую.
+What's needed before continuing: two or three examples of bad translation from Xweather with links
+to specific stories and locales. Without them, choosing between the three measures (batching,
+merging rich-text nodes, brand voice) would be a guess.
