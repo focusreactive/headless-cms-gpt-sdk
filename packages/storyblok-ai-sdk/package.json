@@ -1,6 +1,6 @@
 {
   "name": "@focus-reactive/storyblok-ai-sdk",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "private": false,
   "scripts": {
     "dev:sb": "vite build --watch",
@@ -8,11 +8,13 @@
     "yalc-clean": "yalc remove --all",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "yalc-check": "yalc check"
+    "yalc-check": "yalc check",
+    "test": "vitest run",
+    "test-watch": "vitest"
   },
   "type": "module",
   "dependencies": {
-    "@focus-reactive/content-ai-sdk": "0.0.4",
+    "@focus-reactive/content-ai-sdk": "^0.0.16",
     "@storyblok/app-extension-auth": "^1.0.0-alpha.1",
     "flat": "^6.0.1",
     "lodash.get": "^4.4.2",
@@ -36,6 +38,7 @@
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vite-plugin-dts": "^3.6.3",
+    "vitest": "^0.34.6",
     "yalc": "^1.0.0-pre.53"
   },
   "peerDependencies": {

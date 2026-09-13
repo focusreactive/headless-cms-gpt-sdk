@@ -12,6 +12,25 @@ import LocalizeStoryMode from './modes/Story'
 import { AppDataContext, language } from '@src/context/AppDataContext'
 import { PLUGIN_ID } from '@src/constants'
 
+const PREVIEW_LENGTH = 50
+const PREVIEW_COUNT = 3
+
+const untranslatedNotice = (untranslated: string[]) => {
+  if (untranslated.length === 0) {
+    return 'Success! Change the language to see the localized content.'
+  }
+
+  const preview = untranslated
+    .slice(0, PREVIEW_COUNT)
+    .map((text) => `"${text.slice(0, PREVIEW_LENGTH)}"`)
+    .join(', ')
+  const rest = untranslated.length > PREVIEW_COUNT
+      ? ` and ${untranslated.length - PREVIEW_COUNT} more`
+      : ''
+
+  return `Translated, except ${untranslated.length} field(s), which kept the original text: ${preview}${rest}.`
+}
+
 const Localization = () => {
   const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
   const { spaceId, userId } = React.useContext(AppDataContext)
@@ -77,7 +96,7 @@ const Localization = () => {
       try {
         await cratePageContext()
 
-        const { original, translated } = await localizeStory({
+        const { original, translated, untranslated } = await localizeStory({
           targetLanguageCode: state.targetLanguageCode,
           targetLanguageName: state.targetLanguageName,
           folderLevelTranslation: state.folderLevelTranslation,
@@ -85,18 +104,20 @@ const Localization = () => {
           promptModifier: state.storySummary
             ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
             : '',
-          cb: () =>
-            dispatch({
-              type: 'endedSuccessfully',
-              payload:
-                'Success! Change the language to see the localized content.',
-            }),
+          // Nothing here may read the awaited result: localizeStory calls cb before
+          // it resolves, so those bindings do not exist yet.
+          cb: () => undefined,
           translationLevel: state.translationLevel,
           notTranslatableWords: notTranslatableWords.set,
         })
 
         translatedStory = translated
         originalStory = original
+
+        dispatch({
+          type: 'endedSuccessfully',
+          payload: untranslatedNotice(untranslated),
+        })
       } catch (error) {
         errorMessage = error.message
 
