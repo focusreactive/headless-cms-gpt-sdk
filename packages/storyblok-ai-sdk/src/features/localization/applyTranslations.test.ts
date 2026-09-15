@@ -288,3 +288,225 @@ describe("applyTranslations", () => {
     });
   });
 });
+
+function buildStoryWithEmbeddedComponent(): ISbStoryData {
+  return {
+    id: 2,
+    name: "Landing",
+    slug: "landing",
+    content: {
+      _uid: "root",
+      component: "page",
+      body: [
+        {
+          _uid: "a1",
+          component: "text",
+          body: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [
+                  { type: "text", text: "Buy now", marks: [{ type: "bold" }] },
+                  { type: "text", text: " while supplies last" },
+                ],
+              },
+              {
+                type: "blok",
+                attrs: {
+                  id: "b1",
+                  body: [
+                    { _uid: "c1", component: "defaultCard", title: "Sale ends soon" },
+                  ],
+                },
+              },
+            ],
+          } as ISbRichtext,
+        },
+      ],
+    },
+  } as unknown as ISbStoryData;
+}
+
+const BLOCK_PATH = "content.0.content";
+const EMBEDDED_PATH = "content.1.attrs.body.0.title";
+const FIELD_PATH = "content.body.0.body";
+const BLOCK_KEY = `${FIELD_PATH}#${BLOCK_PATH}`;
+const EMBEDDED_KEY = `${FIELD_PATH}#${EMBEDDED_PATH}`;
+const TRANSLATED_FIELD = `${FIELD_PATH}__i18n__de`;
+
+const embeddedField = (story: ISbStoryData): CollectedField =>
+  [
+    FIELD_PATH,
+    {
+      default: getByPath(story, FIELD_PATH) as ISbRichtext,
+      forTranslation: [
+        [
+          BLOCK_PATH,
+          serializeInline([
+            { type: "text", text: "Buy now", marks: [{ type: "bold" }] },
+            { type: "text", text: " while supplies last" },
+          ] as unknown as ISbRichtext[]),
+        ],
+        [EMBEDDED_PATH, "Sale ends soon"],
+      ],
+    },
+  ] as unknown as CollectedField;
+
+describe("applyTranslations, a fragment collected from inside the document", () => {
+  describe("where it lands (guarantee: every fragment goes inside the clone of the document, and that clone becomes the translated field)", () => {
+    it("writes the embedded component's translation inside the locale field, at its own path", () => {
+      const story = buildStoryWithEmbeddedComponent();
+
+      const { story: result } = applyTranslations({
+        fields: [embeddedField(story)],
+        translations: { [EMBEDDED_KEY]: "Angebot endet bald" },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(getByPath(result, `${TRANSLATED_FIELD}.${EMBEDDED_PATH}`)).toBe(
+        "Angebot endet bald",
+      );
+    });
+
+    it("leaves the source field in the source language", () => {
+      const story = buildStoryWithEmbeddedComponent();
+
+      const { story: result } = applyTranslations({
+        fields: [embeddedField(story)],
+        translations: { [EMBEDDED_KEY]: "Angebot endet bald" },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(getByPath(result, `${FIELD_PATH}.${EMBEDDED_PATH}`)).toBe("Sale ends soon");
+    });
+  });
+
+  describe("the two kinds of fragment together (guarantee: a marked block is rebuilt through parseInline, a plain string is written as it is)", () => {
+    it("rebuilds the marked block of the same field from the answer's markers", () => {
+      const story = buildStoryWithEmbeddedComponent();
+
+      const { story: result } = applyTranslations({
+        fields: [embeddedField(story)],
+        translations: {
+          [BLOCK_KEY]: "<1>Jetzt kaufen</1>, solange der Vorrat reicht",
+          [EMBEDDED_KEY]: "Angebot endet bald",
+        },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(getByPath(result, `${TRANSLATED_FIELD}.${BLOCK_PATH}`)).toEqual([
+        { type: "text", text: "Jetzt kaufen", marks: [{ type: "bold" }] },
+        { type: "text", text: ", solange der Vorrat reicht" },
+      ]);
+    });
+
+    it("writes the plain string word for word, even when the answer reads like a marker", () => {
+      const story = buildStoryWithEmbeddedComponent();
+
+      const { story: result } = applyTranslations({
+        fields: [embeddedField(story)],
+        translations: {
+          [BLOCK_KEY]: "<1>Jetzt kaufen</1>, solange der Vorrat reicht",
+          [EMBEDDED_KEY]: "Angebot <1> endet bald",
+        },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(getByPath(result, `${TRANSLATED_FIELD}.${EMBEDDED_PATH}`)).toBe(
+        "Angebot <1> endet bald",
+      );
+    });
+
+    it("never names a plain string among the blocks that could not be parsed", () => {
+      const story = buildStoryWithEmbeddedComponent();
+
+      const { unparsedBlockKeys } = applyTranslations({
+        fields: [embeddedField(story)],
+        translations: {
+          [BLOCK_KEY]: "<1>Jetzt kaufen</1>, solange der Vorrat reicht",
+          [EMBEDDED_KEY]: "Angebot <1> endet bald",
+        },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(unparsedBlockKeys).toEqual([]);
+    });
+  });
+
+  describe("a plain string no answer came back for (guarantee: it keeps its source text and is not a parse failure)", () => {
+    it("keeps the source text inside the locale field", () => {
+      const story = buildStoryWithEmbeddedComponent();
+
+      const { story: result } = applyTranslations({
+        fields: [embeddedField(story)],
+        translations: { [BLOCK_KEY]: "<1>Jetzt kaufen</1>, solange der Vorrat reicht" },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(getByPath(result, `${TRANSLATED_FIELD}.${EMBEDDED_PATH}`)).toBe(
+        "Sale ends soon",
+      );
+    });
+
+    it("is not named among the blocks that could not be parsed", () => {
+      const story = buildStoryWithEmbeddedComponent();
+
+      const { unparsedBlockKeys } = applyTranslations({
+        fields: [embeddedField(story)],
+        translations: { [BLOCK_KEY]: "<1>Jetzt kaufen</1>, solange der Vorrat reicht" },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(unparsedBlockKeys).toEqual([]);
+    });
+  });
+
+  describe("a plain string answered with nothing (guarantee: an empty answer is no answer, for a fragment exactly as for a field)", () => {
+    it("keeps the source text rather than blanking the field", () => {
+      const story = buildStoryWithEmbeddedComponent();
+
+      const { story: result } = applyTranslations({
+        fields: [embeddedField(story)],
+        translations: {
+          [BLOCK_KEY]: "<1>Jetzt kaufen</1>, solange der Vorrat reicht",
+          [EMBEDDED_KEY]: "",
+        },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(getByPath(result, `${TRANSLATED_FIELD}.${EMBEDDED_PATH}`)).toBe(
+        "Sale ends soon",
+      );
+    });
+  });
+
+  describe("story immutability (guarantee: the story passed in is not modified — a new one is returned)", () => {
+    it("leaves the frozen source story exactly as it was", () => {
+      const story = buildStoryWithEmbeddedComponent();
+      const fields = [embeddedField(story)];
+      const snapshot = structuredClone(story);
+      deepFreeze(story);
+
+      applyTranslations({
+        fields,
+        translations: {
+          [BLOCK_KEY]: "<1>Jetzt kaufen</1>, solange der Vorrat reicht",
+          [EMBEDDED_KEY]: "Angebot endet bald",
+        },
+        story,
+        i18nSuffix: "__i18n__de",
+      });
+
+      expect(story).toEqual(snapshot);
+    });
+  });
+});

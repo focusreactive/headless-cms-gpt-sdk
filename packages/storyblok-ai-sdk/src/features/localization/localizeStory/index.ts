@@ -8,6 +8,7 @@ import {
 import { SpaceInfo } from "../../../config/spaceData";
 import { applyTranslations, type CollectedField } from "../applyTranslations";
 import { collectBlocks } from "../collectBlocks";
+import type { TranslatableFields } from "../translatableFields";
 import { withoutMarkers } from "../inlineMarkers";
 import { collectPairs } from "../collectPairs";
 import { translateInBatches } from "../translateInBatches";
@@ -115,7 +116,10 @@ export const localizeStory = async (
             if (typeof value === "object") {
               return {
                 default: value,
-                forTranslation: collectBlocks(value as ISbRichtext),
+                forTranslation: collectBlocks(
+                  value as ISbRichtext,
+                  componentWithTranslatableFields
+                ),
               };
             }
 
@@ -127,6 +131,7 @@ export const localizeStory = async (
         }) as CollectedField[];
 
         const pairs = collectPairs(fieldsForTranslation);
+
         const sourceTextByKey = new Map(pairs);
 
         const { translations, missing } = await translateInBatches(
@@ -211,10 +216,11 @@ export const localizeStory = async (
             ),
           ],
         });
-      } catch (e) {
-        console.error("Failed to localize the document", e);
+      } catch (cause) {
+        const reason = cause instanceof Error ? cause.message : String(cause);
 
-        reject(new Error("Failed to localize the document"));
+        console.error("Failed to localize the document", cause);
+        reject(new Error(`Failed to localize the document: ${reason}`));
       }
     };
 
@@ -306,12 +312,7 @@ type ComponentSchema = {
   schema: Record<string, ComponentField>;
 };
 
-type SelectedComponentsField = { field: string; type: string };
-
-type ComponentsWithTranslatableFields = Record<
-  string,
-  SelectedComponentsField[]
->;
+type ComponentsWithTranslatableFields = TranslatableFields;
 
 function getTranslatableFields(
   components: ComponentSchema[],
