@@ -178,3 +178,101 @@ describe("a story through the whole pipeline", () => {
     expect(paragraph.map((node) => node.text)).toEqual(["Buy ", "Weather API", " access today."]);
   });
 });
+
+const documentWithComponent = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: [{ type: "text", text: "Weather data you can build on" }],
+    },
+    {
+      type: "blok",
+      attrs: {
+        id: "b1",
+        body: [
+          {
+            _uid: "c1",
+            component: "defaultCard",
+            title: "Hourly forecasts",
+            description: "Updated every hour",
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as ISbRichtext;
+
+const buildStoryWithComponent = () =>
+  ({
+    id: 2,
+    name: "Landing",
+    slug: "landing",
+    content: {
+      _uid: "root",
+      component: "page",
+      body: [{ _uid: "a1", component: "text", body: documentWithComponent }],
+    },
+  }) as unknown as ISbStoryData;
+
+const translatableSchema = {
+  defaultCard: [
+    { field: "title", type: "text" },
+    { field: "description", type: "textarea" },
+  ],
+};
+
+const collectWithSchema = (document: ISbRichtext) =>
+  collectBlocks(document, translatableSchema);
+
+const runWithComponent = async () => {
+  const story = buildStoryWithComponent();
+  const document = (story.content as { body: Array<{ body: ISbRichtext }> }).body[0].body;
+  const fields = [
+    ["content.body.0.body", { default: document, forTranslation: collectWithSchema(document) }],
+  ] as unknown as CollectedField[];
+
+  const { translations } = await translateInBatches(
+    collectPairs(fields),
+    async (batch: TranslationPair[]) =>
+      Object.fromEntries(batch.map(([key, text]) => [key, `DE ${text}`])),
+  );
+
+  return applyTranslations({ fields, translations, story, i18nSuffix: "__i18n__de" }).story;
+};
+
+describe("a story whose rich text carries a component, through the whole pipeline", () => {
+  it("puts the component's translation inside the locale field, where the reader looks", async () => {
+    const translated = await runWithComponent();
+
+    expect(
+      at(translated, "content.body.0.body__i18n__de.content.1.attrs.body.0.title"),
+    ).toBe("DE Hourly forecasts");
+  });
+
+  it("leaves the component inside the source field in the source language", async () => {
+    const translated = await runWithComponent();
+
+    expect(at(translated, "content.body.0.body.content.1.attrs.body.0.title")).toBe(
+      "Hourly forecasts",
+    );
+  });
+
+  it("translates the document's own paragraph into the same locale field", async () => {
+    const translated = await runWithComponent();
+
+    expect(
+      at(translated, "content.body.0.body__i18n__de.content.0.content.0.text"),
+    ).toBe("DE Weather data you can build on");
+  });
+
+  it("writes the component's translation nowhere but inside the locale field", async () => {
+    const translated = await runWithComponent();
+    const outside = structuredClone(translated.content) as {
+      body: Array<Record<string, unknown>>;
+    };
+    delete outside.body[0].body__i18n__de;
+
+    expect(JSON.stringify(outside)).not.toContain("DE Hourly forecasts");
+  });
+});
