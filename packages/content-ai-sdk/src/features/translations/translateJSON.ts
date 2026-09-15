@@ -1,6 +1,10 @@
 import { flatten, unflatten } from "flat";
 
 import { getOpenAiClient } from "../../config/openAi";
+import {
+  hideNotTranslatableWords,
+  PLACEHOLDER_SHAPE,
+} from "./notTranslatableWords";
 
 interface ApiCalloptions {
   targetLanguage: string;
@@ -9,43 +13,6 @@ interface ApiCalloptions {
   valuesToTranslate: Record<string, string>;
   notTranslatableWords: string[];
 }
-
-/** Longest first, so that hiding "Cloud" cannot damage "iCloud". */
-const byLengthDescending = (a: string, b: string) => b.length - a.length;
-
-const placeholder = (index: number | string) => `{{${index}}}`;
-
-/**
- * Numbering starts wherever the source texts leave room. Content of its own can
- * contain `{{0}}` — a template variable, say — and hiding a term behind that same
- * marker makes the two indistinguishable on the way back.
- */
-const firstFreeIndex = (texts: string[], wordCount: number) => {
-  const taken = (from: number) =>
-    Array.from({ length: wordCount }, (_, offset) =>
-      placeholder(from + offset)
-    ).some((marker) => texts.some((text) => text.includes(marker)));
-
-  let base = 0;
-
-  while (taken(base)) {
-    base += wordCount;
-  }
-
-  return base;
-};
-
-const hideWords = (value: string, words: string[], base: number) =>
-  words.reduce(
-    (text, word, index) => text.replaceAll(word, placeholder(base + index)),
-    value
-  );
-
-const revealWords = (value: string, words: string[], base: number) =>
-  words.reduce(
-    (text, word, index) => text.replaceAll(placeholder(base + index), word),
-    value
-  );
 
 /** Models drop the source value's edge spaces; the caller's sentence needs them back. */
 const keepEdgeWhitespace = (source: string, translation: string) => {
@@ -74,13 +41,13 @@ const apiCall = async ({
     throw new Error("OpenAI client is not configurated");
   }
 
-  const words = [...notTranslatableWords].sort(byLengthDescending);
-  const base = firstFreeIndex(Object.values(valuesToTranslate), words.length);
+  const keys = Object.keys(valuesToTranslate);
+  const { hidden, reveal } = hideNotTranslatableWords(
+    Object.values(valuesToTranslate),
+    notTranslatableWords
+  );
   const request = Object.fromEntries(
-    Object.entries(valuesToTranslate).map(([key, value]) => [
-      key,
-      hideWords(value, words, base),
-    ])
+    keys.map((key, index) => [key, hidden[index]])
   );
 
   const completion = await openAiClient.chat.completions.create({
@@ -89,9 +56,7 @@ const apiCall = async ({
         role: "system",
         content: `Translate the values of the JSON object that the user will send you${
           currentLanguage ? " from " + currentLanguage : ""
-        } into ${targetLanguage}. Return a JSON object with exactly the same keys, where each key holds the translation of its own value. Do not add, drop or rename keys. Leave any ${placeholder(
-          "number"
-        )} placeholder untouched.`,
+        } into ${targetLanguage}. Return a JSON object with exactly the same keys, where each key holds the translation of its own value. Do not add, drop or rename keys. Leave any ${PLACEHOLDER_SHAPE} placeholder untouched.`,
       },
       { role: "system", content: promptModifier },
       { role: "user", content: JSON.stringify(request) },
@@ -121,10 +86,7 @@ const apiCall = async ({
       continue;
     }
 
-    translations[key] = keepEdgeWhitespace(
-      source,
-      revealWords(translated, words, base)
-    );
+    translations[key] = keepEdgeWhitespace(source, reveal(translated));
   }
 
   return translations;
