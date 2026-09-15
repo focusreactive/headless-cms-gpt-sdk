@@ -1,6 +1,7 @@
 import { flatten, unflatten } from "flat";
 
 import { getOpenAiClient } from "../../config/openAi";
+import { restoreEdgeWhitespace } from "../../lib/edgeWhitespace";
 import {
   hideNotTranslatableWords,
   PLACEHOLDER_SHAPE,
@@ -13,20 +14,6 @@ interface ApiCalloptions {
   valuesToTranslate: Record<string, string>;
   notTranslatableWords: string[];
 }
-
-/** Models drop the source value's edge spaces; the caller's sentence needs them back. */
-const keepEdgeWhitespace = (source: string, translation: string) => {
-  const leading = source.slice(0, source.length - source.trimStart().length);
-  const trailing = source.slice(source.trimEnd().length);
-  const withLeading =
-    leading && translation === translation.trimStart()
-      ? leading + translation
-      : translation;
-
-  return trailing && withLeading === withLeading.trimEnd()
-    ? withLeading + trailing
-    : withLeading;
-};
 
 const apiCall = async ({
   currentLanguage,
@@ -86,7 +73,7 @@ const apiCall = async ({
       continue;
     }
 
-    translations[key] = keepEdgeWhitespace(source, reveal(translated));
+    translations[key] = restoreEdgeWhitespace(source, reveal(translated));
   }
 
   return translations;
