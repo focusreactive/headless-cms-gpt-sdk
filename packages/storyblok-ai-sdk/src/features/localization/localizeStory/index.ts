@@ -1,13 +1,9 @@
 import { translateJSON } from "@focus-reactive/content-ai-sdk";
-import {
-  ISbContentMangmntAPI,
-  ISbRichtext,
-  ISbStoryData,
-} from "storyblok-js-client";
+import { ISbContentMangmntAPI, ISbStoryData } from "storyblok-js-client";
 
 import { SpaceInfo } from "../../../config/spaceData";
-import { applyTranslations, type CollectedField } from "../applyTranslations";
-import { collectBlocks } from "../collectBlocks";
+import { applyTranslations } from "../applyTranslations";
+import { collectFields } from "../collectFields";
 import type { TranslatableFields } from "../translatableFields";
 import { withoutMarkers } from "../inlineMarkers";
 import { collectPairs } from "../collectPairs";
@@ -82,53 +78,10 @@ export const localizeStory = async (
             props.folderLevelTranslation.translationMode === "all"
         );
 
-        const fieldsForTranslation = traverseObject({
-          object: story,
-          condition: ({ key, value, object }) => {
-            function resolveType(type: string) {
-              if (type === "richtext" && typeof value == "object") {
-                return "object";
-              }
-
-              return "string";
-            }
-
-            function hasComponentField(
-              object: unknown
-            ): object is Record<"component", string> {
-              return Boolean(
-                typeof object === "object" && object && "component" in object
-              );
-            }
-
-            return Object.entries(componentWithTranslatableFields).some(
-              ([component, fields]) =>
-                hasComponentField(object) &&
-                object.component === component &&
-                fields.some(
-                  (field) =>
-                    key === field.field &&
-                    typeof value === resolveType(field.type)
-                )
-            );
-          },
-          transformValue: ({ value }) => {
-            if (typeof value === "object") {
-              return {
-                default: value,
-                forTranslation: collectBlocks(
-                  value as ISbRichtext,
-                  componentWithTranslatableFields
-                ),
-              };
-            }
-
-            return {
-              default: value,
-              forTranslation: value,
-            };
-          },
-        }) as CollectedField[];
+        const fieldsForTranslation = collectFields(
+          story,
+          componentWithTranslatableFields
+        );
 
         const pairs = collectPairs(fieldsForTranslation);
 
@@ -246,60 +199,6 @@ interface LocalizeStoryProps {
   translationLevel: TranslationLevels;
   folderLevelTranslation: FolderTranslationData;
   notTranslatableWords: string[];
-}
-
-type HelperFunction = ({
-  key,
-  newPath,
-  value,
-  object,
-}: {
-  key: string;
-  newPath: string;
-  value: unknown;
-  object: unknown;
-}) => unknown;
-
-type TraverseObject = {
-  object: unknown;
-  condition: HelperFunction;
-  transformKey?: HelperFunction;
-  transformValue?: HelperFunction;
-  path?: string;
-  outputArr?: [unknown, unknown][];
-};
-
-function traverseObject({
-  object,
-  condition,
-  transformKey = ({ newPath }) => newPath,
-  transformValue = ({ value }) => value,
-  path = "",
-  outputArr = [],
-}: TraverseObject) {
-  if (object && typeof object === "object") {
-    for (const [key, value] of Object.entries(object)) {
-      const newPath = [path, key].filter(Boolean).join(".");
-
-      if (condition({ key, value, object, newPath })) {
-        outputArr.push([
-          transformKey({ key, newPath, value, object }),
-          transformValue({ key, newPath, value, object }),
-        ]);
-      } else if (value && typeof value === "object") {
-        traverseObject({
-          object: value,
-          condition,
-          transformKey,
-          transformValue,
-          path: newPath,
-          outputArr,
-        });
-      }
-    }
-  }
-
-  return outputArr;
 }
 
 type ComponentField = {

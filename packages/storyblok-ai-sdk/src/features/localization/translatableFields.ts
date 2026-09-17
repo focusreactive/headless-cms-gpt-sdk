@@ -16,6 +16,9 @@ export type TranslatableField = {
 
 export type TranslatableFields = Record<string, TranslatableField[]>;
 
+/** The `__i18n__` marker is reserved by Storyblok; no schema field may be named with it. */
+export const holdsATranslation = (key: string) => key.includes("__i18n__");
+
 /**
  * The translatable fields of one component, or none when the component has no
  * translatable fields or is absent from the schema. An unknown component is not an

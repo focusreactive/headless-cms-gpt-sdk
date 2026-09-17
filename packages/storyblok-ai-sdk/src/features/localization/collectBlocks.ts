@@ -1,7 +1,11 @@
 import type { ISbRichtext } from "storyblok-js-client";
 
 import { serializeInline, type MarkedBlock } from "./inlineMarkers";
-import { fieldsOf, type TranslatableFields } from "./translatableFields";
+import {
+  fieldsOf,
+  holdsATranslation,
+  type TranslatableFields,
+} from "./translatableFields";
 
 /**
  * One piece of a document that travels to the model on its own: a `MarkedBlock` is
@@ -38,6 +42,8 @@ export type Fragments = Fragment[];
  *
  * A component's field of type richtext is itself a document: its blocks are
  * collected with their paths continuing through it.
+ *
+ * A key containing `__i18n__` is neither collected nor walked into.
  *
  * ## Paths
  *
@@ -112,6 +118,10 @@ export const collectBlocks: CollectBlocks = (document, translatable) => {
     );
 
     for (const [key, field] of Object.entries(value)) {
+      if (holdsATranslation(key)) {
+        continue;
+      }
+
       const fieldPath = `${path}.${key}`;
 
       if (!translatableHere.has(key)) {

@@ -406,4 +406,30 @@ describe("collectBlocks", () => {
       expect(pathsOf(collect(document, translatable))).toEqual(["content.0.content"]);
     });
   });
+  describe("a field already translated (contract: a key containing `__i18n__` is not walked into)", () => {
+    it("leaves the components inside a locale sibling of a bloks field alone", () => {
+      const document = asDocument({
+        type: "doc",
+        content: [
+          blok({
+            _uid: "c1",
+            component: "defaultCard",
+            title: "Sale ends soon",
+            links: [{ _uid: "l1", component: "link", text: "Learn more" }],
+            links__i18n__fr: [{ _uid: "l1", component: "link", text: "En savoir plus" }],
+          }),
+        ],
+      });
+
+      const translatable: TranslatableFields = {
+        defaultCard: [{ field: "title", type: "text" }],
+        link: [{ field: "text", type: "text" }],
+      };
+
+      expect(pathsOf(collect(document, translatable))).toEqual([
+        "content.0.attrs.body.0.title",
+        "content.0.attrs.body.0.links.0.text",
+      ]);
+    });
+  });
 });

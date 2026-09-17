@@ -1,8 +1,9 @@
 import type { ISbRichtext, ISbStoryData } from "storyblok-js-client";
 import { describe, expect, it, vi } from "vitest";
 
-import { applyTranslations, type CollectedField } from "./applyTranslations";
-import { collectBlocks } from "./collectBlocks";
+import { applyTranslations } from "./applyTranslations";
+import type { TranslatableFields } from "./translatableFields";
+import { collectFields } from "./collectFields";
 import { collectPairs } from "./collectPairs";
 import type { TranslationPair } from "./batching";
 import { translateInBatches } from "./translateInBatches";
@@ -57,20 +58,9 @@ const buildStory = () =>
     },
   }) as unknown as ISbStoryData;
 
-/** What localizeStory's own traversal produces for this story. */
-const collectFields = (story: ISbStoryData): CollectedField[] => {
-  const body = (story.content as { body: Array<Record<string, unknown>> }).body;
-
-  return [
-    [
-      "content.body.0.headline",
-      { default: body[0].headline as string, forTranslation: body[0].headline as string },
-    ],
-    [
-      "content.body.1.body",
-      { default: body[1].body as ISbRichtext, forTranslation: collectBlocks(body[1].body as ISbRichtext) },
-    ],
-  ];
+const schema: TranslatableFields = {
+  hero: [{ field: "headline", type: "text" }],
+  text: [{ field: "body", type: "richtext" }],
 };
 
 /** Prefixes every text and keeps markers where they were. */
@@ -88,7 +78,7 @@ const run = async (
   story: ISbStoryData,
   translate: (batch: TranslationPair[]) => Promise<Record<string, string>>,
 ) => {
-  const fields = collectFields(story);
+  const fields = collectFields(story, schema);
   const { translations, missing } = await translateInBatches(collectPairs(fields), translate);
   const { story: translated, unparsedBlockKeys } = applyTranslations({
     fields,
@@ -215,22 +205,17 @@ const buildStoryWithComponent = () =>
     },
   }) as unknown as ISbStoryData;
 
-const translatableSchema = {
+const schemaWithComponent: TranslatableFields = {
+  text: [{ field: "body", type: "richtext" }],
   defaultCard: [
     { field: "title", type: "text" },
     { field: "description", type: "textarea" },
   ],
 };
 
-const collectWithSchema = (document: ISbRichtext) =>
-  collectBlocks(document, translatableSchema);
-
 const runWithComponent = async () => {
   const story = buildStoryWithComponent();
-  const document = (story.content as { body: Array<{ body: ISbRichtext }> }).body[0].body;
-  const fields = [
-    ["content.body.0.body", { default: document, forTranslation: collectWithSchema(document) }],
-  ] as unknown as CollectedField[];
+  const fields = collectFields(story, schemaWithComponent);
 
   const { translations } = await translateInBatches(
     collectPairs(fields),
