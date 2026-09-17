@@ -82,9 +82,10 @@ const Localization = () => {
           targetLanguageName: state.targetLanguageName,
           folderLevelTranslation: state.folderLevelTranslation,
           mode: 'update',
-          promptModifier: state.storySummary
-            ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
-            : '',
+          promptModifier:
+            state.customPrompt || state.storySummary
+              ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
+              : '',
           cb: () =>
             dispatch({
               type: 'endedSuccessfully',
@@ -273,6 +274,7 @@ export type LocalizationState = {
   targetLanguageName: string
   notTranslatableWords: NotTranslatableWords
   history: StateHistoryRecord[]
+  customPrompt: string
 }
 
 const INITIAL_STATE: LocalizationState = {
@@ -296,6 +298,7 @@ const INITIAL_STATE: LocalizationState = {
   isReadyToPerformLocalization: false,
   notTranslatableWords: { set: new Set(), new: null, limit: 10 },
   history: [{ time: new Date(Date.now()).toISOString(), action: 'init' }],
+  customPrompt: '',
 }
 
 export type LocalizationAction =
@@ -315,6 +318,7 @@ export type LocalizationAction =
   | { type: 'addNotTranslatableWord' }
   | { type: 'setNewNotTranslatableWord'; payload: string }
   | { type: 'setNotTranslatableWords'; payload: NotTranslatableWords }
+  | { type: 'setCustomPrompt'; payload: string }
 
 const reducer = (
   state: LocalizationState,
@@ -477,6 +481,12 @@ const reducer = (
           set: new Set(action.payload.set),
         },
         history: updatedHistory,
+      }
+
+    case 'setCustomPrompt':
+      return {
+        ...state,
+        customPrompt: action.payload,
       }
 
     case 'endedSuccessfully':
