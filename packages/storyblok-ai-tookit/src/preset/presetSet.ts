@@ -88,14 +88,8 @@ export const setDefaultPreset: SetDefaultPreset = (settings, id) => {
   return { defaultId: id, items: settings.items }
 }
 
-export const resolveStyle: ResolveStyle = (settings, locale) => {
-  if (settings.defaultId === undefined) {
-    return null
-  }
-
-  const style = settings.items.find((item) => item.id === settings.defaultId)?.byLocale[
-    locale
-  ]
+export const resolveStyle: ResolveStyle = (settings, preset, locale) => {
+  const style = settings.items.find((item) => item.id === preset)?.byLocale[locale]
 
   return style === undefined || saysNothing(style) ? null : style
 }

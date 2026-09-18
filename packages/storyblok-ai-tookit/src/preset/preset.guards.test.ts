@@ -40,34 +40,33 @@ describe("setDefaultPreset (contract: an id that is already the default returns 
   });
 });
 
-describe("resolveStyle (contract: there is no falling back to another locale's entry or another preset's — quietly substituting a different voice is worse than substituting none)", () => {
-  it("is null when the default preset has no entry for the locale, even though another preset does", () => {
+describe("resolveStyle (contract: no falling back to another locale's entry, to another preset's, or to the default when the named preset has gone — quietly substituting a different voice is worse than substituting none)", () => {
+  it("is null when the named preset has no entry for the locale, even though another preset does", () => {
     const settings: StyleSettings = {
-      defaultId: "chosen",
       items: [
         preset("other", { fr: { instructions: "the wrong voice" } }),
         preset("chosen", { de: { instructions: "the right voice, wrong language" } }),
       ],
     };
 
-    expect(resolveStyle(settings, "fr")).toBeNull();
+    expect(resolveStyle(settings, "chosen", "fr")).toBeNull();
   });
 
-  it("is null when defaultId names no preset, even though a preset covers the locale", () => {
-    const settings: StyleSettings = {
-      defaultId: "gone",
-      items: [preset("other", { fr: { instructions: "the wrong voice" } })],
-    };
-
-    expect(resolveStyle(settings, "fr")).toBeNull();
-  });
-
-  it("is null when nothing is the default, even though a preset covers the locale", () => {
+  it("is null when the id names no preset, even though a preset covers the locale", () => {
     const settings: StyleSettings = {
       items: [preset("other", { fr: { instructions: "the wrong voice" } })],
     };
 
-    expect(resolveStyle(settings, "fr")).toBeNull();
+    expect(resolveStyle(settings, "gone", "fr")).toBeNull();
+  });
+
+  it("is null for a preset deleted in another window, though the default still covers the locale", () => {
+    const settings: StyleSettings = {
+      defaultId: "other",
+      items: [preset("other", { fr: { instructions: "the default's voice" } })],
+    };
+
+    expect(resolveStyle(settings, "deleted", "fr")).toBeNull();
   });
 });
 
@@ -103,7 +102,7 @@ describe("saysNothing (contract: no instructions after trimming, no voice word s
  * answering it with `{}` rather than `null` would be the one substitution §3b rule 3 is
  * about: a style that exists and says nothing, in place of no style.
  */
-describe("resolveStyle (contract: `null` covers a default preset holding an entry that saysNothing — an entry that contributes nothing is the same answer as no entry)", () => {
+describe("resolveStyle (contract: `null` covers a preset whose entry for that locale saysNothing — an entry that contributes nothing is the same answer as no entry)", () => {
   it("is null for an entry that storage repaired into one saying nothing", () => {
     const settings: StyleSettings = toSettings({
       defaultId: "p1",
@@ -111,7 +110,7 @@ describe("resolveStyle (contract: `null` covers a default preset holding an entr
     });
 
     expect(settings.items[0]?.byLocale.fr).toBeDefined();
-    expect(resolveStyle(settings, "fr")).toBeNull();
+    expect(resolveStyle(settings, "p1", "fr")).toBeNull();
   });
 
   it("is null for an entry whose only content is the formality that states nothing", () => {
@@ -120,7 +119,7 @@ describe("resolveStyle (contract: `null` covers a default preset holding an entr
       items: [preset("p1", { fr: { formality: "neutral" } })],
     };
 
-    expect(resolveStyle(settings, "fr")).toBeNull();
+    expect(resolveStyle(settings, "p1", "fr")).toBeNull();
   });
 
   it("still answers with an entry that says something", () => {
@@ -129,7 +128,7 @@ describe("resolveStyle (contract: `null` covers a default preset holding an entr
       items: [preset("p1", { fr: { formality: "neutral", instructions: "Keep Checkout" } })],
     };
 
-    expect(resolveStyle(settings, "fr")).toEqual({
+    expect(resolveStyle(settings, "p1", "fr")).toEqual({
       formality: "neutral",
       instructions: "Keep Checkout",
     });

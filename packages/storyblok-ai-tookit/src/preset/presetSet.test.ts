@@ -426,65 +426,59 @@ describe("setDefaultPreset", () => {
 });
 
 describe("resolveStyle", () => {
-  describe("what a translation should use (contract: \"What a translation into `locale` should use\")", () => {
-    it("returns the default preset's entry for that language", () => {
+  describe("what a translation should use (contract: \"What a translation into `locale` should use, given the preset it was told to use\")", () => {
+    it("returns the named preset's entry for that language", () => {
       const settings: StyleSettings = { defaultId: "brand", items: threePresets() };
 
-      const style = resolveStyle(settings, "de");
+      const style = resolveStyle(settings, "brand", "de");
+
+      expect(style).toEqual({ formality: "informal", voice: [{ word: "warm" }] });
+    });
+
+    it("returns the named preset's entry, not the default preset's", () => {
+      const settings: StyleSettings = { defaultId: "first", items: threePresets() };
+
+      const style = resolveStyle(settings, "brand", "de");
 
       expect(style).toEqual({ formality: "informal", voice: [{ word: "warm" }] });
     });
   });
 
-  describe("nothing configured for the language (contract: \"`null` covers all of: no `defaultId`, a `defaultId` naming no preset, and a default preset holding no entry for that locale\" — \"the drawn case, not a failure\")", () => {
-    it("returns null when no defaultId is set", () => {
+  describe("nothing configured for the language (contract: \"`null` covers an id naming no preset, a preset holding no entry for that locale\" — \"the drawn case, not a failure\")", () => {
+    it("returns null when the id names no preset", () => {
       const settings: StyleSettings = { items: [] };
 
-      expect(resolveStyle(settings, "en")).toBeNull();
+      expect(resolveStyle(settings, "gone", "en")).toBeNull();
     });
 
-    it("returns null when defaultId names no preset", () => {
-      const settings: StyleSettings = { defaultId: "gone", items: [] };
-
-      expect(resolveStyle(settings, "en")).toBeNull();
-    });
-
-    it("returns null when the default preset holds no entry for that language", () => {
+    it("returns null when the named preset holds no entry for that language", () => {
       const settings: StyleSettings = {
-        defaultId: "brand",
         items: [{ id: "brand", name: "Brand", byLocale: {} }],
       };
 
-      expect(resolveStyle(settings, "en")).toBeNull();
+      expect(resolveStyle(settings, "brand", "en")).toBeNull();
     });
   });
 
-  describe("no falling back (contract: \"There is no falling back to another locale's entry or another preset's: §3b rule 3 — quietly substituting a different voice is worse than substituting none\")", () => {
-    it("returns null rather than another language's entry of the default preset", () => {
-      const settings: StyleSettings = { defaultId: "brand", items: [brandPreset()] };
+  describe("no falling back (contract: \"not to another locale's entry, not to another preset's, and not to the default when the named preset has gone\" — \"quietly substituting a different voice is worse than substituting none\")", () => {
+    it("returns null rather than another language's entry of the named preset", () => {
+      const settings: StyleSettings = { items: [brandPreset()] };
 
-      expect(resolveStyle(settings, "it")).toBeNull();
+      expect(resolveStyle(settings, "brand", "it")).toBeNull();
     });
 
     it("returns null rather than another preset's entry for that language", () => {
       const settings: StyleSettings = {
-        defaultId: "first",
         items: [{ id: "first", name: "First", byLocale: {} }, brandPreset()],
       };
 
-      expect(resolveStyle(settings, "en")).toBeNull();
+      expect(resolveStyle(settings, "first", "en")).toBeNull();
     });
 
-    it("returns null rather than any preset's entry when defaultId names no preset", () => {
-      const settings: StyleSettings = { defaultId: "gone", items: threePresets() };
+    it("returns null rather than the default preset's entry when the named preset has gone", () => {
+      const settings: StyleSettings = { defaultId: "brand", items: threePresets() };
 
-      expect(resolveStyle(settings, "en")).toBeNull();
-    });
-
-    it("returns null rather than the first preset's entry when no defaultId is set", () => {
-      const settings: StyleSettings = { items: [brandPreset()] };
-
-      expect(resolveStyle(settings, "en")).toBeNull();
+      expect(resolveStyle(settings, "gone", "de")).toBeNull();
     });
   });
 
@@ -493,7 +487,7 @@ describe("resolveStyle", () => {
       const settings: StyleSettings = { defaultId: "brand", items: threePresets() };
       const before: StyleSettings = snapshot(settings);
 
-      resolveStyle(settings, "de");
+      resolveStyle(settings, "brand", "de");
 
       expect(settings).toEqual(before);
     });

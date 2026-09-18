@@ -195,20 +195,29 @@ export type RemovePreset = (settings: StyleSettings, id: PresetId) => StyleSetti
 export type SetDefaultPreset = (settings: StyleSettings, id: PresetId) => StyleSettings
 
 /**
- * What a translation into `locale` should use, or `null` when nothing is configured for
- * it — the drawn case, not a failure.
+ * What a translation into `locale` should use, given the preset it was told to use — or
+ * `null` when that preset says nothing for that language: the drawn case, not a failure.
  *
- * `null` covers all of: no `defaultId`, a `defaultId` naming no preset, a default preset
- * holding no entry for that locale, and one holding an entry that `saysNothing` — an entry
- * that contributes nothing is the same answer as no entry, and a caller must not have to
- * tell them apart. **There is no falling back** to another locale's entry or another
- * preset's: §3b rule 3 — quietly substituting a different voice is worse than substituting
- * none.
+ * **It is told which preset, never left to work it out.** `defaultId` is where a screen
+ * takes its opening selection from, and from then on the editor's choice is the choice; so
+ * this function has one question to answer rather than two, and settings with no default
+ * configured are not a case it can be asked about at all.
+ *
+ * `null` covers an id naming no preset, a preset holding no entry for that locale, and a
+ * preset whose entry for it `saysNothing` — an entry contributing nothing is the same
+ * answer as no entry, and a caller must not have to tell them apart.
+ *
+ * **There is no falling back** — not to another locale's entry, not to another preset's,
+ * and not to the default when the named preset has gone: §3b rule 3, because quietly
+ * substituting a different voice is worse than substituting none. A preset deleted in
+ * another window becomes a translation with no style, which an editor notices; a
+ * translation in someone else's voice they do not.
  *
  * What comes back is the entry the settings hold, not a copy of it. Callers read it.
  */
 export type ResolveStyle = (
   settings: StyleSettings,
+  preset: PresetId,
   locale: LanguageCode,
 ) => LocaleStyle | null
 
