@@ -12,7 +12,8 @@
     "dev:sb": "yalc add --link @focus-reactive/storyblok-ai-sdk && yalc add --link @focus-reactive/content-ai-sdk && yalc add --link @focus-reactive/sb-plugins-storage-sdk && yarn install && next dev",
     "yalc-clean": "yalc remove --all",
     "yalc-check": "yalc check",
-    "build": "next build"
+    "build": "next build",
+    "test": "node ../../node_modules/vitest/vitest.mjs run"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -31,9 +32,12 @@
     "storyblok-js-client": "^6.7.1"
   },
   "devDependencies": {
+    "@testing-library/react": "^14.3.1",
     "@types/node": "^18.7.17",
     "@types/react": "^18.0.19",
+    "jsdom": "^24.1.3",
     "typescript": "5.0.4",
+    "vitest": "^0.34.6",
     "yalc": "^1.0.0-pre.53"
   }
 }
