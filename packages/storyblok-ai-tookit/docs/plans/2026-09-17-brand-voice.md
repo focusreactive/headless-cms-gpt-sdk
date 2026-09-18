@@ -115,10 +115,35 @@ Firestore is schemaless: the field appears on first write, nothing is declared a
 | `stylePresets` | the only new top-level field |
 | `defaultId` | id of the preset used when the editor picks nothing |
 | `items[].byLocale` | keyed by the Storyblok language code — the same code that forms `__i18n__<code>` |
-| `formality` | `formal` / `informal` / `casual`, optional |
-| `voice` | 3–5 adjectives, optional — the brand-voice half, kept structured on purpose |
+| `formality` | `formal` / `informal` / `casual`, optional — **reversed, see below** |
+| `voice` | 3–5 adjectives, optional — the brand-voice half, kept structured on purpose — **reversed, see below** |
 | `instructions` | free text, capped at 500 characters, optional |
 | `notTranslatableWords` | unchanged, stays global — it is this plugin's `protectedPhrases` |
+
+### Reversals since this was signed
+
+Two things in the table above are no longer what the code does. They are recorded here
+rather than edited away, so that a reader comparing the artefact against the types is not
+left wondering which one drifted.
+
+**Formality is `neutral` / `formal` / `informal`, not `formal` / `informal` / `casual`.**
+Decided 18 September while briefing the screens. `neutral` was added because a select
+needs a value meaning "nothing in particular" and an absent field cannot be shown as a
+choice; `casual` was dropped in the same stroke, which was not deliberate at the time and
+was confirmed deliberate afterwards. The reason it stays dropped: `casual` against
+`informal` is a difference of degree, and a translation model is unlikely to act on it
+differently. Three values that a person can tell apart beat four that they cannot.
+
+Consequence worth naming: with nothing inherited from anywhere (rule 3 below), `neutral`
+and an absent `formality` say the same thing. The code therefore treats a locale entry
+whose only content is `neutral` as an entry saying nothing, and does not store it.
+
+**`voice` is `{ word: string }[]`, capped at 20, not 3–5 bare strings.** The objects were
+asked for in session so that a word can gain a field later without a migration. The cap
+moved from a guideline of 3–5 to a hard 20 because the guideline had no enforcement point:
+a number in prose stops nobody, and a form needs one limit it can report. The argument for
+constraint in §4's in-scope note still holds — 20 is a ceiling against runaway lists, not
+an invitation to fill it.
 
 ### Why a preset holds locales, and not the other way round
 
@@ -186,7 +211,8 @@ The customer asked for this first and it is the last unbuilt item of the agreed 
 
 1. A stored style guide **per target locale**, with four parts — the shape Sanity's own
    Studio uses, seen in the product video:
-   - **formality** — a closed choice (formal / informal / casual), not free text;
+   - **formality** — a closed choice (formal / informal / casual), not free text.
+     **Reversed on 18 September — see §3b, “Reversals since this was signed”;**
    - **voice** — a short list of 3–5 adjectives, not a paragraph. An earlier draft cut
      this, arguing free text covers it. It does, literally, and that is the problem: the
      free-text field already exists as `promptModifier`, has existed for months, and has

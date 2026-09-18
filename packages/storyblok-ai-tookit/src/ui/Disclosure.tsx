@@ -7,7 +7,7 @@ import {
 import { Box, ButtonBase, Collapse } from '@mui/material'
 
 type DisclosureProps = Omit<ComponentPropsWithoutRef<'div'>, 'children'> & {
-  $label: string
+  $label: ReactNode
   $open: boolean
   onToggle: () => void
   children: ReactNode
@@ -41,7 +41,18 @@ export const Disclosure = forwardRef<HTMLDivElement, DisclosureProps>(function D
         }}
       >
         <Chevron open={$open} />
-        {$label}
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            textAlign: 'left',
+          }}
+        >
+          {$label}
+        </Box>
       </ButtonBase>
       <Collapse in={$open} id={panelId}>
         <Box
