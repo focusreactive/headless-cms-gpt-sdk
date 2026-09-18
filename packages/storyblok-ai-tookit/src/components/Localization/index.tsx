@@ -296,7 +296,7 @@ export type LocalizationState = {
   history: StateHistoryRecord[]
 }
 
-const INITIAL_STATE: LocalizationState = {
+export const INITIAL_STATE: LocalizationState = {
   fieldLevelTranslation: {
     targetLanguageCode: '',
     targetLanguageName: '',
@@ -525,7 +525,7 @@ const reducer = (
   }
 }
 
-const mainReducer = (
+export const mainReducer = (
   state: LocalizationState,
   action: LocalizationAction,
 ): LocalizationState => {
