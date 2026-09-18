@@ -9,5 +9,5 @@ export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
   { $tone, ...rest },
   ref,
 ) {
-  return <MuiAlert {...rest} ref={ref} severity={$tone} variant="outlined" />
+  return <MuiAlert {...rest} ref={ref} severity={$tone} variant="standard" />
 })
