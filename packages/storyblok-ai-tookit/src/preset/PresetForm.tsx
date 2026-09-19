@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Box, MenuItem, Stack, Typography } from '@mui/material'
 
 import type { language } from '@src/context/AppDataContext'
@@ -74,6 +74,16 @@ const newPresetId = (): PresetId =>
 
 const saved = (written: Written) => written === 'written' || written === 'unchanged'
 
+const Trash = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M12 4a3 3 0 0 1 2.954 2.474l.026.179.01.115.012.232H19a1 1 0 0 1 0 2h-1v9c0 1.657-1.24 3-2.77 3H8.77C7.24 21 6 19.657 6 18V9H5a1 1 0 1 1 0-2h4a3 3 0 0 1 3-3zm4 5H8v9c0 .513.343.936.785.993L8.89 19h6.222c.456 0 .832-.386.883-.883L16 18V9zm-5.25 3a.75.75 0 0 1 .75.75v3.5a.75.75 0 1 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75zm2.5 0a.75.75 0 0 1 .75.75v3.5a.75.75 0 1 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75zM12 6a1 1 0 0 0-.993.883L11 7h2a1 1 0 0 0-1-1z"
+      fill="currentColor"
+      fillRule="evenodd"
+    />
+  </svg>
+)
+
 const nameOfLanguage = (languages: language[], code: LanguageCode) =>
   languages.find((lang) => lang.code === code)?.name ?? code
 
@@ -85,6 +95,13 @@ const takenBy = (name: string, siblings: readonly StylePreset[], id: PresetId) =
 
 /** Where the character counter starts showing, well before the limit it counts towards. */
 const COUNTER_FROM = 400
+
+/**
+ * A name longer than this cannot be typed at all, unlike the instructions, whose limit is
+ * reported rather than enforced. There is nothing to report here: a name is a label for a
+ * row that truncates anyway, and no one means to write a paragraph into it.
+ */
+const NAME_MAX = 60
 
 const counterOf = (instructions: string) =>
   instructions.length >= COUNTER_FROM
@@ -103,13 +120,25 @@ const Header = ({
   title,
   disabled,
   onLeave,
+  action,
 }: {
   title: string
   disabled: boolean
   onLeave: () => void
+  action?: ReactNode
 }) => (
-  <Stack direction="row" alignItems="center" sx={{ height: 34, mb: '8px' }}>
-    <IconButton $label="Back to style presets" disabled={disabled} onClick={onLeave}>
+  <Stack
+    direction="row"
+    alignItems="center"
+    spacing="6px"
+    sx={{ height: 34, pb: '8px', mb: '12px', borderBottom: 1, borderColor: 'divider' }}
+  >
+    <IconButton
+      $label="Back to style presets"
+      sx={{ color: 'text.primary' }}
+      disabled={disabled}
+      onClick={onLeave}
+    >
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path
           d="M14.363 14.777l-2.121-2.12 2.121-2.122A1 1 0 0 0 12.95 9.12l-2.83 2.83a.995.995 0 0 0-.277.53l-.014.118v.118a.997.997 0 0 0 .291.648l2.829 2.829a1 1 0 0 0 1.414-1.415z"
@@ -118,9 +147,10 @@ const Header = ({
         />
       </svg>
     </IconButton>
-    <Typography component="h2" noWrap sx={{ fontSize: 18, fontWeight: 500 }}>
+    <Typography component="h2" noWrap sx={{ flex: 1, minWidth: 0, fontSize: 18, fontWeight: 500 }}>
       {title}
     </Typography>
+    {action}
   </Stack>
 )
 
@@ -129,7 +159,7 @@ export const PresetForm = ({ languages, locale, target, onDone }: PresetFormProp
 
   if (presets.kind !== 'ready') {
     return (
-      <Box sx={{ p: '12px' }}>
+      <Box sx={{ py: '12px' }}>
         <Header title="New preset" disabled onLeave={onDone} />
         <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
           Loading style settings…
@@ -276,22 +306,45 @@ const PresetFormFields = ({
     }
   }, [values, id])
 
-  const voiceHelper =
-    duplicate !== null && voice.fieldState.isTouched
-      ? `“${duplicate}” is already in the list. It clears when you move on.`
-      : typed !== ''
+  // A repeated word is the screen's own finding, not the resolver's, so it has to be told
+  // to the field as a fault of its own — otherwise it reads grey, like a count, while
+  // every other thing that is wrong reads red.
+  const duplicateShown = duplicate !== null && voice.fieldState.isTouched
+
+  const voiceHelper = duplicateShown
+    ? `“${duplicate}” is already in the list. It clears when you move on.`
+    : typed !== ''
         ? 'Enter adds it — so does leaving the field.'
         : (voice.fieldState.error?.message ??
           `Aim for 3–5 · ${values.voice.length} of ${VOICE_MAX}`)
 
   return (
-    <Box component="form" onSubmit={submit} sx={{ p: '12px' }}>
-      <Header title={preset?.name ?? 'New preset'} disabled={saving} onLeave={leave} />
+    <Box component="form" onSubmit={submit} sx={{ py: '12px' }}>
+      <Header
+        title={preset?.name ?? 'New preset'}
+        disabled={saving}
+        onLeave={leave}
+        action={
+          target.kind === 'existing' ? (
+            <IconButton
+              $label={remove.pending ? 'Delete for all languages?' : 'Delete'}
+              $tone={remove.pending ? 'danger' : 'default'}
+              sx={{ color: remove.pending ? undefined : 'error.main' }}
+              disabled={saving}
+              ref={remove.ref}
+              onClick={remove.press}
+            >
+              <Trash />
+            </IconButton>
+          ) : null
+        }
+      />
 
       <Stack spacing="10px" alignItems="flex-start">
         <Input
           $label="Name"
           placeholder={target.kind === 'new' ? 'e.g. Product pages' : undefined}
+          inputProps={{ maxLength: NAME_MAX }}
           disabled={saving}
           value={name.field.value}
           onChange={name.field.onChange}
@@ -316,12 +369,33 @@ const PresetFormFields = ({
           </Select>
         ) : null}
 
-        <Box sx={{ width: '100%' }}>
-          <Typography component="h3" sx={{ ml: '14px', fontSize: 12, fontWeight: 500 }}>
+        {/* A rule, because this line is the seam of the form and nothing else said so: a
+            preset's name is one for every language, and everything below here belongs to
+            this language alone. Without the rule it reads as a note about the field above
+            it — which is where a field's helper text would be. */}
+        <Box
+          sx={{
+            width: '100%',
+            mt: '6px',
+            pt: '12px',
+            borderTop: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Typography
+            component="h3"
+            sx={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'text.secondary',
+            }}
+          >
             Settings for {languageName}
           </Typography>
           {target.kind === 'existing' && saysNothing(entry) ? (
-            <Typography sx={{ ml: '14px', fontSize: 12, color: 'text.secondary' }}>
+            <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
               Nothing set yet. Saving adds {languageName} to this preset.
             </Typography>
           ) : null}
@@ -347,7 +421,7 @@ const PresetFormFields = ({
           <TagsInput
             $label="Voice"
             $helperText={voiceHelper}
-            $error={voice.fieldState.error !== undefined}
+            $error={voice.fieldState.error !== undefined || duplicateShown}
             disabled={saving}
             $placeholder={values.voice.length === 0 ? 'Type a word, press Enter' : undefined}
             value={voice.field.value}
@@ -387,7 +461,12 @@ const PresetFormFields = ({
 
         <Textarea
           $label="Instructions"
+          $minRows={4}
           placeholder="House rules, e.g. terms to leave untranslated"
+          // MUI turns the drag handle off on a multiline field; instructions run to 500
+          // characters and reading them a few lines at a time is the worst way to check
+          // what a translation will be told.
+          sx={{ '& textarea': { resize: 'vertical' } }}
           disabled={saving}
           value={instructions.field.value}
           onChange={instructions.field.onChange}
@@ -431,23 +510,8 @@ const PresetFormFields = ({
               </Button>
             </Stack>
           </Stack>
-        ) : remove.pending ? (
-          <Button $tone="danger" fullWidth ref={remove.ref} onClick={remove.press}>
-            Delete for all languages?
-          </Button>
         ) : (
           <Stack direction="row" spacing="8px">
-            {target.kind === 'existing' ? (
-              <Button
-                $tone="danger"
-                fullWidth
-                ref={remove.ref}
-                disabled={saving}
-                onClick={remove.press}
-              >
-                Delete
-              </Button>
-            ) : null}
             <Button $tone="secondary" fullWidth disabled={saving} onClick={leave}>
               Cancel
             </Button>

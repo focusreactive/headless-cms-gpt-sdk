@@ -847,7 +847,7 @@ describe("leaving with unsaved edits (contract: Back or Cancel with changes pend
   });
 });
 
-describe("deleting from the form (contract: two presses, the second state reads “Delete for all languages?”, it removes the preset — every language of it — and returns to the list; the armed state replaces the whole footer, Cancel included)", () => {
+describe("deleting from the form (contract: two presses, the second state reads “Delete for all languages?”, it removes the preset — every language of it — and returns to the list; the delete sits in the header and the footer stays put, so arming is not a trap)", () => {
   it("reads “Delete for all languages?” after the first press", async () => {
     await renderLoaded(editing());
 
@@ -856,20 +856,20 @@ describe("deleting from the form (contract: two presses, the second state reads 
     expect(button("Delete for all languages?")).toBeTruthy();
   });
 
-  it("hides Cancel while armed", async () => {
+  it("keeps Cancel while armed, so arming is not a trap", async () => {
     await renderLoaded(editing());
 
     fireEvent.click(button("Delete"));
 
-    expect(noButton("Cancel")).toBeNull();
+    expect(button("Cancel")).toBeTruthy();
   });
 
-  it("hides Save while armed", async () => {
+  it("keeps Save while armed", async () => {
     await renderLoaded(editing());
 
     fireEvent.click(button("Delete"));
 
-    expect(noButton("Save")).toBeNull();
+    expect(button("Save")).toBeTruthy();
   });
 
   it("returns to the list after the second press", async () => {

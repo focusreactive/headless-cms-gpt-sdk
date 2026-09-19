@@ -105,8 +105,8 @@ by the back button, by Cancel, or by a save that lands.
 
 - a back button, accessible name **"Back to style presets"**
 - a heading: the preset's name when editing, **"New preset"** when creating
-- a footer: **"Delete"**, **"Cancel"**, **"Save"** when editing; **"Cancel"** and
-  **"Save"** when creating — there is no Delete for a preset that does not exist
+- when editing, a delete control at the **right of the header**, beside the title
+- a footer: **"Cancel"** and **"Save"**, in both modes
 
 ### Its fields, in order
 
@@ -182,12 +182,16 @@ Back or Cancel with changes pending asks **"Discard unsaved changes?"** with
 
 ### Deleting from the form
 
-Two presses, like the list. The second state reads **"Delete for all languages?"**. It
-removes the preset — every language of it — and returns to the list.
+Two presses, like the list, on the control in the header. Unarmed it is named **"Delete"**;
+armed it turns red and is named **"Delete for all languages?"**. The second press removes
+the preset — every language of it — and returns to the list.
 
-**Known and carried:** the armed state replaces the whole footer, Cancel included, so
-someone who armed it by accident has no visible way out until it disarms itself. Drawn that
-way, and shipped that way on purpose.
+**Reversed on 19 September, on the owner's word**, and the record is corrected rather than
+quietly rewritten: an earlier reading of a conversation had this control in the footer
+beside Cancel and Save, and this document said so. It sits in the header. The trap that
+earlier version carried — the armed state replacing the whole footer, so that someone who
+armed it by accident had no visible way out — goes with it: the footer now stays put, and
+two checks that pinned the old behaviour were rewritten to pin the new.
 
 ### The preview
 

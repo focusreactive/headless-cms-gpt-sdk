@@ -72,22 +72,32 @@ export const PresetPicker = ({
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Stack direction="row" alignItems="center" spacing="8px">
-        <Select
-          $label="Style preset"
-          $width={234}
-          displayEmpty
-          value={value}
-          onChange={(event) => onChoose(event.target.value === NO_PRESET ? null : event.target.value)}
+      <Stack direction="row" alignItems="flex-end" spacing="8px">
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Select
+            $label="Style preset"
+            $width="100%"
+            displayEmpty
+            value={value}
+            onChange={(event) =>
+              onChoose(event.target.value === NO_PRESET ? null : event.target.value)
+            }
+          >
+            <MenuItem value={NO_PRESET}>No preset</MenuItem>
+            {(settings?.items ?? []).map((preset) => (
+              <MenuItem key={preset.id} value={preset.id}>
+                {preset.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+        <IconButton
+          $label="Manage style presets"
+          // The kit's 34 is the size of a row icon; here it stands beside a 40px field and
+          // has to match its height. Square, so both axes move together.
+          sx={{ width: 40, height: 40, flexShrink: 0 }}
+          onClick={onManage}
         >
-          <MenuItem value={NO_PRESET}>No preset</MenuItem>
-          {(settings?.items ?? []).map((preset) => (
-            <MenuItem key={preset.id} value={preset.id}>
-              {preset.name}
-            </MenuItem>
-          ))}
-        </Select>
-        <IconButton $label="Manage style presets" onClick={onManage}>
           <Gear />
         </IconButton>
       </Stack>

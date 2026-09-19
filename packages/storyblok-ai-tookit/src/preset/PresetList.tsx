@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Box, ListItemButton, Stack, Typography } from '@mui/material'
+import { Box, ButtonBase, ListItemButton, Stack, Typography } from '@mui/material'
 
 import type { language } from '@src/context/AppDataContext'
 
@@ -31,8 +31,8 @@ const languageWord = (count: number) => (count === 1 ? 'language' : 'languages')
 
 const Chevron = ({ open }: { open: boolean }) => (
   <svg
-    width="18"
-    height="18"
+    width="22"
+    height="22"
     viewBox="0 0 24 24"
     aria-hidden="true"
     focusable="false"
@@ -107,35 +107,44 @@ const PresetRow = ({
   return (
     <Box component="li" sx={{ listStyle: 'none', borderBottom: 1, borderColor: 'divider' }}>
       <Stack direction="row" alignItems="center" sx={{ height: 40 }}>
-        <IconButton
-          $label={`${open ? 'Collapse' : 'Expand'} ${summary}`}
+        {/* One control, not a chevron beside inert text: the name is what a hand reaches
+            for, and two buttons doing the same thing would be two stops for a screen
+            reader. */}
+        <ButtonBase
+          aria-label={`${open ? 'Collapse' : 'Expand'} ${summary}`}
           aria-expanded={open}
           onClick={() => setOpen(!open)}
-        >
-          <Chevron open={open} />
-        </IconButton>
-        <IconButton
-          $label={
-            isDefault ? `${preset.name} is the default preset` : `Make ${preset.name} the default`
-          }
-          onClick={() => {
-            void setDefaultPreset(preset.id)
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            height: 34,
+            px: '2px',
+            gap: '6px',
+            justifyContent: 'flex-start',
+            borderRadius: '5px',
+            textAlign: 'left',
           }}
         >
-          <Star filled={isDefault} />
-        </IconButton>
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Typography
-            noWrap
-            sx={{ flex: '0 1 auto', minWidth: 0, fontSize: 14 }}
-          >
+          <Chevron open={open} />
+          <Typography noWrap sx={{ flex: '0 1 auto', minWidth: 0, fontSize: 14 }}>
             {preset.name}
           </Typography>
           <Box sx={{ flex: 1 }} />
           <Typography sx={{ flexShrink: 0, fontSize: 12, color: 'text.secondary' }}>
             {configured} / {languages.length}
           </Typography>
-        </Box>
+        </ButtonBase>
+        <IconButton
+          $label={
+            isDefault ? `${preset.name} is the default preset` : `Make ${preset.name} the default`
+          }
+          sx={{ ml: '4px' }}
+          onClick={() => {
+            void setDefaultPreset(preset.id)
+          }}
+        >
+          <Star filled={isDefault} />
+        </IconButton>
         <IconButton
           $label={
             remove.pending
@@ -143,6 +152,7 @@ const PresetRow = ({
               : `Delete ${preset.name}`
           }
           $tone={remove.pending ? 'danger' : 'default'}
+          sx={{ color: remove.pending ? undefined : 'error.main' }}
           onClick={remove.press}
         >
           <Trash />
@@ -200,10 +210,19 @@ export const PresetList = ({ languages, onClose, onCreate, onOpen }: PresetListP
   }, [armed])
 
   return (
-    <Box sx={{ p: '12px' }}>
-      <Stack direction="row" alignItems="center" sx={{ height: 34, mb: '8px' }}>
-        <IconButton $label="Back to Localization" onClick={onClose}>
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <Box sx={{ py: '12px' }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing="6px"
+        sx={{ height: 34, pb: '8px', mb: '12px', borderBottom: 1, borderColor: 'divider' }}
+      >
+        <IconButton
+          $label="Back to Localization"
+          sx={{ color: 'text.primary' }}
+          onClick={onClose}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path
               d="M14.363 14.777l-2.121-2.12 2.121-2.122A1 1 0 0 0 12.95 9.12l-2.83 2.83a.995.995 0 0 0-.277.53l-.014.118v.118a.997.997 0 0 0 .291.648l2.829 2.829a1 1 0 0 0 1.414-1.415z"
               fill="currentColor"
