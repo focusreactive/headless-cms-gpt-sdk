@@ -205,3 +205,27 @@ export type CreateFakeRepository = (document?: unknown) => {
   repository: PresetRepository
   control: FakeControl
 }
+
+/**
+ * The repository the plugin runs on, over the space-settings route.
+ *
+ * `read` asks the route for the whole settings document and answers the value of its
+ * `stylePresets` field — `undefined` when the space has none, which is a space nobody has
+ * configured and not a failure.
+ *
+ * `write` sends that field and no other. The route and the store beneath it write each
+ * field whole and leave the rest alone, so a preset save cannot disturb the words a
+ * translation must not touch, and two settings never have to be saved together.
+ *
+ * Everything that goes wrong arrives as `ApiError`, and its `kind` says which of three
+ * things happened: `network` for a request that never produced a response, `http` for a
+ * response whose status says no — carrying that status — and `malformed` for a response
+ * that said yes and whose body could not be read.
+ *
+ * A response that said yes and carried no body at all is the first of those two and not
+ * the third: the route sends an empty body for a space the store holds nothing for, so an
+ * empty answer means nobody has configured the space, never that something went wrong.
+ *
+ * It is built through `overStorage`, so it never sees `StyleSettings`.
+ */
+export type CreateHttpRepository = (spaceId: number) => PresetRepository

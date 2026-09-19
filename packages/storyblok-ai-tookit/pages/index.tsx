@@ -14,8 +14,7 @@ import { initSDK } from '@focus-reactive/storyblok-ai-sdk'
 import { initSDK as initContentSDK } from '@focus-reactive/content-ai-sdk'
 import StoryblokClient, { ISbStoryData } from 'storyblok-js-client'
 import { AppDataContext, Folder, language } from '@src/context/AppDataContext'
-import { createFakeRepository } from '@src/preset/fakeRepository'
-import { FAKE_DOCUMENT } from '@src/preset/fakeDocument'
+import { createHttpRepository } from '@src/preset/httpRepository'
 import { PresetsProvider } from '@src/preset/PresetsProvider'
 
 type PageProps = {
@@ -32,7 +31,9 @@ const PLUGIN_SLUG =
   process.env.NEXT_PUBLIC_PLUGIN_SLUG || 'focusreactive-ai-toolkit'
 
 const Home: NextPage<PageProps> = (props) => {
-  const [presetRepository] = useState(() => createFakeRepository(FAKE_DOCUMENT).repository)
+  // Built once: the provider loads on the repository it was first handed, and a fresh one
+  // each render would restart that load on every render.
+  const [presetRepository] = useState(() => createHttpRepository(props.spaceId))
   const reportedHeight = useRef(0)
   const content = useRef<HTMLDivElement>(null)
   const [currentStory, setCurrentStory] = useState<ISbStoryData>(null)
