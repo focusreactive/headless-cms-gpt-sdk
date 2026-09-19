@@ -42,7 +42,6 @@ type TagsInputProps = Omit<
   $label: string
   $helperText?: string
   $error?: boolean
-  /** Goes on the input, not on the Autocomplete around it, which would drop it. */
   $placeholder?: string
   /** Required, not optional: left out, Autocomplete keeps the words itself and the
    *  caller's cap and duplicate check never run. */
@@ -65,8 +64,8 @@ export const TagsInput = forwardRef<HTMLDivElement, TagsInputProps>(function Tag
       autoSelect
       options={NO_SUGGESTIONS}
       size="small"
-      // MUI's own chips give their delete control no name at all, so a screen reader
-      // reaches an unlabelled button per word. Naming the word is the whole point of it.
+      // MUI's own chips give the delete control no accessible name; this override exists
+      // only to add one.
       renderTags={(words: string[], getTagProps) =>
         words.map((word, index) => {
           const { key, ...tag } = getTagProps({ index })

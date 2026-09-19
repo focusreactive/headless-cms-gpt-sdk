@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const DEFAULT_TIMEOUT_MS = 4000
+export const DEFAULT_TIMEOUT_MS = 4000
 
 /**
  * A control that commits on the second press: the first arms it, the second performs.

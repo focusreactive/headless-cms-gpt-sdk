@@ -30,29 +30,21 @@ import {
 } from './preset.types'
 import { saysNothing } from './presetSet'
 import { usePresets } from './PresetsProvider'
+import type { Written } from './presetStore.types'
 import { validatePreset } from './validatePreset'
 
-/**
- * Which preset the form is for. A union rather than a nullable id beside a flag, so
- * "creating" and "editing this one" cannot both be claimed at once. The form mints the id
- * for a new preset itself, which is what makes saving it one operation.
- */
+/** Which preset the form is for. The id of a new preset is minted by the form, not by the caller. */
 export type PresetFormTarget = { kind: 'new' } | { kind: 'existing'; preset: PresetId }
 
 export type PresetFormProps = {
   languages: language[]
-  /** The space's own code for the language being edited; for a new preset, where the select opens. */
+  /** The space's own language code, not the `byLocale` key — normalised here. */
   locale: LanguageCode
   target: PresetFormTarget
-  /** Called when the form is finished with — saved, cancelled, or deleted. */
+  /** Called on any way out of the form, a save included. */
   onDone: () => void
 }
 
-/**
- * What the fields hold. `voice` is a list of plain words because that is what `TagsInput`
- * speaks; `draftOf` is the one place it becomes the `VoiceWord[]` storage keeps, so the
- * mapping does not land at the field and again at the submit.
- */
 type Values = {
   name: string
   locale: LanguageCode
@@ -77,6 +69,11 @@ const draftOf = (values: Values, id: PresetId): PresetDraft => ({
   instructions: values.instructions,
 })
 
+const newPresetId = (): PresetId =>
+  `p${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+
+const saved = (written: Written) => written === 'written' || written === 'unchanged'
+
 const nameOfLanguage = (languages: language[], code: LanguageCode) =>
   languages.find((lang) => lang.code === code)?.name ?? code
 
@@ -86,11 +83,14 @@ const takenBy = (name: string, siblings: readonly StylePreset[], id: PresetId) =
       preset.id !== id && preset.name.trim().toLowerCase() === name.trim().toLowerCase(),
   )?.name ?? ''
 
-/** Shown from 400 on, past the limit included: it counts, it does not accuse. */
-const counterOf = (instructions: string) =>
-  instructions.length >= 400 ? `${instructions.length} / ${INSTRUCTIONS_MAX}` : undefined
+/** Where the character counter starts showing, well before the limit it counts towards. */
+const COUNTER_FROM = 400
 
-/** The counter plus what to do about it. An error, so it waits for the field to be left. */
+const counterOf = (instructions: string) =>
+  instructions.length >= COUNTER_FROM
+    ? `${instructions.length} / ${INSTRUCTIONS_MAX}`
+    : undefined
+
 const overMessage = (instructions: string) => {
   const over = instructions.length - INSTRUCTIONS_MAX
 
@@ -124,12 +124,6 @@ const Header = ({
   </Stack>
 )
 
-/**
- * The fields are their own component so that they mount only once the settings are there.
- * `useForm` takes its defaults at mount and never again, so a form mounted during the load
- * would capture blanks — and then show an empty Name for a preset that has one, with Save
- * disabled by its own emptiness, for as long as the screen stayed open.
- */
 export const PresetForm = ({ languages, locale, target, onDone }: PresetFormProps) => {
   const { presets } = usePresets()
 
@@ -155,6 +149,10 @@ export const PresetForm = ({ languages, locale, target, onDone }: PresetFormProp
   )
 }
 
+/**
+ * Split in two: `useForm` takes its defaults at mount and never again, so the fields must
+ * not mount until the settings have loaded.
+ */
 const PresetFormFields = ({
   languages,
   locale,
@@ -164,13 +162,10 @@ const PresetFormFields = ({
 }: PresetFormProps & { settings: StyleSettings }) => {
   const { mutation, savePreset, removePreset } = usePresets()
 
-  // Minted once, not per render: it is the id the preset will carry, and a new one each
-  // render would make every save create another preset.
   const minted = useRef<PresetId | null>(null)
 
   if (minted.current === null) {
-    minted.current =
-      target.kind === 'existing' ? target.preset : `p${Date.now()}${Math.random().toString(36).slice(2, 8)}`
+    minted.current = target.kind === 'existing' ? target.preset : newPresetId()
   }
 
   const id = minted.current
@@ -244,7 +239,7 @@ const PresetFormFields = ({
 
   const remove = useTwoStepConfirm<HTMLButtonElement>(() => {
     void removePreset(id).then((written) => {
-      if (written === 'written' || written === 'unchanged') {
+      if (saved(written)) {
         onDone()
       }
     })
@@ -261,9 +256,7 @@ const PresetFormFields = ({
   }
 
   const submit = form.handleSubmit(async (ready: Values) => {
-    const written = await savePreset(draftOf(ready, id))
-
-    if (written === 'written' || written === 'unchanged') {
+    if (saved(await savePreset(draftOf(ready, id)))) {
       onDone()
     }
   })
@@ -354,8 +347,8 @@ const PresetFormFields = ({
             $placeholder={values.voice.length === 0 ? 'Type a word, press Enter' : undefined}
             value={voice.field.value}
             onInputChange={(_event, next) => setTyped(next)}
-            // A word already in the list never reaches `onChange`: MUI swallows the commit
-            // rather than reporting it, so the attempt has to be caught before it does.
+            // A word already in the list never reaches `onChange`: MUI (5.14.18) swallows
+            // the commit rather than reporting it, so it has to be caught before it does.
             onKeyDown={(event) => {
               if (event.key !== 'Enter') {
                 return

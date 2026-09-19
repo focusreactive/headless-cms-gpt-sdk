@@ -10,19 +10,14 @@ import { resolveStyle } from './presetSet'
 import { usePresets } from './PresetsProvider'
 
 /**
- * What the editor has said about which preset to use.
- *
- * Three states and not two. "Nothing said yet, so the space's default applies" is a
- * different thing from "no preset at all", and a nullable id cannot tell them apart —
- * which would make choosing "No preset" unobservable, because the screen would remember
- * nothing and go on showing the default.
- */
+  * What the editor has said about the preset. `said: false` means nothing chosen yet, so
+  * the space's default applies.
+  */
 export type PresetChoice = { said: false } | { said: true; preset: PresetId | null }
 
 export type PresetPickerProps = {
-  /** The language being translated into, as the space's own code — normalised here, not by the caller. */
+  /** The space's own language code; normalising to the `byLocale` key happens here, so pass it unchanged. */
   locale: LanguageCode
-  /** That language's name, for the messages that quote it. */
   localeName: string
   chosen: PresetChoice
   onChoose: (preset: PresetId | null) => void
@@ -31,21 +26,12 @@ export type PresetPickerProps = {
 
 const NO_PRESET = ''
 
-/** Which preset the editor has asked for: what they said, or the space's default. */
 const asked = (chosen: PresetChoice, settings: StyleSettings | null) =>
   chosen.said ? chosen.preset : settings?.defaultId ?? null
 
 /**
- * What the select shows, which is not always what was asked for.
- *
- * With no settings loaded it shows "No preset" whatever was remembered — a preset we have
- * not read cannot be named, and a row with no name would say less. Nothing is lost: the
- * choice lives in the screen around this one. Same for a preset that is no longer there,
- * deleted in another window: claiming it is still chosen would be the lie.
- *
- * The sentence below the field is about what was **asked for**, so it still reports that
- * nothing will be applied. **Whether that is the right sentence for a preset that has been
- * deleted is a design question, not one to invent here.**
+ * What the select shows: `NO_PRESET` while the settings are unread, or when the asked-for
+ * preset is gone — a preset we have not read cannot be named.
  */
 const showing = (chosen: PresetChoice, settings: StyleSettings | null) => {
   const wanted = asked(chosen, settings)
@@ -79,9 +65,6 @@ export const PresetPicker = ({
   const value = showing(chosen, settings)
   const wanted = asked(chosen, settings)
 
-  // Only a preset that exists and says something for this language contributes anything,
-  // and `resolveStyle` is the one place that decides so — asking it here keeps the warning
-  // and the translation agreeing about what "has nothing for this language" means.
   const silent =
     settings !== null &&
     wanted !== null &&
@@ -93,8 +76,6 @@ export const PresetPicker = ({
         <Select
           $label="Style preset"
           $width={234}
-          // `''` is a real choice here — "no preset at all" — and MUI would otherwise draw
-          // it as an empty field rather than as the option that carries that meaning.
           displayEmpty
           value={value}
           onChange={(event) => onChoose(event.target.value === NO_PRESET ? null : event.target.value)}

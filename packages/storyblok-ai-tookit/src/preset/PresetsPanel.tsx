@@ -8,15 +8,10 @@ import { PresetList } from './PresetList'
 
 export type PresetsPanelProps = {
   languages: language[]
-  /** The language being translated into: where the list opens and what the form edits. */
   locale: LanguageCode
   onClose: () => void
 }
 
-/**
- * Which of the two preset screens is showing, and for what. A union rather than a set of
- * flags, so "the form, for no preset and no language" cannot be expressed.
- */
 type Showing =
   | { screen: 'list' }
   | { screen: 'form'; target: PresetFormTarget; locale: LanguageCode }

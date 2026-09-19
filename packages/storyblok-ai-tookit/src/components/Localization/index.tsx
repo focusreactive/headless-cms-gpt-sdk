@@ -11,6 +11,8 @@ import {
 import LocalizeStoryMode from './modes/Story'
 import { AppDataContext, language } from '@src/context/AppDataContext'
 import { PLUGIN_ID } from '@src/constants'
+import type { PresetChoice } from '@src/preset/PresetPicker'
+import { PresetsPanel } from '@src/preset/PresetsPanel'
 
 const PREVIEW_LENGTH = 50
 const PREVIEW_COUNT = 3
@@ -33,7 +35,11 @@ const untranslatedNotice = (untranslated: string[]) => {
 
 const Localization = () => {
   const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
-  const { spaceId, userId } = React.useContext(AppDataContext)
+  const { spaceId, userId, languages } = React.useContext(AppDataContext)
+
+  // Not in the reducer: every action is appended to `state.history`, which is posted to
+  // Slack on each localize.
+  const [managing, setManaging] = React.useState(false)
 
   React.useEffect(() => {
     fetch(`/api/space-settings?spaceId=${spaceId}`, {
@@ -244,6 +250,16 @@ const Localization = () => {
     }
   }
 
+  if (managing) {
+    return (
+      <PresetsPanel
+        languages={languages}
+        locale={state.fieldLevelTranslation.targetLanguage}
+        onClose={() => setManaging(false)}
+      />
+    )
+  }
+
   return (
     <div>
       <Typography variant="h1">Localization</Typography>
@@ -253,6 +269,7 @@ const Localization = () => {
         translationLevels={TRANSLATION_LEVELS}
         dispatch={dispatch}
         state={state}
+        onManagePresets={() => setManaging(true)}
       />
     </div>
   )
@@ -293,6 +310,7 @@ export type LocalizationState = {
   targetLanguageCode: string
   targetLanguageName: string
   notTranslatableWords: NotTranslatableWords
+  stylePreset: PresetChoice
   history: StateHistoryRecord[]
 }
 
@@ -316,6 +334,7 @@ export const INITIAL_STATE: LocalizationState = {
   translationLevel: 'field',
   isReadyToPerformLocalization: false,
   notTranslatableWords: { set: new Set(), new: null, limit: 10 },
+  stylePreset: { said: false },
   history: [{ time: new Date(Date.now()).toISOString(), action: 'init' }],
 }
 
@@ -336,6 +355,7 @@ export type LocalizationAction =
   | { type: 'addNotTranslatableWord' }
   | { type: 'setNewNotTranslatableWord'; payload: string }
   | { type: 'setNotTranslatableWords'; payload: NotTranslatableWords }
+  | { type: 'setStylePreset'; payload: PresetChoice }
 
 const reducer = (
   state: LocalizationState,
@@ -508,6 +528,13 @@ const reducer = (
         notTranslatableWords: {
           ...state.notTranslatableWords,
         },
+        history: updatedHistory,
+      }
+
+    case 'setStylePreset':
+      return {
+        ...state,
+        stylePreset: action.payload,
         history: updatedHistory,
       }
 

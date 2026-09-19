@@ -3,6 +3,7 @@ import { Box, ListItemButton, Stack, Typography } from '@mui/material'
 
 import type { language } from '@src/context/AppDataContext'
 
+import { DEFAULT_TIMEOUT_MS } from '../shared/useTwoStepConfirm'
 import { Alert } from '../ui/Alert'
 import { Button } from '../ui/Button'
 import { IconButton } from '../ui/IconButton'
@@ -26,8 +27,7 @@ const covers = (preset: StylePreset, code: LanguageCode) => {
 
 const languageWord = (count: number) => (count === 1 ? 'language' : 'languages')
 
-/** How long an armed delete waits before disarming itself, matching `useTwoStepConfirm`. */
-const ARMED_MS = 4000
+
 
 const Chevron = ({ open }: { open: boolean }) => (
   <svg
@@ -184,11 +184,9 @@ const PresetRow = ({
 export const PresetList = ({ languages, onClose, onCreate, onOpen }: PresetListProps) => {
   const { presets, reload } = usePresets()
 
-  // Which row's delete is armed lives here rather than in each row, because "arming one
-  // disarms any other" is a fact about the list. `useTwoStepConfirm` disarms on a press
-  // outside its own element, which a mouse reports and a keyboard never does — so a row
-  // holding its own state would leave a destructive control armed for anyone who reached
-  // the next one by tab.
+  // The armed row is the list's: `useTwoStepConfirm` only disarms on a `mousedown`
+  // outside, which a keyboard never sends, so a row holding its own would stay armed after
+  // a tab away.
   const [armed, setArmed] = useState<PresetId | null>(null)
 
   useEffect(() => {
@@ -196,7 +194,7 @@ export const PresetList = ({ languages, onClose, onCreate, onOpen }: PresetListP
       return
     }
 
-    const timer = window.setTimeout(() => setArmed(null), ARMED_MS)
+    const timer = window.setTimeout(() => setArmed(null), DEFAULT_TIMEOUT_MS)
 
     return () => window.clearTimeout(timer)
   }, [armed])

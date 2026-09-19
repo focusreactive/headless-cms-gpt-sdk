@@ -98,6 +98,141 @@ seam it needs already exists and was built last step.
   The one-line fix — keep Cancel, let Delete take Save's width — is here for the morning.
 - The picker holds a preset id that goes nowhere until prompt composition lands.
 
+## Result
+
+| # | Criterion | Outcome |
+|---|---|---|
+| 1 | one row per preset with its count | met |
+| 2 | expanding shows a line per space language, marked | met |
+| 3 | a language line opens the form for that preset **and** that language | met, and guarded twice — the second guard exists because a mutation showed the first did not cover which of the two codes crosses |
+| 4 | the star sets the default and the call reaches the repository | met |
+| 5 | deleting takes two presses | met |
+| 6 | loading, failed-load, saving and failed-save each render | met |
+| 7 | the create form's language select opens on the language being translated into | met |
+| 8 | a validation error lands on its own field, Save stays disabled | met |
+| 9 | editing one language leaves the preset's others untouched, end to end | met |
+| 10 | the picker lists the presets and opens on the default | met |
+| 11 | the translation flow still works | met — 14 reducer checks, recorded from the code before it was touched |
+| 12 | the committed checks stay green | met — 536 of 536 |
+| 13 | no new type errors | met — `npx tsc --noEmit` exit 0 |
+
+Beyond the criteria: **`npx next build` succeeds**, which is the only evidence here that the
+whole app still compiles with the wiring in it — jsdom does not prove that.
+
+### The red runs
+
+| Screen | Checks | Red against the stub | Green |
+|---|---|---|---|
+| list | 39 | 39 | 39 |
+| picker | 32 | 32 | 32 |
+| form | 79 | 79 | 79 |
+
+Every failure in every red run was the stub's own `not implemented — red run`; no
+`TypeError`, no assertion mismatch, no timeout.
+
+### What the checks caught that the red run could not
+
+Four defects, each real rather than a test artefact:
+
+- a **closed row kept its language buttons in the DOM**, focusable and clickable at zero
+  height — MUI's `Collapse` does not unmount, so the rows render conditionally now;
+- **"arming one row's delete disarms any other" rested on `mousedown`**, which a mouse
+  sends and a keyboard never does: anyone reaching the next row by tab would have left a
+  destructive control armed. Which row is armed is a fact about the list, so the list holds
+  it;
+- **MUI swallows an attempt to add a word already in the list** — it never reaches
+  `onChange` at all — so the attempt is caught on the Enter that makes it;
+- the **character counter and the over-the-limit sentence were one thing**, which showed
+  the warning before the editor had left the field.
+
+### What the mutations caught that the checks could not
+
+Fifteen mutations over the three screens; twelve reddened only their own group. Three
+reddened nothing:
+
+- **the form's draft carried an unnormalised locale** — saving a preset for `pt-br` would
+  have written the key `pt-br` while the translation reads `pt_br`. The exact class of bug
+  `localeKey` exists to prevent, on the write path, and only a hyphenated language can see
+  it;
+- **which code the list hands the form** — the blind author had deliberately pinned nothing
+  here, because the contract was silent when they wrote and I decided it afterwards;
+- one that turned out to be a **false alarm**: swapping `wanted` for `value` inside the
+  picker's `resolveStyle` call reddens nothing because, under the guards around it, the two
+  expressions agree. Reported as equivalence, not as a gap.
+
+Closed by `src/preset/screens.guards.test.tsx`.
+
+### And one the guards themselves caught
+
+Writing the guard for the first of those exposed a defect no check and no mutation had
+reached: **`useForm` takes its defaults at mount and never again**, so a form mounted while
+the settings were still loading captured blanks — an empty Name for a preset that has one,
+with Save disabled by that emptiness, for as long as the screen stayed open. The fields are
+their own component now and mount only once the settings are there.
+
+The blind author's report had said, of prefilling: *"ни одна проверка на предзаполнение не
+опирается"* — no check of theirs relied on it, because the contract did not require it. The
+defect was exactly there. The contract requires it now, and two guards hold it.
+
+### Two gaps in the kit the design required
+
+`TagsInput` could not carry the drawn placeholder, and MUI's own chips give their delete
+control no accessible name at all — a screen reader met one unlabelled button per word.
+Both fixed where the gap was, in `src/ui/TagsInput.tsx`.
+
+`Disclosure`'s `$label` was widened to a node in an earlier commit for these rows; the rows
+turned out to need separate buttons inside their summary, which one `ButtonBase` cannot
+hold, so that widening is now unused. Left as it is — it is strictly more general and the
+Preview disclosure still uses the prop — and recorded here rather than quietly kept.
+
+### Not done, by decision
+
+- **prompt composition.** The chosen preset is held in state and reaches nothing. After
+  this step the panel looks finished and a translation is not yet styled;
+- **preset duplication**, drawn on the list rows and deliberately not built;
+- the two states only an eye can judge: the 300px panel at real width, and the armed
+  delete's fill. No criterion claims either.
+
+## Open, and moved here out of the code
+
+**What the picker should say for a preset that has been deleted.** The field shows
+"No preset", because a preset that was not read cannot be named; the sentence below it
+still reads "No French settings in this preset", which is about what was asked for. The two
+are each defensible and together slightly incoherent, and the right wording for a deleted
+preset is a design question. It was a paragraph inside `PresetPicker.tsx` until the comment
+audit pointed out that an open question in code is a TODO nobody signed. It lives here now.
+
+**A preset chosen before the settings finish loading does not show on screen** until they
+arrive — the field reads "No preset" in the meantime. The choice is not lost; it is in the
+reducer. Noticed by the comment auditor while reading, and left as it is: naming a preset
+we have not read is the alternative, and it is worse.
+
+## The comment audit
+
+31 comment blocks judged by a fresh reader, plus 2 it said were missing. Its verdict on the
+whole change was **too dense** — 119 comment lines over 903 of code — with a diagnosis
+worth keeping: the inline comments were fine at 0.25 per ten lines, and the weight was all
+in docblocks, 96 lines over 18 exported symbols. *"Не «код не объясняет себя», а «в
+докблоки переехал протокол задачи»"* — the design arguments and the plans for later steps
+had migrated out of this file and into the source.
+
+Applied: 13 deleted, 11 shortened, 2 replaced by code — a named `COUNTER_FROM` for the bare
+`400`, and `DEFAULT_TIMEOUT_MS` exported from `useTwoStepConfirm` so the list imports the
+number instead of a comment promising it matches. 2 additions it asked for: `newPresetId()`,
+which gives the minting's two magic numbers a name, and `saved()`, because `'unchanged'`
+counting as success is not obvious from the value names.
+
+Three survived, all of them one line about someone else's library and each with a deletion
+test the auditor wrote out: MUI swallowing a duplicate commit; MUI putting its own
+`onClick` on whatever is handed to `deleteIcon`; and `TagsInput`'s `value` having to stay
+required, which is a rule TypeScript cannot hold.
+
+**One verdict refused, visibly.** It proposed renaming `onDone` to `onClose` so the comment
+listing "saved, cancelled, or deleted" would have nothing left to say. Declined: `onClose`
+reads as dismissal, and the callback also fires on a save that landed, which is the case
+most worth not hiding. The comment was shortened instead, to *"Called on any way out of the
+form, a save included."*
+
 ## Human choices
 
 - **19 September 2026** — edit `Localization` directly rather than building the screens

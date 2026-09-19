@@ -14,6 +14,9 @@ import { initSDK } from '@focus-reactive/storyblok-ai-sdk'
 import { initSDK as initContentSDK } from '@focus-reactive/content-ai-sdk'
 import StoryblokClient, { ISbStoryData } from 'storyblok-js-client'
 import { AppDataContext, Folder, language } from '@src/context/AppDataContext'
+import { createFakeRepository } from '@src/preset/fakeRepository'
+import { FAKE_DOCUMENT } from '@src/preset/fakeDocument'
+import { PresetsProvider } from '@src/preset/PresetsProvider'
 
 type PageProps = {
   spaceId: number
@@ -29,6 +32,7 @@ const PLUGIN_SLUG =
   process.env.NEXT_PUBLIC_PLUGIN_SLUG || 'focusreactive-ai-toolkit'
 
 const Home: NextPage<PageProps> = (props) => {
+  const [presetRepository] = useState(() => createFakeRepository(FAKE_DOCUMENT).repository)
   const [currentHeight, setCurrentHeight] = useState<number>(0)
   const [currentStory, setCurrentStory] = useState<ISbStoryData>(null)
 
@@ -115,13 +119,14 @@ const Home: NextPage<PageProps> = (props) => {
           userId: props.userId,
         }}
       >
-        <div>
-          <FeaturesLayout />
-          <Typography
-            variant="body2"
-            style={{ marginTop: '24px' }}
-          >
-            How it works:{' '}
+        <PresetsProvider repository={presetRepository}>
+          <div>
+            <FeaturesLayout />
+            <Typography
+              variant="body2"
+              style={{ marginTop: '24px' }}
+            >
+              How it works:{' '}
             <Link
               href="https://focusreactive.com/storyblok-ai-toolkit/"
               target="_blank"
@@ -138,7 +143,8 @@ const Home: NextPage<PageProps> = (props) => {
               FocusReactive
             </Link>
           </Typography>
-        </div>
+          </div>
+        </PresetsProvider>
       </AppDataContext.Provider>
     </ThemeProvider>
   )

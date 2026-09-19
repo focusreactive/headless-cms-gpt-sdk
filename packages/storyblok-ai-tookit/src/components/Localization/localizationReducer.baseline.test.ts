@@ -133,4 +133,38 @@ describe("the translation state as it stood before the preset work", () => {
       expect(Array.from(added.notTranslatableWords.set)).toEqual(["Checkout"]);
     });
   });
+
+  describe("the style preset the editor picks, added by the preset work", () => {
+    it("starts with nothing said, so the space default applies", () => {
+      expect(INITIAL_STATE.stylePreset).toEqual({ said: false });
+    });
+
+    it("remembers a preset the editor picked", () => {
+      const picked: LocalizationState = mainReducer(withLanguage("fr"), {
+        type: "setStylePreset",
+        payload: { said: true, preset: "brand" },
+      });
+
+      expect(picked.stylePreset).toEqual({ said: true, preset: "brand" });
+    });
+
+    it("remembers that the editor picked no preset at all, which is not the same as saying nothing", () => {
+      const none: LocalizationState = mainReducer(withLanguage("fr"), {
+        type: "setStylePreset",
+        payload: { said: true, preset: null },
+      });
+
+      expect(none.stylePreset).toEqual({ said: true, preset: null });
+    });
+
+    it("does not disturb readiness, which is what the baseline above pins", () => {
+      const picked: LocalizationState = mainReducer(withLanguage("fr"), {
+        type: "setStylePreset",
+        payload: { said: true, preset: "brand" },
+      });
+
+      expect(picked.isReadyToPerformLocalization).toBe(true);
+      expect(picked.targetLanguageCode).toBe("fr");
+    });
+  });
 });
