@@ -122,6 +122,18 @@ by the back button, by Cancel, or by a save that lands.
 
 Each chip carries a remove button named **"Remove <word>"**.
 
+### What the fields start out holding
+
+**Editing:** the preset's name, and that language's formality, voice and instructions — the
+stored ones. This was missing from an earlier draft of this document, and its absence let a
+real defect through: the fields are set once, when they first appear, so a form that
+appeared while the settings were still loading captured blanks and then showed an empty
+Name for a preset that has one, with Save disabled by that emptiness, for as long as the
+screen stayed open. The fields therefore appear only once the settings are there.
+
+**Creating:** everything empty, formality on Neutral, the language select on the one being
+translated into.
+
 ### What it says when something is wrong
 
 Each message replaces that field's helper text. **A field shows nothing wrong until it has
