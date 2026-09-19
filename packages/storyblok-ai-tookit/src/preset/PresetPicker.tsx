@@ -4,16 +4,11 @@ import { Alert } from '../ui/Alert'
 import { Button } from '../ui/Button'
 import { IconButton } from '../ui/IconButton'
 import { Select } from '../ui/Select'
-import { localeKey } from './localeKey'
 import type { LanguageCode, PresetId, StyleSettings } from './preset.types'
-import { resolveStyle } from './presetSet'
+import { askedFor, styleFor, type PresetChoice } from './presetChoice'
 import { usePresets } from './PresetsProvider'
 
-/**
-  * What the editor has said about the preset. `said: false` means nothing chosen yet, so
-  * the space's default applies.
-  */
-export type PresetChoice = { said: false } | { said: true; preset: PresetId | null }
+export type { PresetChoice }
 
 export type PresetPickerProps = {
   /** The space's own language code; normalising to the `byLocale` key happens here, so pass it unchanged. */
@@ -26,15 +21,12 @@ export type PresetPickerProps = {
 
 const NO_PRESET = ''
 
-const asked = (chosen: PresetChoice, settings: StyleSettings | null) =>
-  chosen.said ? chosen.preset : settings?.defaultId ?? null
-
 /**
  * What the select shows: `NO_PRESET` while the settings are unread, or when the asked-for
  * preset is gone — a preset we have not read cannot be named.
  */
 const showing = (chosen: PresetChoice, settings: StyleSettings | null) => {
-  const wanted = asked(chosen, settings)
+  const wanted = askedFor(chosen, settings)
 
   if (settings === null || wanted === null) {
     return NO_PRESET
@@ -63,12 +55,10 @@ export const PresetPicker = ({
   const { presets, reload } = usePresets()
   const settings = presets.kind === 'ready' ? presets.settings : null
   const value = showing(chosen, settings)
-  const wanted = asked(chosen, settings)
+  const wanted = askedFor(chosen, settings)
 
   const silent =
-    settings !== null &&
-    wanted !== null &&
-    resolveStyle(settings, wanted, localeKey(locale)) === null
+    settings !== null && wanted !== null && styleFor(settings, chosen, locale) === null
 
   return (
     <Box sx={{ width: '100%' }}>

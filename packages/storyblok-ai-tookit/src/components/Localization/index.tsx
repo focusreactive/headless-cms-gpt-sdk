@@ -11,8 +11,10 @@ import {
 import LocalizeStoryMode from './modes/Story'
 import { AppDataContext, language } from '@src/context/AppDataContext'
 import { PLUGIN_ID } from '@src/constants'
-import type { PresetChoice } from '@src/preset/PresetPicker'
+import { describeStyle } from '@src/preset/describeStyle'
+import { styleFor, type PresetChoice } from '@src/preset/presetChoice'
 import { PresetsPanel } from '@src/preset/PresetsPanel'
+import { usePresets } from '@src/preset/PresetsProvider'
 
 const PREVIEW_LENGTH = 50
 const PREVIEW_COUNT = 3
@@ -36,6 +38,7 @@ const untranslatedNotice = (untranslated: string[]) => {
 const Localization = () => {
   const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
   const { spaceId, userId, languages } = React.useContext(AppDataContext)
+  const { presets } = usePresets()
 
   // Not in the reducer: every action is appended to `state.history`, which is posted to
   // Slack on each localize.
@@ -62,6 +65,23 @@ const Localization = () => {
       promptModifier: 'Summary should be short and concise.',
       cb: (summary) => dispatch({ type: 'setStorySummary', payload: summary }),
     })
+  }
+
+  /**
+   * What the chosen preset says about the language being translated into, in the words the
+   * model is given — or nothing, which is every case where no preset applies.
+   *
+   * The same `styleFor` the picker asks, so the sentence under the field and the sentence
+   * in the request cannot disagree about which style is in force.
+   */
+  const styleSentence = () => {
+    const style = styleFor(
+      presets.kind === 'ready' ? presets.settings : null,
+      state.stylePreset,
+      state.fieldLevelTranslation.targetLanguage,
+    )
+
+    return style === null ? '' : describeStyle(state.targetLanguageName, style)
   }
 
   const localize = async () => {
@@ -107,9 +127,14 @@ const Localization = () => {
           targetLanguageName: state.targetLanguageName,
           folderLevelTranslation: state.folderLevelTranslation,
           mode: 'update',
-          promptModifier: state.storySummary
-            ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
-            : '',
+          promptModifier: [
+            styleSentence(),
+            state.storySummary
+              ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
+              : '',
+          ]
+            .filter(Boolean)
+            .join('\n'),
           // Nothing here may read the awaited result: localizeStory calls cb before
           // it resolves, so those bindings do not exist yet.
           cb: () => undefined,
