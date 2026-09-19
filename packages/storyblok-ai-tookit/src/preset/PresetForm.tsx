@@ -246,6 +246,11 @@ const PresetFormFields = ({
   })
 
   const leave = () => {
+    // An armed delete is only hidden by the discard prompt, not ended by it: without this
+    // the footer comes back as a lone "Delete for all languages?" after Keep editing, and
+    // the next press — the only control on screen — is the second press.
+    remove.cancel()
+
     if (form.formState.isDirty) {
       setLeaving(true)
 

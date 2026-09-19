@@ -182,3 +182,42 @@ describe("the form's fields when they first appear (contract: editing shows the 
     ).toBe(false);
   });
 });
+
+describe("the form's two ways out (contract: the armed delete and the discard prompt are two footers, and only one of them can be the way out at a time)", () => {
+  it("disarms the delete when the discard prompt takes over, so keeping editing lands on the normal footer", async () => {
+    mount(
+      createElement(PresetForm, {
+        languages: [{ code: "fr", name: "French" }],
+        locale: "fr",
+        target: { kind: "existing", preset: "legal" },
+        onDone: () => undefined,
+      }),
+      storedWith({ fr: { instructions: "Keep it plain." } }),
+    );
+
+    await waitFor(() => expect(screen.queryByLabelText("Name")).not.toBeNull());
+
+    // something changed, so leaving will ask
+    fireEvent.change(screen.getByLabelText("Instructions"), {
+      target: { value: "Keep it very plain." },
+    });
+
+    // the delete is armed, and then abandoned in favour of leaving
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(
+      screen.queryByRole("button", { name: "Delete for all languages?" }),
+    ).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to style presets" }));
+    expect(screen.queryByText("Discard unsaved changes?")).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
+
+    // the footer a person expects back — not a lone armed delete that the next press fires
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Delete for all languages?" }),
+    ).toBeNull();
+  });
+});

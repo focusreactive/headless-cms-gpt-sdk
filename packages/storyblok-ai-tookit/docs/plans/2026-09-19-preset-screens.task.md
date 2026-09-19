@@ -207,6 +207,30 @@ arrive — the field reads "No preset" in the meantime. The choice is not lost; 
 reducer. Noticed by the comment auditor while reading, and left as it is: naming a preset
 we have not read is the alternative, and it is worse.
 
+## The regression sweep
+
+Mandatory here, because Phase 1 called this high risk: it edits working code that has no
+tests and carries the product's one feature. Every surface the change touched, grepped for
+its call sites, and each one read:
+
+| Surface | Call sites | Where |
+|---|---|---|
+| `TagsInput` | 1 | `PresetForm.tsx` (plus the barrel) |
+| `useTwoStepConfirm` | 2 | `PresetForm.tsx`, and `PresetList.tsx` for the constant only |
+| `DEFAULT_TIMEOUT_MS` (newly exported) | 1 | `PresetList.tsx` |
+| `LocalizationState` | 2 | `modes/Story/index.tsx`, the baseline test |
+| `LocalizationAction` | 1 | `modes/Story/index.tsx` |
+| `mainReducer`, `INITIAL_STATE` (newly exported) | 1 each | the baseline test, and nothing else |
+| `Disclosure` | 1 | `PresetForm.tsx` (plus the barrel) |
+| `PresetChoice` | 2 | `Localization/index.tsx`, `PresetPicker.test.tsx` |
+
+Nothing outside this change consumes any of them: every new export has exactly the callers
+it was added for, and the two pre-existing types kept the two they had. The only widened
+surface with no caller is `Disclosure`'s `$label`, recorded above.
+
+`npx next build` → **Compiled successfully**, with Next's own lint and type pass. That is
+the one check here that covers the whole app rather than a component in jsdom.
+
 ## The comment audit
 
 31 comment blocks judged by a fresh reader, plus 2 it said were missing. Its verdict on the
@@ -241,4 +265,24 @@ form, a save included."*
 
 ## Review log
 
-- (empty)
+**19 September 2026 — fresh-eyes review of `9629d75..HEAD`.** One defect, and a destructive
+one:
+
+The form has two two-step mechanisms and they could cross. Edit a field, press Delete once,
+then leave — the discard prompt takes the footer and *hides* the armed delete without
+ending it. Press "Keep editing" and the footer comes back as a lone
+**"Delete for all languages?"**. It is the only control on screen, so pressing it is the
+obvious thing to do, and it is the second press: the whole preset goes, every language of
+it.
+
+A real mouse hides this — `useTwoStepConfirm` disarms on a `mousedown` outside its element,
+and the back arrow is outside — but a keyboard sends no `mousedown`, which is the same
+class of fault the list had and the same reason it was moved there. Fixed by ending the
+arming when the leaving flow starts, guarded by a check written red against the broken code
+first.
+
+The reviewer also ruled out, so a later pass need not: the voice cap's silence on an
+untouched field and the duplicate note persisting until blur (both specified); `minted` and
+the read-once defaults (`PresetsPanel` never swaps one form target for another under a
+mounted form); the list's timer (cleaned up on change and unmount); the fake built once;
+and `describeStyle` / `counterOf` for doubled spaces, missing stops and negative counts.
