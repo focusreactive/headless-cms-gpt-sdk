@@ -1,6 +1,6 @@
 import { GetServerSideProps, NextPage } from 'next'
 import { authHandlerParams, endpointPrefix } from '@src/auth'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   AppSession,
   isAppSessionQuery,
@@ -33,14 +33,30 @@ const PLUGIN_SLUG =
 
 const Home: NextPage<PageProps> = (props) => {
   const [presetRepository] = useState(() => createFakeRepository(FAKE_DOCUMENT).repository)
-  const [currentHeight, setCurrentHeight] = useState<number>(0)
+  const reportedHeight = useRef(0)
+  const content = useRef<HTMLDivElement>(null)
   const [currentStory, setCurrentStory] = useState<ISbStoryData>(null)
 
   useEffect(() => {
-    const handleResize = () => {
-      const height = document.body.clientHeight
+    // This one element, never the document and never the root above it.
+    //
+    // The document counts MUI's tooltips and dropdowns, which are portals appended to the
+    // body — one of those lengthened the document, the frame grew to match, and when the
+    // portal went nothing had changed size, so nothing fired and the frame stayed tall.
+    //
+    // The root cannot shrink: `global.css` pins it to the frame's own height, so once the
+    // frame had grown it reported that height back for ever. This element takes its height
+    // from its content alone, which is the number the frame actually wants.
+    const measured = content.current
 
-      if (height === currentHeight) {
+    if (measured === null) {
+      return
+    }
+
+    const handleResize = () => {
+      const height = measured.scrollHeight
+
+      if (height === reportedHeight.current) {
         return
       }
 
@@ -55,11 +71,13 @@ const Home: NextPage<PageProps> = (props) => {
         '*',
       )
 
-      setCurrentHeight(height)
+      reportedHeight.current = height
     }
 
     const observer = new ResizeObserver(handleResize)
-    observer.observe(document.body)
+
+    observer.observe(measured)
+    handleResize()
 
     return () => {
       observer.disconnect()
@@ -120,7 +138,9 @@ const Home: NextPage<PageProps> = (props) => {
         }}
       >
         <PresetsProvider repository={presetRepository}>
-          <div>
+          {/* `flex-start`: the root above is a flex container of the frame's full height,
+              and a stretched child could never report a height smaller than the frame. */}
+          <div ref={content} style={{ alignSelf: 'flex-start' }}>
             <FeaturesLayout />
             <Typography
               variant="body2"

@@ -11,7 +11,10 @@ body {
   height: 100%;
 }
 
-body>div {
+/* `#__next`, not `body>div`: MUI renders tooltips, menus and dropdowns into portals it
+   appends to the body, and every one of them matched this rule — a tooltip came out
+   stretched to the full height of the panel. */
+#__next {
   height: 100%;
   display: flex;
 }
