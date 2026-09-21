@@ -5,7 +5,11 @@ import { SpaceInfo } from "../../../config/spaceData";
 import { applyTranslations } from "../applyTranslations";
 import { collectFields } from "../collectFields";
 import type { TranslatableFields } from "../translatableFields";
-import { withoutMarkers } from "../inlineMarkers";
+import { describeCause } from "../describeCause";
+import {
+  collectUntranslated,
+  type UntranslatedField,
+} from "../untranslatedFields";
 import { collectPairs } from "../collectPairs";
 import { translateInBatches } from "../translateInBatches";
 import { SBManagementClient } from "../../../config/initClient";
@@ -27,10 +31,11 @@ export const localizeStory = async (
       original: ISbStoryData;
       translated: ISbStoryData;
       /**
-       * Source texts written back untranslated: the model never answered, or its
-       * answer could not be read back.
+       * Fields written back untranslated: the model never answered, or its answer
+       * could not be read back. Each carries the key that locates it in the story —
+       * the text alone cannot, since an empty field has no text to show.
        */
-      untranslated: string[];
+      untranslated: UntranslatedField[];
     }
   | undefined
 > => {
@@ -162,15 +167,14 @@ export const localizeStory = async (
         resolve({
           original: story,
           translated: newStory,
-          untranslated: [
-            ...missing.map(([, sourceText]) => withoutMarkers(sourceText)),
-            ...unparsedBlockKeys.map((key) =>
-              withoutMarkers(sourceTextByKey.get(key) ?? key)
-            ),
-          ],
+          untranslated: collectUntranslated(
+            missing,
+            unparsedBlockKeys,
+            sourceTextByKey
+          ),
         });
       } catch (cause) {
-        const reason = cause instanceof Error ? cause.message : String(cause);
+        const reason = describeCause(cause);
 
         console.error("Failed to localize the document", cause);
         reject(new Error(`Failed to localize the document: ${reason}`));
