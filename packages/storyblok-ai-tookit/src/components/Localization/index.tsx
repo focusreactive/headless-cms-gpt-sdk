@@ -7,6 +7,7 @@ import {
   TRANSLATION_LEVELS,
   TranslationLevels,
   TranslationModes,
+  UntranslatedField,
 } from '@focus-reactive/storyblok-ai-sdk'
 import LocalizeStoryMode from './modes/Story'
 import { AppDataContext, language } from '@src/context/AppDataContext'
@@ -19,14 +20,18 @@ import { usePresets } from '@src/preset/PresetsProvider'
 const PREVIEW_LENGTH = 50
 const PREVIEW_COUNT = 3
 
-const untranslatedNotice = (untranslated: string[]) => {
+// The key leads, because it is the half a reader can act on: an empty field has no
+// text to quote, and two fields can hold the same words.
+const untranslatedNotice = (untranslated: UntranslatedField[]) => {
   if (untranslated.length === 0) {
     return 'Success! Change the language to see the localized content.'
   }
 
   const preview = untranslated
     .slice(0, PREVIEW_COUNT)
-    .map((text) => `"${text.slice(0, PREVIEW_LENGTH)}"`)
+    .map(({ key, text }) =>
+      text === '' ? key : `${key} ("${text.slice(0, PREVIEW_LENGTH)}")`,
+    )
     .join(', ')
   const rest = untranslated.length > PREVIEW_COUNT
       ? ` and ${untranslated.length - PREVIEW_COUNT} more`
@@ -100,19 +105,33 @@ const Localization = () => {
       limit: state.notTranslatableWords.limit,
     }
 
-    if (notTranslatableWords.set.length > 0) {
-      await fetch(`/api/space-settings`, {
-        method: 'POST',
-        body: JSON.stringify({
-          spaceId,
-          pluginId: PLUGIN_ID,
-          notTranslatableWords,
-        }),
+    // Everything up to the usage answer needs the same catch as the translation below.
+    // Without it a throw here — `/api/usage` answering with a Next error page rather
+    // than JSON, say — leaves the button stuck on "Localizing…" with nothing said.
+    let isUseAllowed: boolean
+    try {
+      if (notTranslatableWords.set.length > 0) {
+        await fetch(`/api/space-settings`, {
+          method: 'POST',
+          body: JSON.stringify({
+            spaceId,
+            pluginId: PLUGIN_ID,
+            notTranslatableWords,
+          }),
+        })
+      }
+
+      const response = await fetch(`/api/usage?spaceId=${spaceId}`)
+
+      ;({ isUseAllowed } = await response.json())
+    } catch (error) {
+      return dispatch({
+        type: 'endedWithError',
+        payload: `Could not reach the plugin's own API: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       })
     }
-
-    const response = await fetch(`/api/usage?spaceId=${spaceId}`)
-    const { isUseAllowed } = await response.json()
 
     if (isUseAllowed) {
       let errorMessage = ''
@@ -566,7 +585,7 @@ const reducer = (
     case 'endedWithError':
       return {
         ...state,
-        isLoading: true,
+        isLoading: false,
         successMessage: '',
         errorMessage: action.payload,
         notTranslatableWords: {
@@ -599,6 +618,15 @@ export const mainReducer = (
     newState.folderLevelTranslation.userTypedLanguage
 
   if (newState.translationLevel === 'folder' && !isFolderTranslationDataReady) {
+    return { ...newState, isReadyToPerformLocalization: false }
+  }
+
+  // Folder level duplicates the story into the target folder as its first action, before
+  // anything is translated, and nothing removes that duplicate if a later step fails. A
+  // second press would make a second one, so the button stays disabled until the plugin
+  // is reopened. Field level writes once at the end and leaves nothing behind, so there
+  // retrying is simply retrying.
+  if (newState.translationLevel === 'folder' && newState.errorMessage) {
     return { ...newState, isReadyToPerformLocalization: false }
   }
 

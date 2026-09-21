@@ -92,21 +92,24 @@ describe("the translation state as it stood before the preset work", () => {
     });
 
     /**
-     * **A recorded defect, not an intention.** `endedWithError` sets `isLoading: true`, so
-     * after a failed translation the panel stays in its loading state and the Localize
-     * button never comes back — the editor has to reopen the plugin. Untouched by this
-     * work and held here so that it stays exactly as wrong as it was until somebody fixes
-     * it deliberately.
+     * **The defect this used to hold, fixed on 2026-09-21 after an editor hit it.**
+     * `endedWithError` set `isLoading: true`, so a failed translation left the panel in
+     * its loading state and the Localize button never came back — the plugin had to be
+     * reopened. The check was pinned here to keep that wrong until somebody fixed it
+     * deliberately; somebody has, and it records the working behaviour now.
      */
-    it("keeps isLoading true on failure, leaving the button disabled", () => {
+    it("clears isLoading on failure, so the button comes back ready to retry", () => {
       const failed: LocalizationState = mainReducer(withLanguage("fr"), {
         type: "endedWithError",
         payload: "Nope",
       });
 
       expect(failed.errorMessage).toBe("Nope");
-      expect(failed.isLoading).toBe(true);
-      expect(failed.isReadyToPerformLocalization).toBe(false);
+      expect(failed.isLoading).toBe(false);
+      // Derived from isLoading by mainReducer: with the loading state cleared the
+      // Localize button is enabled again, which is the point — a failed translation
+      // should be retryable without reopening the plugin.
+      expect(failed.isReadyToPerformLocalization).toBe(true);
     });
   });
 
