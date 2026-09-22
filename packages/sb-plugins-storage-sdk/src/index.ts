@@ -206,10 +206,20 @@ export async function getSpaceSettings({ pluginId, spaceId }: BasicProps) {
   };
 }
 
+/**
+ * Writes whatever settings it is given, naming none of them.
+ *
+ * Each field is written whole — `updateDoc` merges at the top level and replaces a nested
+ * object outright — so a caller sending one setting leaves the others alone, and a caller
+ * sending a setting that holds a list replaces that list rather than adding to it.
+ *
+ * Nothing is named here on purpose: the previous version destructured the one field it
+ * knew, so every new setting meant editing this package and releasing it.
+ */
 export async function saveSpaceSettings({
   pluginId,
   spaceId,
-  notTranslatableWords,
+  ...settings
 }: SpaceSettingsProps) {
   const spaceSettings = await getSpaceSettings({ pluginId, spaceId });
   const modified = Timestamp.fromDate(new Date(Date.now()));
@@ -217,14 +227,14 @@ export async function saveSpaceSettings({
   if (Object.keys(spaceSettings).length && spaceSettings.id) {
     await updateDoc(doc(db, "SpaceSettings", spaceSettings.id), {
       modified,
-      notTranslatableWords,
+      ...settings,
     });
   } else {
     await setDoc(doc(collection(db, "SpaceSettings"), uuidv4()), {
       pluginId,
       spaceId,
       createdAt: modified,
-      notTranslatableWords,
+      ...settings,
     });
   }
 }
@@ -246,7 +256,7 @@ type SpaceSettings = {
 type SpaceSettingsProps = {
   pluginId: number;
   spaceId: number;
-  notTranslatableWords?: NotTranslatableWords;
+  [setting: string]: unknown;
 };
 
 type UsagePlanRecord = {

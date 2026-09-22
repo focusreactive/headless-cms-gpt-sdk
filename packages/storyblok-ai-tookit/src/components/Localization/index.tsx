@@ -7,22 +7,31 @@ import {
   TRANSLATION_LEVELS,
   TranslationLevels,
   TranslationModes,
+  UntranslatedField,
 } from '@focus-reactive/storyblok-ai-sdk'
 import LocalizeStoryMode from './modes/Story'
 import { AppDataContext, language } from '@src/context/AppDataContext'
 import { PLUGIN_ID } from '@src/constants'
+import { describeStyle } from '@src/preset/describeStyle'
+import { styleFor, type PresetChoice } from '@src/preset/presetChoice'
+import { PresetsPanel } from '@src/preset/PresetsPanel'
+import { usePresets } from '@src/preset/PresetsProvider'
 
 const PREVIEW_LENGTH = 50
 const PREVIEW_COUNT = 3
 
-const untranslatedNotice = (untranslated: string[]) => {
+// The key leads, because it is the half a reader can act on: an empty field has no
+// text to quote, and two fields can hold the same words.
+const untranslatedNotice = (untranslated: UntranslatedField[]) => {
   if (untranslated.length === 0) {
     return 'Success! Change the language to see the localized content.'
   }
 
   const preview = untranslated
     .slice(0, PREVIEW_COUNT)
-    .map((text) => `"${text.slice(0, PREVIEW_LENGTH)}"`)
+    .map(({ key, text }) =>
+      text === '' ? key : `${key} ("${text.slice(0, PREVIEW_LENGTH)}")`,
+    )
     .join(', ')
   const rest = untranslated.length > PREVIEW_COUNT
       ? ` and ${untranslated.length - PREVIEW_COUNT} more`
@@ -33,7 +42,12 @@ const untranslatedNotice = (untranslated: string[]) => {
 
 const Localization = () => {
   const [state, dispatch] = React.useReducer(mainReducer, INITIAL_STATE)
-  const { spaceId, userId } = React.useContext(AppDataContext)
+  const { spaceId, userId, languages } = React.useContext(AppDataContext)
+  const { presets } = usePresets()
+
+  // Not in the reducer: every action is appended to `state.history`, which is posted to
+  // Slack on each localize.
+  const [managing, setManaging] = React.useState(false)
 
   React.useEffect(() => {
     fetch(`/api/space-settings?spaceId=${spaceId}`, {
@@ -58,6 +72,23 @@ const Localization = () => {
     })
   }
 
+  /**
+   * What the chosen preset says about the language being translated into, in the words the
+   * model is given — or nothing, which is every case where no preset applies.
+   *
+   * The same `styleFor` the picker asks, so the sentence under the field and the sentence
+   * in the request cannot disagree about which style is in force.
+   */
+  const styleSentence = () => {
+    const style = styleFor(
+      presets.kind === 'ready' ? presets.settings : null,
+      state.stylePreset,
+      state.fieldLevelTranslation.targetLanguage,
+    )
+
+    return style === null ? '' : describeStyle(state.targetLanguageName, style)
+  }
+
   const localize = async () => {
     dispatch({ type: 'loadingStarted' })
 
@@ -74,19 +105,33 @@ const Localization = () => {
       limit: state.notTranslatableWords.limit,
     }
 
-    if (notTranslatableWords.set.length > 0) {
-      await fetch(`/api/space-settings`, {
-        method: 'POST',
-        body: JSON.stringify({
-          spaceId,
-          pluginId: PLUGIN_ID,
-          notTranslatableWords,
-        }),
+    // Everything up to the usage answer needs the same catch as the translation below.
+    // Without it a throw here — `/api/usage` answering with a Next error page rather
+    // than JSON, say — leaves the button stuck on "Localizing…" with nothing said.
+    let isUseAllowed: boolean
+    try {
+      if (notTranslatableWords.set.length > 0) {
+        await fetch(`/api/space-settings`, {
+          method: 'POST',
+          body: JSON.stringify({
+            spaceId,
+            pluginId: PLUGIN_ID,
+            notTranslatableWords,
+          }),
+        })
+      }
+
+      const response = await fetch(`/api/usage?spaceId=${spaceId}`)
+
+      ;({ isUseAllowed } = await response.json())
+    } catch (error) {
+      return dispatch({
+        type: 'endedWithError',
+        payload: `Could not reach the plugin's own API: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       })
     }
-
-    const response = await fetch(`/api/usage?spaceId=${spaceId}`)
-    const { isUseAllowed } = await response.json()
 
     if (isUseAllowed) {
       let errorMessage = ''
@@ -101,9 +146,14 @@ const Localization = () => {
           targetLanguageName: state.targetLanguageName,
           folderLevelTranslation: state.folderLevelTranslation,
           mode: 'update',
-          promptModifier: state.storySummary
-            ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
-            : '',
+          promptModifier: [
+            styleSentence(),
+            state.storySummary
+              ? `Use this text as a context, do not add it to the result translation: "${state.storySummary}"`
+              : '',
+          ]
+            .filter(Boolean)
+            .join('\n'),
           // Nothing here may read the awaited result: localizeStory calls cb before
           // it resolves, so those bindings do not exist yet.
           cb: () => undefined,
@@ -244,6 +294,16 @@ const Localization = () => {
     }
   }
 
+  if (managing) {
+    return (
+      <PresetsPanel
+        languages={languages}
+        locale={state.fieldLevelTranslation.targetLanguage}
+        onClose={() => setManaging(false)}
+      />
+    )
+  }
+
   return (
     <div>
       <Typography variant="h1">Localization</Typography>
@@ -253,6 +313,7 @@ const Localization = () => {
         translationLevels={TRANSLATION_LEVELS}
         dispatch={dispatch}
         state={state}
+        onManagePresets={() => setManaging(true)}
       />
     </div>
   )
@@ -293,10 +354,11 @@ export type LocalizationState = {
   targetLanguageCode: string
   targetLanguageName: string
   notTranslatableWords: NotTranslatableWords
+  stylePreset: PresetChoice
   history: StateHistoryRecord[]
 }
 
-const INITIAL_STATE: LocalizationState = {
+export const INITIAL_STATE: LocalizationState = {
   fieldLevelTranslation: {
     targetLanguageCode: '',
     targetLanguageName: '',
@@ -316,6 +378,7 @@ const INITIAL_STATE: LocalizationState = {
   translationLevel: 'field',
   isReadyToPerformLocalization: false,
   notTranslatableWords: { set: new Set(), new: null, limit: 10 },
+  stylePreset: { said: false },
   history: [{ time: new Date(Date.now()).toISOString(), action: 'init' }],
 }
 
@@ -336,6 +399,7 @@ export type LocalizationAction =
   | { type: 'addNotTranslatableWord' }
   | { type: 'setNewNotTranslatableWord'; payload: string }
   | { type: 'setNotTranslatableWords'; payload: NotTranslatableWords }
+  | { type: 'setStylePreset'; payload: PresetChoice }
 
 const reducer = (
   state: LocalizationState,
@@ -511,10 +575,17 @@ const reducer = (
         history: updatedHistory,
       }
 
+    case 'setStylePreset':
+      return {
+        ...state,
+        stylePreset: action.payload,
+        history: updatedHistory,
+      }
+
     case 'endedWithError':
       return {
         ...state,
-        isLoading: true,
+        isLoading: false,
         successMessage: '',
         errorMessage: action.payload,
         notTranslatableWords: {
@@ -525,7 +596,7 @@ const reducer = (
   }
 }
 
-const mainReducer = (
+export const mainReducer = (
   state: LocalizationState,
   action: LocalizationAction,
 ): LocalizationState => {
@@ -547,6 +618,15 @@ const mainReducer = (
     newState.folderLevelTranslation.userTypedLanguage
 
   if (newState.translationLevel === 'folder' && !isFolderTranslationDataReady) {
+    return { ...newState, isReadyToPerformLocalization: false }
+  }
+
+  // Folder level duplicates the story into the target folder as its first action, before
+  // anything is translated, and nothing removes that duplicate if a later step fails. A
+  // second press would make a second one, so the button stays disabled until the plugin
+  // is reopened. Field level writes once at the end and leaves nothing behind, so there
+  // retrying is simply retrying.
+  if (newState.translationLevel === 'folder' && newState.errorMessage) {
     return { ...newState, isReadyToPerformLocalization: false }
   }
 

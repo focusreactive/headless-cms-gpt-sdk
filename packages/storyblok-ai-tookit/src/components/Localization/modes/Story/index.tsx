@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   FormControl,
   FormLabel,
@@ -16,6 +17,8 @@ import {
   Stack,
 } from '@mui/material'
 import { AppDataContext } from '@src/context/AppDataContext'
+import { PresetPicker } from '@src/preset/PresetPicker'
+import { usePresets } from '@src/preset/PresetsProvider'
 import React, { Dispatch, PropsWithChildren } from 'react'
 import { LocalizationAction, LocalizationState } from '../..'
 import {
@@ -28,6 +31,7 @@ interface ILocalizeStoryModeProps {
   translationLevels: string[]
   state: LocalizationState
   dispatch: Dispatch<LocalizationAction>
+  onManagePresets: () => void
 }
 
 const style = { margin: '12px 0', padding: '0 2px' }
@@ -69,8 +73,10 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
   translationLevels,
   state,
   dispatch,
+  onManagePresets,
 }) => {
   const { languages, folders } = React.useContext(AppDataContext)
+  const { presets } = usePresets()
   const [showIgnoredWords, setShowIgnoredWords] = React.useState(false)
 
   React.useEffect(() => {
@@ -125,6 +131,19 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
             </MenuItem>
           ))}
         />
+      )}
+      {state.translationLevel === 'field' && (
+        <Box sx={style}>
+          <PresetPicker
+            locale={state.fieldLevelTranslation.targetLanguage}
+            localeName={state.targetLanguageName}
+            chosen={state.stylePreset}
+            onChoose={(preset) =>
+              dispatch({ type: 'setStylePreset', payload: { said: true, preset } })
+            }
+            onManage={onManagePresets}
+          />
+        </Box>
       )}
       {showIgnoredWords ? (
         <Stack
@@ -278,10 +297,14 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
       )}
       <Button
         fullWidth
-        disabled={!state.isReadyToPerformLocalization}
+        disabled={!state.isReadyToPerformLocalization || presets.kind === 'loading'}
         onClick={localize}
       >
-        {state.isLoading ? 'Localizing...' : 'Localize'}
+        {state.isLoading
+          ? 'Localizing...'
+          : presets.kind === 'failed'
+            ? 'Localize without style'
+            : 'Localize'}
       </Button>
       {state.isLoading && (
         <Typography
