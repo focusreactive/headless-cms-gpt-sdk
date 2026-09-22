@@ -566,12 +566,10 @@ const reducer = (
 
     case 'endedSuccessfully':
       return {
-        ...INITIAL_STATE,
+        ...state,
+        isLoading: false,
         successMessage: action.payload,
         errorMessage: '',
-        notTranslatableWords: {
-          ...state.notTranslatableWords,
-        },
         history: updatedHistory,
       }
 
