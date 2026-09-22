@@ -79,6 +79,8 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
   const { presets } = usePresets()
   const [showIgnoredWords, setShowIgnoredWords] = React.useState(false)
 
+  const localeForPresets = state.fieldLevelTranslation.targetLanguage
+
   React.useEffect(() => {
     if (languages.length > 0) {
       dispatch({
@@ -135,9 +137,10 @@ const LocalizeStoryMode: React.FC<ILocalizeStoryModeProps> = ({
       {state.translationLevel === 'field' && (
         <Box sx={style}>
           <PresetPicker
-            locale={state.fieldLevelTranslation.targetLanguage}
+            locale={localeForPresets}
             localeName={state.targetLanguageName}
             chosen={state.stylePreset}
+            disabled={localeForPresets === ''}
             onChoose={(preset) =>
               dispatch({ type: 'setStylePreset', payload: { said: true, preset } })
             }
