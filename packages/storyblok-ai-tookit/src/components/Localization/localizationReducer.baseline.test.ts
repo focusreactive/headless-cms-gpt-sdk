@@ -80,15 +80,20 @@ describe("the translation state as it stood before the preset work", () => {
   });
 
   describe("how a translation ends", () => {
-    it("clears the chosen language on success and carries the message", () => {
+    /**
+     * **The second defect this file used to hold, fixed on 2026-09-22.** `endedSuccessfully`
+     * rebuilt the state from `INITIAL_STATE`, so finishing a translation emptied every field
+     * the editor had set. The recorded value changed deliberately, not by drift.
+     */
+    it("keeps the chosen language on success and carries the message", () => {
       const done: LocalizationState = mainReducer(withLanguage("fr"), {
         type: "endedSuccessfully",
         payload: "Done",
       });
 
       expect(done.successMessage).toBe("Done");
-      expect(done.targetLanguageCode).toBe("");
-      expect(done.isReadyToPerformLocalization).toBe(false);
+      expect(done.targetLanguageCode).toBe("fr");
+      expect(done.isReadyToPerformLocalization).toBe(true);
     });
 
     /**

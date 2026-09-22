@@ -3,8 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { language } from "../context/AppDataContext";
 import { createFakeRepository } from "./fakeRepository";
+import { PRESETS_MAX } from "./preset.types";
 import type { StylePreset } from "./preset.types";
-import { PresetList } from "./PresetList";
+import { PresetList, RIGHT_SLOT } from "./PresetList";
 import type { PresetListProps } from "./PresetList";
 import type { FakeControl } from "./presetStore.types";
 import { PresetsProvider } from "./PresetsProvider";
@@ -370,7 +371,7 @@ describe("a row, expanded (contract: one line per language the space has — eve
   });
 });
 
-describe("deleting from the list (contract: two presses — the first arms it, renaming the button \"Delete <name> — tap again, removes <n> language\" and showing a note \"Tap again to delete · <n> language\", plural for any <n> other than one; the second removes the preset; arming one row's delete disarms any other; nothing is removed by the first press alone)", () => {
+describe("deleting from the list (contract: two presses — the first arms it, renaming the button \"Delete <name> — tap again, removes <n> language\" and replacing that row's language counter with \"Tap again\" rather than adding a line under it; the second removes the preset; arming one row's delete disarms any other; nothing is removed by the first press alone)", () => {
   it("renames the delete button once the first press has armed it", async () => {
     renderList(storedDocument());
 
@@ -379,12 +380,194 @@ describe("deleting from the list (contract: two presses — the first arms it, r
     expect(await screen.findByRole("button", { name: ARMED_TONE })).toBeTruthy();
   });
 
-  it("shows the note \"Tap again to delete · <n> language\" once armed", async () => {
+  it("replaces that row's counter with \"Tap again\" once armed", async () => {
     renderList(storedDocument());
 
     await press("Delete Tone");
 
-    expect(await screen.findByText("Tap again to delete · 1 language")).toBeTruthy();
+    expect(await screen.findByText("Tap again")).toBeTruthy();
+    expect(screen.queryByText("1 / 3")).toBeNull();
+  });
+
+  it("leaves the other rows' counters alone", async () => {
+    renderList(storedDocument());
+
+    await press("Delete Tone");
+    await screen.findByText("Tap again");
+
+    expect(screen.getByText("2 / 3")).toBeTruthy();
+  });
+
+  /**
+   * Counts the row's own children rather than measuring it: jsdom gives every element a
+   * zero-sized box, so a height comparison here would pass against any implementation,
+   * including the one that grew the list. Child count is what this environment can actually
+   * see, and adding a line back is what would change it.
+   */
+  it("adds no element to the row, so arming grows the list by nothing", async () => {
+    renderList(storedDocument());
+    const row = (await screen.findByRole("button", { name: EXPAND_TONE })).closest("li");
+
+    expect(row).not.toBeNull();
+
+    const before = row!.childElementCount;
+
+    await press("Delete Tone");
+    await screen.findByText("Tap again");
+
+    expect(screen.queryByText(/Tap again to delete/)).toBeNull();
+    expect(row!.childElementCount).toBe(before);
+  });
+
+  /** No positions in jsdom, so "the button does not move" is held as "it is the last control in the row, armed or not". */
+  it("keeps the delete button last in the row, armed or not", async () => {
+    renderList(storedDocument());
+    const trash = await screen.findByRole("button", { name: "Delete Tone" });
+    const slot = trash.parentElement;
+
+    expect(slot?.lastElementChild).toBe(trash);
+
+    await press("Delete Tone");
+    const armed = await screen.findByRole("button", { name: ARMED_TONE });
+
+    expect(armed.parentElement).toBe(slot);
+    expect(slot?.lastElementChild).toBe(armed);
+  });
+
+  it("changes nothing on the name's side of the row", async () => {
+    renderList(storedDocument());
+    const name = await screen.findByRole("button", { name: EXPAND_TONE });
+    const before = name.innerHTML;
+
+    await press("Delete Tone");
+    await screen.findByText("Tap again");
+
+    expect(screen.getByRole("button", { name: EXPAND_TONE }).innerHTML).toBe(before);
+  });
+
+  /** `getComputedStyle` resolves in jsdom though layout does not: a numeric width is readable here, a contents-driven one is not. */
+  it("gives the row's right side a width its contents cannot change", async () => {
+    renderList(storedDocument());
+    const trash = await screen.findByRole("button", { name: "Delete Tone" });
+    const slot = trash.parentElement as HTMLElement;
+
+    expect(getComputedStyle(slot).width).toBe(`${RIGHT_SLOT}px`);
+
+    await press("Delete Tone");
+    await screen.findByText("Tap again");
+
+    expect(getComputedStyle(slot).width).toBe(`${RIGHT_SLOT}px`);
+  });
+
+  /** `fireEvent.mouseDown`, not a click: the cancelling has to run before the pressed element's own click handler, and a click alone would not prove that ordering. */
+  describe("pressing away from the armed button", () => {
+    it("disarms when the press lands elsewhere in the list", async () => {
+      renderList(storedDocument());
+
+      await press("Delete Tone");
+      await screen.findByText("Tap again");
+
+      fireEvent.mouseDown(screen.getByRole("button", { name: EXPAND_BRAND }));
+
+      expect(screen.queryByText("Tap again")).toBeNull();
+      expect(await screen.findByRole("button", { name: "Delete Tone" })).toBeTruthy();
+    });
+
+    it("disarms when the press lands outside the panel entirely", async () => {
+      renderList(storedDocument());
+
+      await press("Delete Tone");
+      await screen.findByText("Tap again");
+
+      fireEvent.mouseDown(document.body);
+
+      expect(screen.queryByText("Tap again")).toBeNull();
+    });
+
+    it("writes nothing when a press away cancels it", async () => {
+      const document_ = storedDocument();
+      const { control } = renderList(document_);
+
+      await press("Delete Tone");
+      await screen.findByText("Tap again");
+      fireEvent.mouseDown(screen.getByRole("button", { name: EXPAND_BRAND }));
+      await settle();
+
+      expect(control.held()).toBe(document_);
+    });
+
+    it("stays armed when the press lands on the armed button itself", async () => {
+      renderList(storedDocument());
+
+      await press("Delete Tone");
+      const armedButton = await screen.findByRole("button", { name: ARMED_TONE });
+
+      fireEvent.mouseDown(armedButton);
+
+      expect(screen.getByText("Tap again")).toBeTruthy();
+    });
+
+    it("still deletes on the second press, the cancelling not having eaten it", async () => {
+      const { control } = renderList(storedDocument());
+
+      await press("Delete Tone");
+      await screen.findByText("Tap again");
+      await press(ARMED_TONE);
+      await settle();
+
+      expect(heldItems(control)).toEqual(["brand", "legal"]);
+    });
+  });
+
+  describe("Escape", () => {
+    it("disarms while the armed button holds the focus", async () => {
+      renderList(storedDocument());
+
+      await press("Delete Tone");
+      const armedButton = await screen.findByRole("button", { name: ARMED_TONE });
+      armedButton.focus();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(screen.queryByText("Tap again")).toBeNull();
+    });
+
+    it("leaves the arming alone once the focus has moved on", async () => {
+      renderList(storedDocument());
+
+      await press("Delete Tone");
+      await screen.findByText("Tap again");
+      screen.getByRole("button", { name: EXPAND_BRAND }).focus();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(screen.getByText("Tap again")).toBeTruthy();
+    });
+
+    it("answers only Escape, not any key", async () => {
+      renderList(storedDocument());
+
+      await press("Delete Tone");
+      const armedButton = await screen.findByRole("button", { name: ARMED_TONE });
+      armedButton.focus();
+
+      fireEvent.keyDown(document, { key: "Enter" });
+
+      expect(screen.getByText("Tap again")).toBeTruthy();
+    });
+
+    it("writes nothing when Escape cancels it", async () => {
+      const document_ = storedDocument();
+      const { control } = renderList(document_);
+
+      await press("Delete Tone");
+      const armedButton = await screen.findByRole("button", { name: ARMED_TONE });
+      armedButton.focus();
+      fireEvent.keyDown(document, { key: "Escape" });
+      await settle();
+
+      expect(control.held()).toBe(document_);
+    });
   });
 
   it("removes nothing on the first press alone", async () => {
@@ -444,6 +627,72 @@ describe("leaving and creating (contract: \"Leaves by the back button\", and at 
     await press("New preset");
 
     expect(onCreate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("the ceiling on how many presets a space may hold (contract: PRESETS_MAX is the most; below it the screen says how many remain, at it the button refuses)", () => {
+  /** Not `storedDocument`: these checks compute the expected count from the document's size, which must not follow a shared fixture. */
+  const documentOf = (count: number): StoredDocument => ({
+    items: Array.from({ length: count }, (_, index) => ({
+      id: `preset-${index}`,
+      name: `Preset ${index}`,
+      byLocale: {},
+    })),
+  });
+
+  it("says how many more may be added, below the ceiling", async () => {
+    renderList(documentOf(3));
+
+    expect(await screen.findByText(`You can add ${PRESETS_MAX - 3} more presets`)).toBeTruthy();
+  });
+
+  it("says it in the singular when one place is left", async () => {
+    renderList(documentOf(PRESETS_MAX - 1));
+
+    expect(await screen.findByText("You can add 1 more preset")).toBeTruthy();
+  });
+
+  it("offers the button below the ceiling", async () => {
+    const { onCreate } = renderList(documentOf(PRESETS_MAX - 1));
+
+    await press("New preset");
+
+    expect(onCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses the button at the ceiling", async () => {
+    renderList(documentOf(PRESETS_MAX));
+
+    const button = await screen.findByRole("button", { name: "New preset" });
+
+    expect(button.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("says why, rather than offering a count of zero", async () => {
+    renderList(documentOf(PRESETS_MAX));
+
+    expect(
+      await screen.findByText(
+        `${PRESETS_MAX} presets is the most a space can hold. Delete one to add another.`,
+      ),
+    ).toBeTruthy();
+  });
+
+  it("keeps every preset a space already holds above the ceiling, and still refuses", async () => {
+    renderList(documentOf(PRESETS_MAX + 2));
+
+    const button = await screen.findByRole("button", { name: "New preset" });
+
+    expect(button.hasAttribute("disabled")).toBe(true);
+    expect(screen.getAllByRole("button", { name: /^Expand Preset/ })).toHaveLength(PRESETS_MAX + 2);
+  });
+
+  it("presses onCreate no times while the button refuses", async () => {
+    const { onCreate } = renderList(documentOf(PRESETS_MAX));
+
+    fireEvent.click(await screen.findByRole("button", { name: "New preset" }));
+
+    expect(onCreate).not.toHaveBeenCalled();
   });
 });
 

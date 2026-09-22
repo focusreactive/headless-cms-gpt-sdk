@@ -15,6 +15,12 @@ export type PresetPickerProps = {
   locale: LanguageCode
   localeName: string
   chosen: PresetChoice
+  /**
+   * Off while the caller's screen has no target language. It disables the field **and**
+   * suppresses the "No <language> settings in this preset" warning, which in that state has
+   * no language to name.
+   */
+  disabled?: boolean
   onChoose: (preset: PresetId | null) => void
   onManage: () => void
 }
@@ -49,6 +55,7 @@ export const PresetPicker = ({
   locale,
   localeName,
   chosen,
+  disabled = false,
   onChoose,
   onManage,
 }: PresetPickerProps) => {
@@ -58,7 +65,10 @@ export const PresetPicker = ({
   const wanted = askedFor(chosen, settings)
 
   const silent =
-    settings !== null && wanted !== null && styleFor(settings, chosen, locale) === null
+    !disabled &&
+    settings !== null &&
+    wanted !== null &&
+    styleFor(settings, chosen, locale) === null
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -68,6 +78,7 @@ export const PresetPicker = ({
             $label="Style preset"
             $width="100%"
             displayEmpty
+            disabled={disabled}
             value={value}
             onChange={(event) =>
               onChoose(event.target.value === NO_PRESET ? null : event.target.value)
@@ -83,6 +94,7 @@ export const PresetPicker = ({
         </Box>
         <IconButton
           $label="Manage style presets"
+          $tone="secondary"
           // The kit's 34 is the size of a row icon; here it stands beside a 40px field and
           // has to match its height. Square, so both axes move together.
           sx={{ width: 40, height: 40, flexShrink: 0 }}

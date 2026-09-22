@@ -254,6 +254,52 @@ describe("the manage button (contract: \"beside it a button, accessible name 'Ma
   });
 });
 
+describe("no target language chosen yet (contract: the field waits for one, and says nothing about a language that is not there)", () => {
+  /**
+   * `settingsOf` names `brand` as the space default, so `askedFor` answers `brand` even
+   * though the editor has said nothing. That is the state the warning used to fire in: a
+   * preset is asked for, it resolves to nothing for the empty locale, and the sentence
+   * naming the language had no language to name.
+   */
+  const withoutLanguage = { locale: "", localeName: "", disabled: true };
+
+  it("disables the style-preset field", async () => {
+    await renderReady(settingsOf(), withoutLanguage);
+
+    expect(
+      screen.getByRole("combobox", { name: "Style preset" }).getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
+
+  it("shows no warning naming a language", async () => {
+    await renderReady(settingsOf(), withoutLanguage);
+
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("never renders the blank-named sentence the warning used to read", async () => {
+    await renderReady(settingsOf(), withoutLanguage);
+
+    expect(screen.queryByText(/settings in this preset/)).toBeNull();
+  });
+
+  it("leaves the manage button live, it leading to a screen a language is not needed for", async () => {
+    await renderReady(settingsOf(), withoutLanguage);
+
+    const manage = screen.getByRole("button", { name: "Manage style presets" });
+
+    expect(manage.hasAttribute("disabled")).toBe(false);
+  });
+
+  it("enables the field again once a language is chosen", async () => {
+    await renderReady(settingsOf());
+
+    expect(
+      screen.getByRole("combobox", { name: "Style preset" }).getAttribute("aria-disabled"),
+    ).toBeNull();
+  });
+});
+
 describe("the settings are loading (contract: the text is \"Loading style settings…\")", () => {
   it("says \"Loading style settings…\"", () => {
     renderPicker(recordingRepository());

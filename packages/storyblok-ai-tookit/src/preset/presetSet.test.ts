@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { PRESETS_MAX } from "./preset.types";
 import type { PresetDraft, StylePreset, StyleSettings } from "./preset.types";
 import { removePreset, resolveStyle, savePreset, setDefaultPreset } from "./presetSet";
 
@@ -73,6 +74,44 @@ describe("savePreset", () => {
       const saved: StyleSettings = savePreset(settings, draft);
 
       expect(saved.items[0].name).toBe("House voice");
+    });
+  });
+
+  /**
+   * The ceiling on how many presets a space may hold is the list screen's, deliberately, and
+   * these say so. `savePreset` refusing quietly would be invisible: the provider turns
+   * "same object back" into `'unchanged'`, which `PresetForm` reads as saved and closes on —
+   * so a guard added here would drop the editor's typing with no message. If a later change
+   * wants the store to enforce the ceiling, it has to give the refusal a way to be seen, and
+   * these two checks are what it must deliberately rewrite.
+   */
+  describe("the preset ceiling, which is not enforced here", () => {
+    const manyPresets = (count: number): StylePreset[] =>
+      Array.from({ length: count }, (_, index) => ({
+        id: `preset-${index}`,
+        name: `Preset ${index}`,
+        byLocale: {},
+      }));
+
+    it("edits a held preset even when the space is at the ceiling", () => {
+      const items = manyPresets(PRESETS_MAX);
+      const settings: StyleSettings = { items };
+      const draft: PresetDraft = draftOf({ id: "preset-0", name: "Renamed", formality: "formal" });
+
+      const saved: StyleSettings = savePreset(settings, draft);
+
+      expect(saved.items).toHaveLength(PRESETS_MAX);
+      expect(saved.items[0].name).toBe("Renamed");
+      expect(saved.items[0].byLocale.en).toEqual({ formality: "formal" });
+    });
+
+    it("still adds an unheld preset past the ceiling, because the screen is what refuses", () => {
+      const settings: StyleSettings = { items: manyPresets(PRESETS_MAX) };
+      const draft: PresetDraft = draftOf({ id: "fresh", name: "Fresh", formality: "formal" });
+
+      const saved: StyleSettings = savePreset(settings, draft);
+
+      expect(saved.items).toHaveLength(PRESETS_MAX + 1);
     });
   });
 

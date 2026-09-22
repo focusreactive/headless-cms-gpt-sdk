@@ -5,7 +5,7 @@ import {
   type IconButtonProps as MuiIconButtonProps,
 } from '@mui/material'
 
-type Tone = 'default' | 'danger'
+type Tone = 'default' | 'secondary' | 'danger'
 
 type IconButtonProps = Omit<MuiIconButtonProps, 'aria-label' | 'size'> & {
   /** Names the action once, for the tooltip and for assistive tech alike. */
@@ -24,9 +24,23 @@ const DANGER = {
   '&:hover': { bgcolor: 'error.dark' },
 } as const
 
+// MUI's own outlined-field border, which it hardcodes and exposes no token for: a swap to
+// `divider` or `grey.400` renders lighter than the field this button stands beside.
+const SECONDARY = {
+  border: '1px solid',
+  borderColor: 'rgba(0, 0, 0, 0.23)',
+  '&:hover': { borderColor: 'text.primary', bgcolor: 'action.hover' },
+} as const
+
+const TONES: Record<Tone, readonly object[]> = {
+  default: [SIZE],
+  secondary: [SIZE, SECONDARY],
+  danger: [SIZE, DANGER],
+}
+
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   function IconButton({ $label, $tone = 'default', sx, ...rest }, ref) {
-    const tone = $tone === 'danger' ? [SIZE, DANGER] : [SIZE]
+    const tone = TONES[$tone]
 
     return (
       // Above, not below: the panel is one 300px column with its controls stacked, so a

@@ -423,7 +423,9 @@ const PresetFormFields = ({
             $helperText={voiceHelper}
             $error={voice.fieldState.error !== undefined || duplicateShown}
             disabled={saving}
-            $placeholder={values.voice.length === 0 ? 'Type a word, press Enter' : undefined}
+            $placeholder={
+              values.voice.length === 0 ? 'e.g. warm, plain, confident — Enter after each' : undefined
+            }
             value={voice.field.value}
             onInputChange={(_event, next) => setTyped(next)}
             // A word already in the list never reaches `onChange`: MUI (5.14.18) swallows
@@ -462,7 +464,7 @@ const PresetFormFields = ({
         <Textarea
           $label="Instructions"
           $minRows={4}
-          placeholder="House rules, e.g. terms to leave untranslated"
+          placeholder="Rules every translation must follow — e.g. keep product names in English; address the reader formally."
           // MUI turns the drag handle off on a multiline field; instructions run to 500
           // characters and reading them a few lines at a time is the worst way to check
           // what a translation will be told.
