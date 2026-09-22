@@ -442,17 +442,19 @@ describe("the formality select (contract: label “Formality”, three options �
   });
 });
 
-describe("the voice field (contract: label “Voice”, chips and free text, placeholder “Type a word, press Enter” when empty, helper “Aim for 3–5 · <n> of 20”, and each chip carries a remove button named “Remove <word>”)", () => {
+describe("the voice field (contract: label “Voice”, chips and free text, placeholder “e.g. warm, plain, confident — Enter after each” when empty, helper “Aim for 3–5 · <n> of 20”, and each chip carries a remove button named “Remove <word>”)", () => {
   it("labels it “Voice”", async () => {
     await renderLoaded(editing({ locale: "pt-br" }));
 
     expect(voiceInput()).toBeTruthy();
   });
 
-  it("carries the placeholder “Type a word, press Enter” when empty", async () => {
+  it("carries the placeholder “e.g. warm, plain, confident — Enter after each” when empty", async () => {
     await renderLoaded(editing({ locale: "pt-br" }));
 
-    expect(voiceInput().getAttribute("placeholder")).toBe("Type a word, press Enter");
+    expect(voiceInput().getAttribute("placeholder")).toBe(
+      "e.g. warm, plain, confident — Enter after each",
+    );
   });
 
   it("reads the helper with nothing in the list", async () => {
@@ -503,7 +505,7 @@ describe("the voice field (contract: label “Voice”, chips and free text, pla
   });
 });
 
-describe("the instructions field (contract: label “Instructions”, multi-line, placeholder “House rules, e.g. terms to leave untranslated”)", () => {
+describe("the instructions field (contract: label “Instructions”, multi-line, placeholder naming what the field governs with an example)", () => {
   it("labels it “Instructions”", async () => {
     await renderLoaded(editing());
 
@@ -516,11 +518,11 @@ describe("the instructions field (contract: label “Instructions”, multi-line
     expect(screen.getByLabelText("Instructions").tagName).toBe("TEXTAREA");
   });
 
-  it("carries the placeholder “House rules, e.g. terms to leave untranslated”", async () => {
+  it("carries a placeholder that says what the field governs, with an example", async () => {
     await renderLoaded(editing());
 
     expect(screen.getByLabelText("Instructions").getAttribute("placeholder")).toBe(
-      "House rules, e.g. terms to leave untranslated",
+      "Rules every translation must follow — e.g. keep product names in English; address the reader formally.",
     );
   });
 });
