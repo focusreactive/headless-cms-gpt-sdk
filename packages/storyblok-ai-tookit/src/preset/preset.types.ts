@@ -292,3 +292,9 @@ export type ValidatePreset = (
 export const INSTRUCTIONS_MAX = 500
 
 export const VOICE_MAX = 20
+
+/**
+ * The most presets a space may add. Enforced by the list screen, not by `savePreset`: a
+ * space already holding more keeps every one of them and can only add no further one.
+ */
+export const PRESETS_MAX = 10

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type Ref } from 'react'
 import { Box, ButtonBase, ListItemButton, Stack, Typography } from '@mui/material'
 
 import type { language } from '@src/context/AppDataContext'
@@ -8,6 +8,7 @@ import { Alert } from '../ui/Alert'
 import { Button } from '../ui/Button'
 import { IconButton } from '../ui/IconButton'
 import { localeKey } from './localeKey'
+import { PRESETS_MAX } from './preset.types'
 import type { LanguageCode, PresetId, StylePreset } from './preset.types'
 import { saysNothing } from './presetSet'
 import { usePresets } from './PresetsProvider'
@@ -26,6 +27,18 @@ const covers = (preset: StylePreset, code: LanguageCode) => {
 }
 
 const languageWord = (count: number) => (count === 1 ? 'language' : 'languages')
+
+/**
+ * The width of everything right of the name, fixed so the name's share of the row never
+ * depends on what that side is showing. 108 is the unarmed state, its widest: a counter of
+ * up to seven characters at 12px (~44), two 28px buttons, two 4px gaps.
+ *
+ * @internal Exported for `PresetList.test.tsx`, the only check that the slot has a width at
+ * all; every other helper in this file is module-private.
+ */
+export const RIGHT_SLOT = 108
+
+const presetWord = (count: number) => (count === 1 ? 'preset' : 'presets')
 
 
 
@@ -73,6 +86,7 @@ type RowProps = {
   languages: language[]
   isDefault: boolean
   armed: boolean
+  armedDeleteRef?: Ref<HTMLButtonElement>
   onArm: () => void
   onOpen: (preset: PresetId, locale: LanguageCode) => void
 }
@@ -82,6 +96,7 @@ const PresetRow = ({
   languages,
   isDefault,
   armed,
+  armedDeleteRef,
   onArm,
   onOpen,
 }: RowProps) => {
@@ -106,7 +121,7 @@ const PresetRow = ({
 
   return (
     <Box component="li" sx={{ listStyle: 'none', borderBottom: 1, borderColor: 'divider' }}>
-      <Stack direction="row" alignItems="center" sx={{ height: 40 }}>
+      <Stack direction="row" alignItems="center" sx={{ minHeight: 40 }}>
         {/* One control, not a chevron beside inert text: the name is what a hand reaches
             for, and two buttons doing the same thing would be two stops for a screen
             reader. */}
@@ -117,7 +132,8 @@ const PresetRow = ({
           sx={{
             flex: 1,
             minWidth: 0,
-            height: 34,
+            minHeight: 34,
+            py: '3px',
             px: '2px',
             gap: '6px',
             justifyContent: 'flex-start',
@@ -126,43 +142,56 @@ const PresetRow = ({
           }}
         >
           <Chevron open={open} />
-          <Typography noWrap sx={{ flex: '0 1 auto', minWidth: 0, fontSize: 14 }}>
+          <Typography
+            sx={{ flex: '0 1 auto', minWidth: 0, fontSize: 14, overflowWrap: 'anywhere' }}
+          >
             {preset.name}
           </Typography>
-          <Box sx={{ flex: 1 }} />
-          <Typography sx={{ flexShrink: 0, fontSize: 12, color: 'text.secondary' }}>
-            {configured} / {languages.length}
-          </Typography>
         </ButtonBase>
-        <IconButton
-          $label={
-            isDefault ? `${preset.name} is the default preset` : `Make ${preset.name} the default`
-          }
-          sx={{ ml: '4px' }}
-          onClick={() => {
-            void setDefaultPreset(preset.id)
-          }}
+
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="flex-end"
+          spacing="4px"
+          sx={{ width: RIGHT_SLOT, flexShrink: 0 }}
         >
-          <Star filled={isDefault} />
-        </IconButton>
-        <IconButton
-          $label={
-            remove.pending
-              ? `Delete ${preset.name} — tap again, removes ${configured} ${languageWord(configured)}`
-              : `Delete ${preset.name}`
-          }
-          $tone={remove.pending ? 'danger' : 'default'}
-          sx={{ color: remove.pending ? undefined : 'error.main' }}
-          onClick={remove.press}
-        >
-          <Trash />
-        </IconButton>
+          {remove.pending ? (
+            <Typography sx={{ fontSize: 11, color: 'error.main' }}>Tap again</Typography>
+          ) : (
+            <>
+              <Typography noWrap sx={{ fontSize: 12, color: 'text.secondary' }}>
+                {configured} / {languages.length}
+              </Typography>
+              <IconButton
+                $label={
+                  isDefault
+                    ? `${preset.name} is the default preset`
+                    : `Make ${preset.name} the default`
+                }
+                onClick={() => {
+                  void setDefaultPreset(preset.id)
+                }}
+              >
+                <Star filled={isDefault} />
+              </IconButton>
+            </>
+          )}
+          <IconButton
+            ref={armedDeleteRef}
+            $label={
+              remove.pending
+                ? `Delete ${preset.name} — tap again, removes ${configured} ${languageWord(configured)}`
+                : `Delete ${preset.name}`
+            }
+            $tone={remove.pending ? 'danger' : 'default'}
+            sx={{ color: remove.pending ? undefined : 'error.main' }}
+            onClick={remove.press}
+          >
+            <Trash />
+          </IconButton>
+        </Stack>
       </Stack>
-      {remove.pending ? (
-        <Typography sx={{ px: '10px', pb: '6px', fontSize: 11, color: 'text.secondary' }}>
-          Tap again to delete · {configured} {languageWord(configured)}
-        </Typography>
-      ) : null}
       {open ? (
         <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
           {languages.map((lang) => {
@@ -199,6 +228,11 @@ export const PresetList = ({ languages, onClose, onCreate, onOpen }: PresetListP
   // a tab away.
   const [armed, setArmed] = useState<PresetId | null>(null)
 
+  const held = presets.kind === 'ready' ? presets.settings.items.length : 0
+  const full = held >= PRESETS_MAX
+
+  const armedDelete = useRef<HTMLButtonElement>(null)
+
   useEffect(() => {
     if (armed === null) {
       return
@@ -206,7 +240,32 @@ export const PresetList = ({ languages, onClose, onCreate, onOpen }: PresetListP
 
     const timer = window.setTimeout(() => setArmed(null), DEFAULT_TIMEOUT_MS)
 
-    return () => window.clearTimeout(timer)
+    // mousedown, not click: on click, a press on another row's delete would arm it and the
+    // disarm would then run, leaving it armed for a second press that deletes.
+    const onPressOutside = (event: MouseEvent) => {
+      const button = armedDelete.current
+
+      if (button && event.target instanceof Node && !button.contains(event.target)) {
+        setArmed(null)
+      }
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const button = armedDelete.current
+
+      if (event.key === 'Escape' && button && button.contains(document.activeElement)) {
+        setArmed(null)
+      }
+    }
+
+    document.addEventListener('mousedown', onPressOutside)
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('mousedown', onPressOutside)
+      document.removeEventListener('keydown', onKeyDown)
+    }
   }, [armed])
 
   return (
@@ -270,6 +329,7 @@ export const PresetList = ({ languages, onClose, onCreate, onOpen }: PresetListP
               languages={languages}
               isDefault={presets.settings.defaultId === preset.id}
               armed={armed === preset.id}
+              armedDeleteRef={armed === preset.id ? armedDelete : undefined}
               onArm={() => setArmed(preset.id)}
               onOpen={onOpen}
             />
@@ -278,7 +338,14 @@ export const PresetList = ({ languages, onClose, onCreate, onOpen }: PresetListP
       ) : null}
 
       <Box sx={{ mt: '12px' }}>
-        <Button $tone="secondary" fullWidth onClick={onCreate}>
+        {presets.kind === 'ready' ? (
+          <Typography sx={{ fontSize: 12, color: 'text.secondary', mb: '6px' }}>
+            {full
+              ? `${PRESETS_MAX} presets is the most a space can hold. Delete one to add another.`
+              : `You can add ${PRESETS_MAX - held} more ${presetWord(PRESETS_MAX - held)}`}
+          </Typography>
+        ) : null}
+        <Button $tone="secondary" fullWidth disabled={full} onClick={onCreate}>
           New preset
         </Button>
       </Box>
