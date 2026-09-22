@@ -269,6 +269,16 @@ condition the pin's own comment named. The rejected option was reverting `isLoad
 hanging on every failed translation, which is what prompted the work. The pin is rewritten
 to record the fixed behaviour, and its comment no longer describes a live defect.
 
+**2026-09-22 — F-2, release the SDK as `0.1.0`, not `0.0.15`.** `706409a` changes the type
+of `untranslated` on the result `localizeStory` returns, from `string[]` to
+`UntranslatedField[]`; a caller that reads those strings breaks on upgrade. The rejected
+option was continuing the `0.0.x` run, which the semver spec permits below `1.0.0` — it
+lost because the number is the only warning a consumer gets before installing, and here it
+would have carried none. `sb-plugins-storage-sdk` keeps the `0.0.16` that
+`main` already carries: the number was bumped in an earlier pass but never published, so
+the registry still ends at `0.0.15` and the field-agnostic `saveSpaceSettings` rides out
+on it.
+
 ## Review log
 
 ### 2026-09-21 · `sp-review-iteration` · three angles · 1 critical, 1 major, 1 out-of-scope
