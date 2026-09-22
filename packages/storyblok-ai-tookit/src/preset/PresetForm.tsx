@@ -131,7 +131,7 @@ const Header = ({
     direction="row"
     alignItems="center"
     spacing="6px"
-    sx={{ height: 34, pb: '8px', mb: '12px', borderBottom: 1, borderColor: 'divider' }}
+    sx={{ minHeight: 34, pb: '8px', mb: '12px', borderBottom: 1, borderColor: 'divider' }}
   >
     <IconButton
       $label="Back to style presets"
@@ -147,7 +147,16 @@ const Header = ({
         />
       </svg>
     </IconButton>
-    <Typography component="h2" noWrap sx={{ flex: 1, minWidth: 0, fontSize: 18, fontWeight: 500 }}>
+    <Typography
+      component="h2"
+      sx={{
+        flex: 1,
+        minWidth: 0,
+        fontSize: 18,
+        fontWeight: 500,
+        overflowWrap: 'anywhere',
+      }}
+    >
       {title}
     </Typography>
     {action}
